@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Job Application Manager{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-tachometer-alt me-2"></i>Dashboard</h1>
+            <a href="{{ url_for('jobs.new_job') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i>New Job Application
+            </a>
+        </div>
+    </div>
+</div>
+
+{% if jobs %}
+    <div class="row">
+        {% for job in jobs %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">{{ job.title }}</h5>
+                    <span class="badge bg-{{ 
+                        'success' if job.status == 'Completed' 
+                        else 'info' if job.status == 'Process' 
+                        else 'warning' if job.status in ['Applied', 'Waiting Decision'] 
+                        else 'secondary' if job.status == 'Collected'
+                        else 'danger' if job.status == 'Rejected'
+                        else 'primary' 
+                    }}">
+                        {{ job.status }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">
+                        <i class="fas fa-building me-1"></i>{{ job.company }}
+                    </h6>
+                    {% if job.description %}
+                        <p class="card-text text-truncate">{{ job.description[:150] }}{% if job.description|length > 150 %}...{% endif %}</p>
+                    {% endif %}
+                    <small class="text-muted">
+                        <i class="fas fa-clock me-1"></i>Last updated: {{ job.last_update.strftime('%Y-%m-%d %H:%M') }}
+                    </small>
+                </div>
+                <div class="card-footer">
+                    <div class="btn-group w-100" role="group">
+                        <a href="{{ url_for('jobs.job_detail', job_id=job.id) }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-eye me-1"></i>View Details
+                        </a>
+                        {% if job.documents %}
+                            <a href="{{ url_for('jobs.download_document', job_id=job.id, document_id=job.documents[-1].id) }}" class="btn btn-outline-success btn-sm">
+                                <i class="fas fa-download me-1"></i>Latest PDF
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="row">
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="fas fa-briefcase fa-3x text-muted mb-3"></i>
+                <h3 class="text-muted">No job applications yet</h3>
+                <p class="text-muted">Start by adding your first job application.</p>
+                <a href="{{ url_for('jobs.new_job') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>Add First Job
+                </a>
+            </div>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}

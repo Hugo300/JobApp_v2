@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block title %}{{ job.title }} at {{ job.company }} - Job Application Manager{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1><i class="fas fa-briefcase me-2"></i>{{ job.title }}</h1>
+                <p class="text-muted mb-0">
+                    <i class="fas fa-building me-1"></i>{{ job.company }}
+                    {% if job.url %}
+                        <a href="{{ job.url }}" target="_blank" class="ms-2">
+                            <i class="fas fa-external-link-alt"></i>View Original
+                        </a>
+                    {% endif %}
+                </p>
+            </div>
+            <div class="d-flex gap-2">
+                <form method="POST" action="{{ url_for('jobs.update_status', job_id=job.id) }}" class="d-inline">
+                    <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                        {% for status in status_options %}
+                            <option value="{{ status.value }}" {{ 'selected' if job.status == status.value else '' }}>
+                                {{ status.value }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </form>
+                <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Back
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Job Details and Analysis -->
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Job Description</h5>
+            </div>
+            <div class="card-body">
+                {% if job.description %}
+                    <div class="job-description">
+                        {% for paragraph in job.description.split('\n') %}
+                            {% if paragraph.strip() %}
+                                <p>{{ paragraph }}</p>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">No description available.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Skills Analysis -->
+        {% if user_data and user_data.skills %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Skills Analysis</h5>
+            </div>
+            <div class="card-body">
+                <div class="row align-items-center mb-3">
+                    <div class="col-md-6">
+                        <h6 class="mb-0">Match Score</h6>
+                        <div class="match-score text-{{ 'success' if match_score >= 70 else 'warning' if match_score >= 40 else 'danger' }}">
+                            {{ match_score }}%
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="progress">
+                            <div class="progress-bar bg-{{ 'success' if match_score >= 70 else 'warning' if match_score >= 40 else 'danger' }}" 
+                                 role="progressbar" style="width: {{ match_score }}%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if matched_keywords %}
+                <div class="mb-3">
+                    <h6>Matched Skills:</h6>
+                    {% for keyword in matched_keywords %}
+                        <span class="keyword-match">{{ keyword }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                {% if unmatched_keywords %}
+                <div class="mb-3">
+                    <h6>Missing Skills:</h6>
+                    {% for keyword in unmatched_keywords %}
+                        <span class="keyword-unmatch">{{ keyword }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- PDF Generation -->
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Generate Documents</h5>
+            </div>
+            <div class="card-body">
+                {% if not user_data %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        Please set up your <a href="{{ url_for('main.user_data') }}">user profile</a> first.
+                    </div>
+                {% elif not templates %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        Please create some <a href="{{ url_for('main.templates') }}">templates</a> first.
+                    </div>
+                {% else %}
+                    <form method="POST" action="{{ url_for('jobs.generate_pdf', job_id=job.id) }}">
+                        <div class="mb-3">
+                            <label for="template" class="form-label">Template</label>
+                            <select class="form-select" id="template" name="template_id" onchange="loadTemplateContent()">
+                                <option value="">Select a template...</option>
+                                {% for template in templates %}
+                                    <option value="{{ template.id }}" data-type="{{ template.template_type }}">
+                                        {{ template.name }} ({{ template.template_type|title }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="type" class="form-label">Document Type</label>
+                            <select class="form-select" id="type" name="type" required>
+                                <option value="CV">CV</option>
+                                <option value="Cover Letter">Cover Letter</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3" id="content-section">
+                            <label for="content" class="form-label">LaTeX Content</label>
+                            <textarea class="form-control" id="content" name="content" rows="10" 
+                                      placeholder="Select a template to load content..."></textarea>
+                            <div class="form-text" id="template-info">
+                                Select a template to load its content. File-based templates will automatically include section files.
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-file-pdf me-1"></i>Generate PDF
+                            </button>
+                        </div>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Generated Documents -->
+        {% if job.documents %}
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Generated Documents</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    {% for document in job.documents|sort(attribute='created_at', reverse=true) %}
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">{{ document.type }}</h6>
+                            <small class="text-muted">{{ document.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                        </div>
+                        <a href="{{ url_for('jobs.download_document', job_id=job.id, document_id=document.id) }}" 
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-download me-1"></i>Download
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function loadTemplateContent() {
+    const templateSelect = document.getElementById('template');
+    const templateId = templateSelect.value;
+    const contentTextarea = document.getElementById('content');
+    const templateInfo = document.getElementById('template-info');
+    
+    if (!templateId) {
+        contentTextarea.value = '';
+        templateInfo.textContent = 'Select a template to load its content. File-based templates will automatically include section files.';
+        return;
+    }
+    
+    // Get the selected option to check template type
+    const selectedOption = templateSelect.options[templateSelect.selectedIndex];
+    const templateType = selectedOption.getAttribute('data-type');
+    
+    fetch(`/templates/${templateId}`)
+        .then(response => response.json())
+        .then(data => {
+            contentTextarea.value = data.content;
+            
+            if (templateType === 'file') {
+                templateInfo.innerHTML = `
+                    <strong>File-based template loaded!</strong><br>
+                    This template includes section files and will be compiled with all associated files (sections/, styles/, etc.).
+                    <br><small class="text-muted">You can edit the content above, but section files are managed separately.</small>
+                `;
+            } else {
+                templateInfo.textContent = 'Database template content loaded. You can edit the content above.';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading template:', error);
+            alert('Error loading template content');
+            templateInfo.textContent = 'Error loading template content.';
+        });
+}
+</script>
+{% endblock %}
