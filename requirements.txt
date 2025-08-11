@@ -1,7 +1,15 @@
 Flask==2.3.3
 Flask-SQLAlchemy==3.0.5
+Flask-Bootstrap==3.3.7.1
+Flask-WTF==1.1.1
+WTForms==3.0.1
 Werkzeug==2.3.7
 beautifulsoup4==4.12.2
 requests==2.31.0
+lxml==4.9.3
 
-#lxml==4.9.3
+# Testing dependencies
+pytest==7.4.0
+pytest-flask==1.2.0
+pytest-cov==4.1.0
+coverage==7.2.7
