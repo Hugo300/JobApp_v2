@@ -117,28 +117,98 @@ A comprehensive Flask web application for managing job applications, generating 
 JobApp_v2/
 ├── app.py                 # Main application instance
 ├── config.py             # Configuration settings
-├── models.py             # Database models
+├── models/              # Database models package
+│   └── __init__.py      # Model definitions
 ├── requirements.txt      # Python dependencies
 ├── README.md            # This file
 ├── routes/              # Flask blueprints
 │   ├── __init__.py
-│   ├── main.py          # Main routes (dashboard, user, templates)
-│   └── jobs.py          # Job-specific routes
-├── templates/           # HTML templates
-│   ├── base.html        # Base template
-│   ├── dashboard.html   # Dashboard page
-│   ├── user_data.html   # User profile page
-│   ├── templates.html   # Template management
-│   ├── new_job.html     # New job form
-│   └── job_detail.html  # Job details page
-├── utils/               # Utility functions
+│   ├── main.py          # Main routes (dashboard, user profile)
+│   ├── jobs.py          # Job-specific routes
+│   ├── templates.py     # Template management routes
+│   └── forms.py         # WTForms definitions
+├── templates/           # HTML templates organized by domain
+│   ├── base.html        # Base template with theme support
+│   ├── dashboard.html   # Main dashboard
+│   ├── components/      # Reusable template components
+│   │   ├── forms.html   # Form field macros and utilities
+│   │   ├── cards.html   # Card component macros
+│   │   └── modals.html  # Modal component macros
+│   ├── jobs/           # Job-related templates
+│   │   ├── new_job.html     # New job application form
+│   │   ├── edit_job.html    # Edit job application
+│   │   ├── job_detail.html  # Job details with logging
+│   │   └── add_log.html     # Add log entry form
+│   ├── user/           # User-related templates
+│   │   └── user_data.html   # User profile management
+│   └── templates_mgmt/ # Template management
+│       ├── templates.html        # Template listing
+│       ├── template_create.html  # Create template
+│       ├── template_view_edit.html # View/edit template
+│       └── templates_landing.html  # Template landing page
+├── static/              # Static files (CSS, JS, images)
+│   ├── css/            # Organized stylesheets
+│   │   ├── main.css    # Main styles with theme support
+│   │   └── components/ # Component-specific styles
+│   │       ├── cards.css    # Card component styles
+│   │       └── forms.css    # Form component styles
+│   ├── js/             # JavaScript modules
+│   │   ├── main.js     # Main application JavaScript
+│   │   └── utils/      # JavaScript utility modules
+│   │       ├── ajax.js      # AJAX helper functions
+│   │       ├── ui.js        # UI utility functions
+│   │       └── forms.js     # Form validation utilities
+│   └── images/         # Image assets
+├── services/            # Business logic service layer
+│   ├── __init__.py      # Service exports
+│   ├── base_service.py  # Base service with common operations
+│   ├── job_service.py   # Job application business logic
+│   ├── user_service.py  # User data management
+│   ├── log_service.py   # Activity logging operations
+│   └── template_service.py # Template management
+├── utils/               # Python utility modules
 │   ├── __init__.py
-│   ├── scraper.py       # Web scraping functionality
-│   ├── analysis.py      # Skills analysis
-│   └── latex.py         # LaTeX compilation
-└── documents/           # Generated PDFs
-    └── .gitkeep
+│   ├── analysis.py     # Skills matching algorithm
+│   ├── latex.py        # LaTeX compilation utilities
+│   ├── scraper.py      # Web scraping utilities
+│   ├── forms.py        # Form validation utilities
+│   └── responses.py    # Response formatting utilities
+├── tests/               # Test suite
+│   ├── __init__.py
+│   ├── conftest.py     # Test configuration
+│   ├── test_models.py  # Model tests
+│   ├── test_routes.py  # Route tests
+│   └── test_utils.py   # Utility tests
+└── documents/           # Generated documents and templates
+    └── templates_latex/ # LaTeX template files
 ```
+
+## 🔧 **Code Organization & Architecture**
+
+### **Refactored Structure**
+The codebase has been significantly refactored to improve maintainability, reduce duplication, and enhance code organization:
+
+#### **Python Utilities**
+- **`utils/database.py`**: Centralized database operations with error handling
+- **`utils/responses.py`**: Consistent API response formatting and flash messaging
+- **`utils/forms.py`**: Form validation utilities and custom validators
+- **`utils/analysis.py`**: Skills matching and job analysis algorithms
+- **`utils/latex.py`**: LaTeX compilation and PDF generation
+- **`utils/scraper.py`**: Web scraping functionality for job postings
+
+#### **Frontend Components**
+- **Template Macros**: Reusable Jinja2 macros for forms, cards, and modals
+- **JavaScript Modules**: Organized utility modules for AJAX, UI, and form handling
+- **CSS Components**: Component-based styling with theme support
+- **Responsive Design**: Mobile-first approach with Bootstrap 5
+
+#### **Key Improvements**
+- ✅ **Eliminated Code Duplication**: Extracted common patterns into reusable utilities
+- ✅ **Improved Error Handling**: Centralized error handling with consistent user feedback
+- ✅ **Enhanced Maintainability**: Clear separation of concerns and modular architecture
+- ✅ **Better Testing**: Comprehensive test suite with proper fixtures
+- ✅ **Theme Support**: Dark/light theme switching with CSS custom properties
+- ✅ **Accessibility**: Improved keyboard navigation and screen reader support
 
 ## Database Models
 
