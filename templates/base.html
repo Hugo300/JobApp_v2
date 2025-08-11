@@ -6,6 +6,10 @@
     <title>{% block title %}Job Application Manager{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/components/cards.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/components/forms.css') }}" rel="stylesheet">
+    {% block head %}{% endblock %}
     <style>
         :root {
             --bs-body-bg: #ffffff;
@@ -109,7 +113,7 @@
         }
     </style>
 </head>
-<body>
+<body data-page="{% block page_name %}{% endblock %}">
     <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: var(--navbar-bg);">
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('main.dashboard') }}">
@@ -136,7 +140,7 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.templates') }}">
+                        <a class="nav-link" href="{{ url_for('templates.landing') }}">
                             <i class="fas fa-file-alt me-1"></i>Templates
                         </a>
                     </li>
@@ -172,39 +176,10 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Theme switching functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            const themeToggle = document.getElementById('themeToggle');
-            const themeIcon = document.getElementById('themeIcon');
-            const html = document.documentElement;
-            
-            // Check for saved theme preference or default to 'light'
-            const currentTheme = localStorage.getItem('theme') || 'light';
-            html.setAttribute('data-bs-theme', currentTheme);
-            updateThemeIcon(currentTheme);
-            
-            // Theme toggle click handler
-            themeToggle.addEventListener('click', function() {
-                const currentTheme = html.getAttribute('data-bs-theme');
-                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-                
-                html.setAttribute('data-bs-theme', newTheme);
-                localStorage.setItem('theme', newTheme);
-                updateThemeIcon(newTheme);
-            });
-            
-            function updateThemeIcon(theme) {
-                if (theme === 'dark') {
-                    themeIcon.className = 'fas fa-sun';
-                    themeToggle.title = 'Switch to light mode';
-                } else {
-                    themeIcon.className = 'fas fa-moon';
-                    themeToggle.title = 'Switch to dark mode';
-                }
-            }
-        });
-    </script>
+    <script src="{{ url_for('static', filename='js/utils/ajax.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/utils/ui.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/utils/forms.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>
