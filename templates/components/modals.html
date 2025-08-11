@@ -1,0 +1,285 @@
+{% macro render_modal(modal_id, title, content, footer="", size="", backdrop="true", keyboard="true") %}
+    <div class="modal fade" id="{{ modal_id }}" tabindex="-1" aria-labelledby="{{ modal_id }}Label" aria-hidden="true"
+         data-bs-backdrop="{{ backdrop }}" data-bs-keyboard="{{ keyboard }}">
+        <div class="modal-dialog{% if size %} modal-{{ size }}{% endif %}">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="{{ modal_id }}Label">{{ title }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    {{ content|safe }}
+                </div>
+                {% if footer %}
+                    <div class="modal-footer">
+                        {{ footer|safe }}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endmacro %}
+
+{% macro render_confirm_modal(modal_id, title, message, confirm_text="Confirm", cancel_text="Cancel", 
+                              confirm_class="btn-danger", confirm_action="") %}
+    {% set footer_content %}
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ cancel_text }}</button>
+        <button type="button" class="btn {{ confirm_class }}" onclick="{{ confirm_action }}" data-bs-dismiss="modal">
+            {{ confirm_text }}
+        </button>
+    {% endset %}
+    
+    {{ render_modal(modal_id, title, message, footer_content) }}
+{% endmacro %}
+
+{% macro render_form_modal(modal_id, title, form_action, form_method="POST", form_content="", 
+                          submit_text="Submit", submit_class="btn-primary", cancel_text="Cancel") %}
+    {% set modal_content %}
+        <form action="{{ form_action }}" method="{{ form_method }}" id="{{ modal_id }}Form">
+            {{ form_content|safe }}
+        </form>
+    {% endset %}
+    
+    {% set footer_content %}
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ cancel_text }}</button>
+        <button type="submit" form="{{ modal_id }}Form" class="btn {{ submit_class }}">{{ submit_text }}</button>
+    {% endset %}
+    
+    {{ render_modal(modal_id, title, modal_content, footer_content) }}
+{% endmacro %}
+
+{% macro render_info_modal(modal_id, title, content, close_text="Close") %}
+    {% set footer_content %}
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ close_text }}</button>
+    {% endset %}
+    
+    {{ render_modal(modal_id, title, content, footer_content) }}
+{% endmacro %}
+
+{% macro render_loading_modal(modal_id, title="Processing...", message="Please wait while we process your request.") %}
+    {% set modal_content %}
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary mb-3" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mb-0">{{ message }}</p>
+        </div>
+    {% endset %}
+    
+    {{ render_modal(modal_id, title, modal_content, "", "", "static", "false") }}
+{% endmacro %}
+
+{% macro render_preview_modal(modal_id, title="Preview", content_id="previewContent") %}
+    {% set modal_content %}
+        <div id="{{ content_id }}" class="preview-content">
+            <!-- Content will be loaded dynamically -->
+        </div>
+    {% endset %}
+    
+    {% set footer_content %}
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" onclick="copyPreviewContent('{{ content_id }}')">
+            <i class="fas fa-copy me-1"></i>Copy
+        </button>
+    {% endset %}
+    
+    {{ render_modal(modal_id, title, modal_content, footer_content, "lg") }}
+{% endmacro %}
+
+{% macro render_upload_modal(modal_id, title, upload_url, accepted_files="", max_file_size="") %}
+    {% set modal_content %}
+        <form id="{{ modal_id }}Form" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label for="{{ modal_id }}File" class="form-label">Select File</label>
+                <input type="file" class="form-control" id="{{ modal_id }}File" name="file" 
+                       {% if accepted_files %}accept="{{ accepted_files }}"{% endif %} required>
+                {% if accepted_files or max_file_size %}
+                    <div class="form-text">
+                        {% if accepted_files %}Accepted files: {{ accepted_files }}{% endif %}
+                        {% if max_file_size %}{% if accepted_files %} | {% endif %}Max size: {{ max_file_size }}{% endif %}
+                    </div>
+                {% endif %}
+            </div>
+            <div class="mb-3">
+                <div class="progress d-none" id="{{ modal_id }}Progress">
+                    <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                </div>
+            </div>
+        </form>
+    {% endset %}
+    
+    {% set footer_content %}
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="uploadFile('{{ modal_id }}', '{{ upload_url }}')">
+            <i class="fas fa-upload me-1"></i>Upload
+        </button>
+    {% endset %}
+    
+    {{ render_modal(modal_id, title, modal_content, footer_content) }}
+{% endmacro %}
+
+{% macro render_quick_log_modal(job_id, csrf_token) %}
+    {% set form_content %}
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div class="mb-3">
+            <label for="quickNote" class="form-label">Log Note</label>
+            <textarea class="form-control" id="quickNote" name="note" rows="3" 
+                      placeholder="Enter log details..." maxlength="500" required></textarea>
+            <div class="d-flex justify-content-between">
+                <small class="form-text text-muted">Maximum 500 characters</small>
+                <small class="form-text">
+                    <span id="quickCharCount">0</span>/500
+                </small>
+            </div>
+        </div>
+        <div class="mb-3">
+            <label for="quickStatusChange" class="form-label">Update Status (Optional)</label>
+            <select class="form-select" id="quickStatusChange" name="status_change">
+                <option value="">No status change</option>
+                <!-- Status options will be populated by JavaScript -->
+            </select>
+        </div>
+    {% endset %}
+    
+    {{ render_form_modal("quickLogModal", "Add Quick Log", url_for('jobs.add_log', job_id=job_id), 
+                        "POST", form_content, "Add Log", "btn-primary") }}
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const quickNote = document.getElementById('quickNote');
+            const quickCharCount = document.getElementById('quickCharCount');
+            
+            if (quickNote && quickCharCount) {
+                quickNote.addEventListener('input', function() {
+                    const currentLength = quickNote.value.length;
+                    quickCharCount.textContent = currentLength;
+                    
+                    if (currentLength > 400) {
+                        quickCharCount.className = 'text-warning';
+                    } else if (currentLength > 475) {
+                        quickCharCount.className = 'text-danger';
+                    } else {
+                        quickCharCount.className = '';
+                    }
+                });
+            }
+        });
+    </script>
+{% endmacro %}
+
+{% macro render_delete_confirmation_modal(modal_id, item_type, item_name, delete_action) %}
+    {% set message %}
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>Warning:</strong> This action cannot be undone.
+        </div>
+        <p>Are you sure you want to delete the {{ item_type }} <strong>"{{ item_name }}"</strong>?</p>
+        {% if item_type == "job application" %}
+            <p class="text-muted small">This will also delete:</p>
+            <ul class="text-muted small">
+                <li>All log entries</li>
+                <li>All generated documents</li>
+                <li>All associated data</li>
+            </ul>
+        {% endif %}
+    {% endset %}
+    
+    {{ render_confirm_modal(modal_id, "Delete " + item_type.title(), message, 
+                           "Delete", "Cancel", "btn-danger", delete_action) }}
+{% endmacro %}
+
+{% macro render_status_change_modal(job_id, current_status, csrf_token) %}
+    {% set form_content %}
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div class="mb-3">
+            <label for="newStatus" class="form-label">New Status</label>
+            <select class="form-select" id="newStatus" name="status" required>
+                <!-- Status options will be populated by JavaScript -->
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="statusNote" class="form-label">Note (Optional)</label>
+            <textarea class="form-control" id="statusNote" name="note" rows="2" 
+                      placeholder="Add a note about this status change..."></textarea>
+        </div>
+    {% endset %}
+    
+    {{ render_form_modal("statusChangeModal", "Change Status", url_for('jobs.update_status', job_id=job_id), 
+                        "POST", form_content, "Update Status", "btn-primary") }}
+{% endmacro %}
+
+<!-- JavaScript utilities for modals -->
+<script>
+function showModal(modalId) {
+    const modal = new bootstrap.Modal(document.getElementById(modalId));
+    modal.show();
+}
+
+function hideModal(modalId) {
+    const modal = bootstrap.Modal.getInstance(document.getElementById(modalId));
+    if (modal) {
+        modal.hide();
+    }
+}
+
+function copyPreviewContent(contentId) {
+    const content = document.getElementById(contentId);
+    if (content) {
+        const text = content.textContent || content.innerText;
+        navigator.clipboard.writeText(text).then(function() {
+            // Show success feedback
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-check me-1"></i>Copied!';
+            button.classList.add('btn-success');
+            button.classList.remove('btn-primary');
+            
+            setTimeout(function() {
+                button.innerHTML = originalText;
+                button.classList.add('btn-primary');
+                button.classList.remove('btn-success');
+            }, 2000);
+        });
+    }
+}
+
+function uploadFile(modalId, uploadUrl) {
+    const form = document.getElementById(modalId + 'Form');
+    const fileInput = document.getElementById(modalId + 'File');
+    const progress = document.getElementById(modalId + 'Progress');
+    const progressBar = progress.querySelector('.progress-bar');
+    
+    if (!fileInput.files[0]) {
+        alert('Please select a file');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    
+    // Show progress bar
+    progress.classList.remove('d-none');
+    
+    fetch(uploadUrl, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            hideModal(modalId);
+            location.reload(); // Refresh page to show uploaded file
+        } else {
+            alert('Upload failed: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Upload error:', error);
+        alert('Upload failed: ' + error.message);
+    })
+    .finally(() => {
+        progress.classList.add('d-none');
+        progressBar.style.width = '0%';
+    });
+}
+</script>

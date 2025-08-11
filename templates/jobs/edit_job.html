@@ -1,0 +1,330 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Job Application - {{ job.title }} at {{ job.company }} - Job Application Manager{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1><i class="fas fa-edit me-2"></i>Edit Job Application</h1>
+                <p class="text-muted mb-0">Update details for {{ job.title }} at {{ job.company }}</p>
+            </div>
+            <a href="{{ url_for('jobs.job_detail', job_id=job.id) }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Back to Job
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Job Details</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.company.label(class="form-label") }}
+                        {{ form.company(class="form-control", id="company") }}
+                        {% if form.company.errors %}
+                            <div class="text-danger">
+                                {% for error in form.company.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.title.label(class="form-label") }}
+                        {{ form.title(class="form-control", id="title") }}
+                        {% if form.title.errors %}
+                            <div class="text-danger">
+                                {% for error in form.title.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.url.label(class="form-label") }}
+                        <div class="input-group">
+                            {{ form.url(class="form-control", id="url", placeholder="https://example.com/job-posting") }}
+                            <button type="button" class="btn btn-outline-primary" id="scrapeBtn" onclick="scrapeJob()">
+                                <i class="fas fa-magic me-1"></i>Update with Python
+                            </button>
+                        </div>
+                        {% if form.url.errors %}
+                            <div class="text-danger">
+                                {% for error in form.url.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">Optional: Enter a job posting URL to automatically fill in details</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.description.label(class="form-label") }}
+                        {{ form.description(class="form-control", id="description", rows="8", placeholder="Job description, requirements, responsibilities...") }}
+                        {% if form.description.errors %}
+                            <div class="text-danger">
+                                {% for error in form.description.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.office_location.label(class="form-label") }}
+                                {{ form.office_location(class="form-control", id="office_location") }}
+                                {% if form.office_location.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.office_location.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.country.label(class="form-label") }}
+                                {{ form.country(class="form-control", id="country") }}
+                                {% if form.country.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.country.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.job_mode.label(class="form-label") }}
+                        {{ form.job_mode(class="form-select", id="job_mode") }}
+                        {% if form.job_mode.errors %}
+                            <div class="text-danger">
+                                {% for error in form.job_mode.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Update Application
+                        </button>
+                        <a href="{{ url_for('jobs.job_detail', job_id=job.id) }}" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Current Status</h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-2">
+                    <strong>Status:</strong> 
+                    <span class="badge bg-{{ 
+                        'success' if job.status == 'Completed' 
+                        else 'info' if job.status == 'Process' 
+                        else 'warning' if job.status in ['Applied', 'Waiting Decision'] 
+                        else 'secondary' if job.status == 'Collected'
+                        else 'danger' if job.status == 'Rejected'
+                        else 'primary' 
+                    }}">{{ job.status }}</span>
+                </p>
+                <p class="mb-2">
+                    <strong>Last Updated:</strong><br>
+                    <small class="text-muted">{{ job.last_update.strftime('%Y-%m-%d %H:%M') }}</small>
+                </p>
+                {% if job.office_location or job.country or job.job_mode %}
+                <hr>
+                <p class="mb-2">
+                    <strong>Location & Mode:</strong><br>
+                    {% if job.office_location %}
+                        <small class="text-muted">
+                            <i class="fas fa-map-marker-alt me-1"></i>{{ job.office_location }}
+                            {% if job.country %}, {{ job.country }}{% endif %}
+                        </small><br>
+                    {% elif job.country %}
+                        <small class="text-muted">
+                            <i class="fas fa-globe me-1"></i>{{ job.country }}
+                        </small><br>
+                    {% endif %}
+                    {% if job.job_mode %}
+                        <small class="text-muted">
+                            <i class="fas fa-laptop-house me-1"></i>{{ job.job_mode }}
+                        </small>
+                    {% endif %}
+                </p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('jobs.job_detail', job_id=job.id) }}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-eye me-1"></i>View Details
+                    </a>
+                    <a href="{{ url_for('jobs.add_log', job_id=job.id) }}" class="btn btn-outline-success btn-sm">
+                        <i class="fas fa-plus me-1"></i>Add Log
+                    </a>
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="confirmDeleteFromEdit()">
+                        <i class="fas fa-trash me-1"></i>Delete Job
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function scrapeJob() {
+    const url = document.getElementById('url').value;
+    if (!url) {
+        showAlert('Please enter a job posting URL first', 'warning');
+        return;
+    }
+
+    // Validate URL format
+    try {
+        new URL(url);
+    } catch (e) {
+        showAlert('Please enter a valid URL (e.g., https://example.com/job)', 'warning');
+        return;
+    }
+
+    // Show loading state
+    const scrapeBtn = document.getElementById('scrapeBtn');
+    const originalText = scrapeBtn.innerHTML;
+    scrapeBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Updating with Python...';
+    scrapeBtn.disabled = true;
+
+    // Show progress message
+    showAlert('🐍 Using Python scraper to update job details...', 'info');
+
+    fetch(`{{ url_for('jobs.scrape_job', job_id=job.id) }}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({url: url})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update form fields
+            document.getElementById('title').value = data.title || '';
+            document.getElementById('company').value = data.company || '';
+            document.getElementById('description').value = data.description || '';
+
+            // Show success message
+            let message = '✅ ' + (data.message || 'Job details updated successfully!');
+            if (data.title || data.company) {
+                message += `\n\n📋 Updated: ${data.title || 'No title'} at ${data.company || 'Unknown company'}`;
+            }
+            message += '\n\n💡 A log entry has been created to track this update.';
+            showAlert(message, 'success');
+
+            // Highlight updated fields
+            highlightUpdatedFields();
+        } else {
+            showAlert('❌ Scraping failed: ' + (data.error || 'Unknown error'), 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Scraping error:', error);
+        showAlert('❌ Network error while scraping: ' + error.message, 'danger');
+    })
+    .finally(() => {
+        scrapeBtn.innerHTML = originalText;
+        scrapeBtn.disabled = false;
+    });
+}
+
+function showAlert(message, type) {
+    // Remove existing alerts
+    const existingAlerts = document.querySelectorAll('.scrape-alert');
+    existingAlerts.forEach(alert => alert.remove());
+
+    // Create new alert
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show scrape-alert mt-2`;
+    alertDiv.innerHTML = `
+        ${message.replace(/\n/g, '<br>')}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+
+    // Insert after the URL input group
+    const urlGroup = document.querySelector('.input-group');
+    urlGroup.parentNode.insertBefore(alertDiv, urlGroup.nextSibling);
+
+    // Auto-dismiss success/info alerts after 5 seconds
+    if (type === 'success' || type === 'info') {
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 5000);
+    }
+}
+
+function highlightUpdatedFields() {
+    const fields = ['company', 'title', 'description'];
+    fields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (field && field.value.trim()) {
+            field.classList.add('border-success');
+            setTimeout(() => {
+                field.classList.remove('border-success');
+            }, 3000);
+        }
+    });
+}
+
+// Delete confirmation functionality for edit page
+function confirmDeleteFromEdit() {
+    const jobTitle = "{{ job.title }}";
+    const jobCompany = "{{ job.company }}";
+
+    if (confirm(`Are you sure you want to delete the job application "${jobTitle}" at ${jobCompany}?\n\nThis action cannot be undone and will also delete:\n• All log entries\n• All generated documents\n• All associated data`)) {
+        // Create and submit delete form
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = "{{ url_for('jobs.delete_job', job_id=job.id) }}";
+
+        // Add CSRF token from the existing form
+        const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrf_token';
+        csrfInput.value = csrfToken;
+        form.appendChild(csrfInput);
+
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+{% endblock %}

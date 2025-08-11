@@ -1,0 +1,358 @@
+{% extends "base.html" %}
+
+{% block title %}Add Log - {{ job.title }} at {{ job.company }} - Job Application Manager{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1><i class="fas fa-plus-circle me-2"></i>Add Log Entry</h1>
+                <p class="text-muted mb-0">
+                    <i class="fas fa-briefcase me-1"></i>{{ job.title }} at {{ job.company }}
+                </p>
+            </div>
+            <a href="{{ url_for('jobs.job_detail', job_id=job.id) }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Back to Job
+            </a>
+        </div>
+
+        <!-- Quick Templates -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-magic me-2"></i>Quick Templates
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-2">
+                    <div class="col-md-4">
+                        <button type="button" class="btn btn-outline-primary btn-sm w-100" onclick="insertTemplate('applied')">
+                            <i class="fas fa-paper-plane me-1"></i>Applied
+                        </button>
+                    </div>
+                    <div class="col-md-4">
+                        <button type="button" class="btn btn-outline-info btn-sm w-100" onclick="insertTemplate('interview')">
+                            <i class="fas fa-user-tie me-1"></i>Interview
+                        </button>
+                    </div>
+                    <div class="col-md-4">
+                        <button type="button" class="btn btn-outline-success btn-sm w-100" onclick="insertTemplate('followup')">
+                            <i class="fas fa-envelope me-1"></i>Follow-up
+                        </button>
+                    </div>
+                    <div class="col-md-4">
+                        <button type="button" class="btn btn-outline-warning btn-sm w-100" onclick="insertTemplate('research')">
+                            <i class="fas fa-search me-1"></i>Research
+                        </button>
+                    </div>
+                    <div class="col-md-4">
+                        <button type="button" class="btn btn-outline-secondary btn-sm w-100" onclick="insertTemplate('call')">
+                            <i class="fas fa-phone me-1"></i>Phone Call
+                        </button>
+                    </div>
+                    <div class="col-md-4">
+                        <button type="button" class="btn btn-outline-dark btn-sm w-100" onclick="insertTemplate('meeting')">
+                            <i class="fas fa-calendar me-1"></i>Meeting
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-edit me-2"></i>Log Details
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" id="logForm">
+                    {{ form.hidden_tag() }}
+
+                    <div class="mb-4">
+                        {{ form.note.label(class="form-label fw-bold") }}
+                        {{ form.note(class="form-control", id="noteTextarea") }}
+                        {% if form.note.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.note.errors %}
+                                    <small><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Describe what happened, what you did, or any notes about this job application.
+                            <span class="float-end">
+                                <span id="charCount">0</span>/1000 characters
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        {{ form.status_change.label(class="form-label fw-bold") }}
+                        {{ form.status_change(class="form-select", id="statusSelect") }}
+                        {% if form.status_change.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.status_change.errors %}
+                                    <small><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Optionally update the job status along with this log entry.
+                        </div>
+                        <div id="statusChangePreview" class="mt-2" style="display: none;">
+                            <div class="alert alert-info py-2">
+                                <small>
+                                    <i class="fas fa-arrow-right me-1"></i>
+                                    Status will change from <strong id="currentStatus">{{ job.status }}</strong> to <strong id="newStatus"></strong>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 justify-content-between">
+                        <div>
+                            <button type="button" class="btn btn-outline-secondary" onclick="saveDraft()">
+                                <i class="fas fa-save me-1"></i>Save Draft
+                            </button>
+                            <small class="text-muted ms-2" id="draftStatus"></small>
+                        </div>
+                        <div>
+                            {{ form.submit(class="btn btn-primary btn-lg") }}
+                            <a href="{{ url_for('jobs.job_detail', job_id=job.id) }}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <!-- Current Status Info -->
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">
+                            <i class="fas fa-info-circle me-2"></i>Current Status
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <span class="badge bg-secondary fs-6 me-3">{{ job.status }}</span>
+                            <div>
+                                <small class="text-muted d-block">Last updated</small>
+                                <small class="fw-bold">{{ job.last_update.strftime('%b %d, %Y at %I:%M %p') }}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <!-- Recent Logs Preview -->
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">
+                            <i class="fas fa-history me-2"></i>Recent Activity
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        {% if job.logs[:3] %}
+                            {% for log in job.logs[:3] %}
+                                <div class="d-flex align-items-start mb-2 {% if not loop.last %}border-bottom pb-2{% endif %}">
+                                    <div class="flex-shrink-0 me-2">
+                                        {% if log.status_change_from and log.status_change_to %}
+                                            <i class="fas fa-exchange-alt text-primary"></i>
+                                        {% else %}
+                                            <i class="fas fa-sticky-note text-secondary"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <small class="text-muted d-block">{{ log.created_at.strftime('%b %d, %I:%M %p') }}</small>
+                                        <small class="text-truncate d-block" style="max-width: 200px;">{{ log.note[:50] }}{% if log.note|length > 50 %}...{% endif %}</small>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                            <div class="text-center mt-2">
+                                <a href="{{ url_for('jobs.job_detail', job_id=job.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye me-1"></i>View All
+                                </a>
+                            </div>
+                        {% else %}
+                            <p class="text-muted mb-0 text-center">
+                                <i class="fas fa-clipboard-list fa-2x d-block mb-2"></i>
+                                No logs yet
+                            </p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Quick template functionality
+const templates = {
+    applied: "Applied to this position today. Submitted application through [platform/method]. Attached CV and cover letter tailored for this role.",
+    interview: "Interview scheduled/completed. [Add details about interview type, date, time, interviewer, questions discussed, impressions, next steps].",
+    followup: "Sent follow-up email to [contact person] regarding application status. [Add any response received or next planned follow-up].",
+    research: "Researched company background, recent news, and key personnel. [Add specific findings that could be useful for interview preparation].",
+    call: "Phone call with [contact person/recruiter]. Discussed [topics]. Next steps: [action items].",
+    meeting: "Meeting/call scheduled for [date/time] with [person/team]. Purpose: [interview/discussion topic]. Preparation needed: [items]."
+};
+
+function insertTemplate(templateType) {
+    const textarea = document.getElementById('noteTextarea');
+    const template = templates[templateType];
+
+    if (textarea.value.trim() === '') {
+        textarea.value = template;
+    } else {
+        textarea.value += '\n\n' + template;
+    }
+
+    updateCharCount();
+    textarea.focus();
+
+    // Move cursor to the end
+    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+}
+
+// Character count functionality
+function updateCharCount() {
+    const textarea = document.getElementById('noteTextarea');
+    const charCount = document.getElementById('charCount');
+    const currentLength = textarea.value.length;
+
+    charCount.textContent = currentLength;
+
+    if (currentLength > 800) {
+        charCount.className = 'text-warning';
+    } else if (currentLength > 950) {
+        charCount.className = 'text-danger';
+    } else {
+        charCount.className = '';
+    }
+}
+
+// Status change preview
+function updateStatusPreview() {
+    const statusSelect = document.getElementById('statusSelect');
+    const preview = document.getElementById('statusChangePreview');
+    const newStatusSpan = document.getElementById('newStatus');
+
+    if (statusSelect.value && statusSelect.value !== '') {
+        newStatusSpan.textContent = statusSelect.value;
+        preview.style.display = 'block';
+    } else {
+        preview.style.display = 'none';
+    }
+}
+
+// Draft functionality
+function saveDraft() {
+    const textarea = document.getElementById('noteTextarea');
+    const statusSelect = document.getElementById('statusSelect');
+    const draftStatus = document.getElementById('draftStatus');
+
+    const draft = {
+        note: textarea.value,
+        status_change: statusSelect.value,
+        timestamp: new Date().toISOString()
+    };
+
+    localStorage.setItem('log_draft_{{ job.id }}', JSON.stringify(draft));
+
+    draftStatus.innerHTML = '<i class="fas fa-check text-success me-1"></i>Draft saved';
+    setTimeout(() => {
+        draftStatus.innerHTML = '';
+    }, 3000);
+}
+
+function loadDraft() {
+    const draftKey = 'log_draft_{{ job.id }}';
+    const draft = localStorage.getItem(draftKey);
+
+    if (draft) {
+        try {
+            const draftData = JSON.parse(draft);
+            const textarea = document.getElementById('noteTextarea');
+            const statusSelect = document.getElementById('statusSelect');
+
+            if (textarea.value.trim() === '' && draftData.note) {
+                textarea.value = draftData.note;
+                updateCharCount();
+            }
+
+            if (statusSelect.value === '' && draftData.status_change) {
+                statusSelect.value = draftData.status_change;
+                updateStatusPreview();
+            }
+
+            const draftDate = new Date(draftData.timestamp);
+            const draftStatus = document.getElementById('draftStatus');
+            draftStatus.innerHTML = `<i class="fas fa-info-circle text-info me-1"></i>Draft from ${draftDate.toLocaleDateString()}`;
+        } catch (e) {
+            console.error('Error loading draft:', e);
+        }
+    }
+}
+
+function clearDraft() {
+    localStorage.removeItem('log_draft_{{ job.id }}');
+}
+
+// Auto-save draft every 30 seconds
+let autoSaveInterval;
+
+function startAutoSave() {
+    autoSaveInterval = setInterval(() => {
+        const textarea = document.getElementById('noteTextarea');
+        if (textarea.value.trim() !== '') {
+            saveDraft();
+        }
+    }, 30000); // 30 seconds
+}
+
+function stopAutoSave() {
+    if (autoSaveInterval) {
+        clearInterval(autoSaveInterval);
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const textarea = document.getElementById('noteTextarea');
+    const statusSelect = document.getElementById('statusSelect');
+    const form = document.getElementById('logForm');
+
+    // Load draft
+    loadDraft();
+
+    // Set up event listeners
+    textarea.addEventListener('input', updateCharCount);
+    statusSelect.addEventListener('change', updateStatusPreview);
+
+    // Initialize character count
+    updateCharCount();
+
+    // Start auto-save
+    startAutoSave();
+
+    // Clear draft on successful form submission
+    form.addEventListener('submit', function() {
+        stopAutoSave();
+        clearDraft();
+    });
+
+    // Handle page unload
+    window.addEventListener('beforeunload', function() {
+        stopAutoSave();
+    });
+});
+</script>
+{% endblock %}

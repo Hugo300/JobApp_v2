@@ -1,0 +1,569 @@
+{% extends "base.html" %}
+
+{% block title %}{{ job.title }} at {{ job.company }} - Job Application Manager{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1><i class="fas fa-briefcase me-2"></i>{{ job.title }}</h1>
+                <p class="text-muted mb-1">
+                    <i class="fas fa-building me-1"></i>{{ job.company }}
+                    {% if job.url %}
+                        <a href="{{ job.url }}" target="_blank" class="ms-2">
+                            <i class="fas fa-external-link-alt"></i>View Original
+                        </a>
+                    {% endif %}
+                </p>
+                {% if job.office_location or job.country or job.job_mode %}
+                <p class="text-muted mb-0">
+                    {% if job.office_location %}
+                        <i class="fas fa-map-marker-alt me-1"></i>{{ job.office_location }}
+                        {% if job.country %}, {{ job.country }}{% endif %}
+                    {% elif job.country %}
+                        <i class="fas fa-globe me-1"></i>{{ job.country }}
+                    {% endif %}
+                    {% if job.job_mode %}
+                        <span class="ms-3">
+                            <i class="fas fa-laptop-house me-1"></i>{{ job.job_mode }}
+                        </span>
+                    {% endif %}
+                </p>
+                {% endif %}
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('jobs.edit_job', job_id=job.id) }}" class="btn btn-primary">
+                    <i class="fas fa-edit me-1"></i>Edit
+                </a>
+                <button type="button" class="btn btn-danger" onclick="confirmDelete()">
+                    <i class="fas fa-trash me-1"></i>Delete
+                </button>
+                <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Back
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Job Details and Analysis -->
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Job Description</h5>
+            </div>
+            <div class="card-body">
+                {% if job.description %}
+                    <div class="job-description">
+                        {% for paragraph in job.description.split('\n') %}
+                            {% if paragraph.strip() %}
+                                <p>{{ paragraph }}</p>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">No description available.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Skills Analysis -->
+        {% if user_data and user_data.skills %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Skills Analysis</h5>
+            </div>
+            <div class="card-body">
+                <div class="row align-items-center mb-3">
+                    <div class="col-md-6">
+                        <h6 class="mb-0">Match Score</h6>
+                        <div class="match-score text-{{ 'success' if match_score >= 70 else 'warning' if match_score >= 40 else 'danger' }}">
+                            {{ match_score }}%
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="progress">
+                            <div class="progress-bar bg-{{ 'success' if match_score >= 70 else 'warning' if match_score >= 40 else 'danger' }}" 
+                                 role="progressbar" style="width: {{ match_score }}%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if matched_keywords %}
+                <div class="mb-3">
+                    <h6>Matched Skills:</h6>
+                    {% for keyword in matched_keywords %}
+                        <span class="keyword-match">{{ keyword }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                {% if unmatched_keywords %}
+                <div class="mb-3">
+                    <h6>Missing Skills:</h6>
+                    {% for keyword in unmatched_keywords %}
+                        <span class="keyword-unmatch">{{ keyword }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Job Logs -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center bg-light">
+                <div>
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-history me-2 text-primary"></i>Activity Log
+                    </h5>
+                    <small class="text-muted">Track all activities and status changes</small>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-success" type="button" data-bs-toggle="collapse" data-bs-target="#quickLogForm" aria-expanded="false">
+                        <i class="fas fa-plus me-1"></i>Quick Log
+                    </button>
+                    <a href="{{ url_for('jobs.add_log', job_id=job.id) }}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-edit me-1"></i>Detailed Log
+                    </a>
+                    {% if total_logs > 10 %}
+                        {% if request.args.get('show_all') == 'true' %}
+                            <a href="{{ url_for('jobs.job_detail', job_id=job.id) }}" class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-compress-alt me-1"></i>Show Recent
+                            </a>
+                        {% else %}
+                            <a href="{{ url_for('jobs.job_detail', job_id=job.id, show_all='true') }}" class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-expand-alt me-1"></i>Show All
+                            </a>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quick Log Form (Collapsible) -->
+            <div class="collapse" id="quickLogForm">
+                <div class="card-body border-bottom bg-light">
+                    <form method="POST" action="{{ url_for('jobs.quick_log', job_id=job.id) }}" id="quickLogFormElement">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <div class="row align-items-end">
+                            <div class="col-md-8">
+                                <label for="quickNote" class="form-label fw-bold">Quick Note</label>
+                                <textarea name="note" id="quickNote" class="form-control" rows="2" placeholder="Add a quick note about this job..." maxlength="500" required></textarea>
+                                <div class="form-text">
+                                    <span class="float-end">
+                                        <span id="quickCharCount">0</span>/500 characters
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-plus me-1"></i>Add
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#quickLogForm">
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card-body p-0">
+                {% if recent_logs %}
+                    <div class="timeline-container">
+                        {% for log in recent_logs %}
+                        <div class="timeline-item {% if loop.first %}timeline-item-first{% endif %} {% if loop.last %}timeline-item-last{% endif %}">
+                            <div class="timeline-marker-container">
+                                <div class="timeline-marker {% if log.status_change_from and log.status_change_to %}timeline-marker-status{% else %}timeline-marker-note{% endif %}">
+                                    {% if log.status_change_from and log.status_change_to %}
+                                        <i class="fas fa-exchange-alt"></i>
+                                    {% else %}
+                                        <i class="fas fa-sticky-note"></i>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="timeline-header">
+                                    <div class="timeline-date">
+                                        <strong>{{ log.created_at.strftime('%b %d, %Y') }}</strong>
+                                        <span class="text-muted">at {{ log.created_at.strftime('%I:%M %p') }}</span>
+                                        <small class="text-muted ms-2 relative-time" title="{{ log.created_at.strftime('%Y-%m-%d %H:%M:%S') }}" data-timestamp="{{ log.created_at.isoformat() }}">
+                                            ({{ log.created_at.strftime('%b %d') }})
+                                        </small>
+                                    </div>
+                                    {% if log.status_change_from and log.status_change_to %}
+                                        <div class="status-change-badges">
+                                            <span class="badge bg-secondary">{{ log.status_change_from }}</span>
+                                            <i class="fas fa-arrow-right mx-1 text-muted"></i>
+                                            <span class="badge bg-success">{{ log.status_change_to }}</span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="timeline-note">
+                                    {% for paragraph in log.note.split('\n') %}
+                                        {% if paragraph.strip() %}
+                                            <p class="mb-2">{{ paragraph }}</p>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% if total_logs > 10 %}
+                        <div class="text-center py-3 border-top bg-light">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                {% if request.args.get('show_all') == 'true' %}
+                                    Showing all {{ total_logs }} logs
+                                {% else %}
+                                    Showing 10 most recent logs out of {{ total_logs }} total
+                                {% endif %}
+                            </small>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center py-5">
+                        <div class="mb-3">
+                            <i class="fas fa-clipboard-list fa-3x text-muted"></i>
+                        </div>
+                        <h6 class="text-muted">No activity logs yet</h6>
+                        <p class="text-muted mb-3">Start tracking your job application progress by adding your first log entry.</p>
+                        <a href="{{ url_for('jobs.add_log', job_id=job.id) }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i>Add First Log Entry
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- PDF Generation -->
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Generate Documents</h5>
+            </div>
+            <div class="card-body">
+                {% if not user_data %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        Please set up your <a href="{{ url_for('main.user_data') }}">user profile</a> first.
+                    </div>
+                {% elif not templates %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        Please create some <a href="{{ url_for('main.templates') }}">templates</a> first.
+                    </div>
+                {% else %}
+                    <form method="POST" action="{{ url_for('jobs.generate_pdf', job_id=job.id) }}">
+                        <div class="mb-3">
+                            <label for="template" class="form-label">Template</label>
+                            <select class="form-select" id="template" name="template_id" onchange="loadTemplateContent()">
+                                <option value="">Select a template...</option>
+                                {% for template in templates %}
+                                    <option value="{{ template.id }}" data-type="{{ template.template_type }}">
+                                        {{ template.name }} ({{ template.template_type|title }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="type" class="form-label">Document Type</label>
+                            <select class="form-select" id="type" name="type" required>
+                                <option value="CV">CV</option>
+                                <option value="Cover Letter">Cover Letter</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3" id="content-section">
+                            <label for="content" class="form-label">LaTeX Content</label>
+                            <textarea class="form-control" id="content" name="content" rows="10" 
+                                      placeholder="Select a template to load content..."></textarea>
+                            <div class="form-text" id="template-info">
+                                Select a template to load its content. File-based templates will automatically include section files.
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-file-pdf me-1"></i>Generate PDF
+                            </button>
+                        </div>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Generated Documents -->
+        {% if job.documents %}
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Generated Documents</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    {% for document in job.documents|sort(attribute='created_at', reverse=true) %}
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">{{ document.type }}</h6>
+                            <small class="text-muted">{{ document.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                        </div>
+                        <a href="{{ url_for('jobs.download_document', job_id=job.id, document_id=document.id) }}" 
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-download me-1"></i>Download
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+.timeline-container {
+    position: relative;
+    padding: 1rem 0;
+}
+
+.timeline-item {
+    position: relative;
+    display: flex;
+    margin-bottom: 0;
+    padding: 1rem 0;
+    border-left: 3px solid #e9ecef;
+    margin-left: 1.5rem;
+}
+
+.timeline-item:not(.timeline-item-last)::after {
+    content: '';
+    position: absolute;
+    left: -3px;
+    bottom: 0;
+    width: 3px;
+    height: 1rem;
+    background: #e9ecef;
+}
+
+.timeline-item-first {
+    border-top-left-radius: 0.375rem;
+}
+
+.timeline-item-last {
+    border-bottom-left-radius: 0.375rem;
+}
+
+.timeline-marker-container {
+    position: absolute;
+    left: -12px;
+    top: 1.25rem;
+    z-index: 2;
+}
+
+.timeline-marker {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.timeline-marker-status {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+}
+
+.timeline-marker-note {
+    background: linear-gradient(135deg, #6c757d, #495057);
+    color: white;
+}
+
+.timeline-content {
+    flex: 1;
+    padding-left: 1.5rem;
+    padding-right: 1rem;
+}
+
+.timeline-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.timeline-date {
+    flex: 1;
+    min-width: 200px;
+}
+
+.status-change-badges {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.timeline-note {
+    background: #f8f9fa;
+    border-radius: 0.375rem;
+    padding: 0.75rem;
+    border-left: 3px solid #007bff;
+    margin-top: 0.5rem;
+}
+
+.timeline-note p {
+    margin-bottom: 0.5rem;
+    line-height: 1.5;
+}
+
+.timeline-note p:last-child {
+    margin-bottom: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .timeline-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .status-change-badges {
+        margin-top: 0.25rem;
+    }
+
+    .timeline-content {
+        padding-left: 1rem;
+        padding-right: 0.5rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Relative time functionality
+function getRelativeTime(timestamp) {
+    const now = new Date();
+    const date = new Date(timestamp);
+    const diffInSeconds = Math.floor((now - date) / 1000);
+
+    if (diffInSeconds < 60) return 'just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)} days ago`;
+    if (diffInSeconds < 31536000) return `${Math.floor(diffInSeconds / 2592000)} months ago`;
+    return `${Math.floor(diffInSeconds / 31536000)} years ago`;
+}
+
+// Update relative times on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const relativeTimeElements = document.querySelectorAll('.relative-time');
+    relativeTimeElements.forEach(element => {
+        const timestamp = element.getAttribute('data-timestamp');
+        if (timestamp) {
+            element.textContent = `(${getRelativeTime(timestamp)})`;
+        }
+    });
+
+    // Quick log character count
+    const quickNote = document.getElementById('quickNote');
+    const quickCharCount = document.getElementById('quickCharCount');
+
+    if (quickNote && quickCharCount) {
+        quickNote.addEventListener('input', function() {
+            const currentLength = quickNote.value.length;
+            quickCharCount.textContent = currentLength;
+
+            if (currentLength > 400) {
+                quickCharCount.className = 'text-warning';
+            } else if (currentLength > 475) {
+                quickCharCount.className = 'text-danger';
+            } else {
+                quickCharCount.className = '';
+            }
+        });
+
+        // Initialize count
+        quickCharCount.textContent = quickNote.value.length;
+    }
+});
+
+
+
+function loadTemplateContent() {
+    const templateSelect = document.getElementById('template');
+    const templateId = templateSelect.value;
+    const contentTextarea = document.getElementById('content');
+    const templateInfo = document.getElementById('template-info');
+    
+    if (!templateId) {
+        contentTextarea.value = '';
+        templateInfo.textContent = 'Select a template to load its content. File-based templates will automatically include section files.';
+        return;
+    }
+    
+    // Get the selected option to check template type
+    const selectedOption = templateSelect.options[templateSelect.selectedIndex];
+    const templateType = selectedOption.getAttribute('data-type');
+    
+    fetch(`/templates/${templateId}`)
+        .then(response => response.json())
+        .then(data => {
+            contentTextarea.value = data.content;
+            
+            if (templateType === 'file') {
+                templateInfo.innerHTML = `
+                    <strong>File-based template loaded!</strong><br>
+                    This template includes section files and will be compiled with all associated files (sections/, styles/, etc.).
+                    <br><small class="text-muted">You can edit the content above, but section files are managed separately.</small>
+                `;
+            } else {
+                templateInfo.textContent = 'Database template content loaded. You can edit the content above.';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading template:', error);
+            alert('Error loading template content');
+            templateInfo.textContent = 'Error loading template content.';
+        });
+}
+
+// Delete confirmation functionality
+function confirmDelete() {
+    const jobTitle = "{{ job.title }}";
+    const jobCompany = "{{ job.company }}";
+
+    if (confirm(`Are you sure you want to delete the job application "${jobTitle}" at ${jobCompany}?\n\nThis action cannot be undone and will also delete:\n• All log entries\n• All generated documents\n• All associated data`)) {
+        // Create and submit delete form
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = "{{ url_for('jobs.delete_job', job_id=job.id) }}";
+
+        // Add CSRF token
+        const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrf_token';
+        csrfInput.value = csrfToken;
+        form.appendChild(csrfInput);
+
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+{% endblock %}

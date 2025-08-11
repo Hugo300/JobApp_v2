@@ -1,0 +1,246 @@
+{% macro render_job_card(job, show_actions=true, show_match_score=false, match_score=0, matched_keywords=[], unmatched_keywords=[]) %}
+    <div class="card mb-3 job-card" data-job-id="{{ job.id }}">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div class="flex-grow-1">
+                    <h5 class="card-title mb-1">
+                        <a href="{{ url_for('jobs.job_detail', job_id=job.id) }}" class="text-decoration-none">
+                            {{ job.title }}
+                        </a>
+                    </h5>
+                    <h6 class="card-subtitle text-muted mb-2">{{ job.company }}</h6>
+                </div>
+                <div class="text-end">
+                    <span class="badge bg-{{ 'success' if job.status == 'Completed' else 'primary' if job.status == 'Applied' else 'warning' if job.status == 'Process' else 'secondary' }}">
+                        {{ job.status }}
+                    </span>
+                    {% if job.job_mode %}
+                        <span class="badge bg-info ms-1">{{ job.job_mode }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if job.description %}
+                <p class="card-text text-muted small">
+                    {{ job.description[:150] }}{% if job.description|length > 150 %}...{% endif %}
+                </p>
+            {% endif %}
+            
+            <div class="row text-muted small">
+                <div class="col-md-6">
+                    {% if job.office_location %}
+                        <i class="fas fa-map-marker-alt me-1"></i>{{ job.office_location }}
+                    {% endif %}
+                    {% if job.country %}
+                        <br><i class="fas fa-globe me-1"></i>{{ job.country }}
+                    {% endif %}
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <i class="fas fa-clock me-1"></i>Updated {{ job.last_update.strftime('%Y-%m-%d') }}
+                    {% if job.url %}
+                        <br><a href="{{ job.url }}" target="_blank" class="text-decoration-none">
+                            <i class="fas fa-external-link-alt me-1"></i>View Posting
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if show_match_score and match_score > 0 %}
+                <div class="mt-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <small class="text-muted">Skills Match</small>
+                        <small class="fw-bold text-{{ 'success' if match_score >= 70 else 'warning' if match_score >= 40 else 'danger' }}">
+                            {{ match_score }}%
+                        </small>
+                    </div>
+                    <div class="progress mb-2" style="height: 6px;">
+                        <div class="progress-bar bg-{{ 'success' if match_score >= 70 else 'warning' if match_score >= 40 else 'danger' }}" 
+                             style="width: {{ match_score }}%"></div>
+                    </div>
+                    {% if matched_keywords %}
+                        <div class="mb-1">
+                            <small class="text-success">
+                                <i class="fas fa-check-circle me-1"></i>
+                                {% for keyword in matched_keywords[:5] %}
+                                    <span class="badge bg-success-subtle text-success me-1">{{ keyword }}</span>
+                                {% endfor %}
+                                {% if matched_keywords|length > 5 %}
+                                    <span class="text-muted">+{{ matched_keywords|length - 5 }} more</span>
+                                {% endif %}
+                            </small>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+            
+            {% if show_actions %}
+                <div class="mt-3 d-flex gap-2">
+                    <a href="{{ url_for('jobs.job_detail', job_id=job.id) }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-eye me-1"></i>View Details
+                    </a>
+                    <a href="{{ url_for('jobs.edit_job', job_id=job.id) }}" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-edit me-1"></i>Edit
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endmacro %}
+
+{% macro render_template_card(template, show_actions=true) %}
+    <div class="card mb-3 template-card" data-template-id="{{ template.id }}">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div class="flex-grow-1">
+                    <h5 class="card-title mb-1">{{ template.name }}</h5>
+                    <span class="badge bg-{{ 'info' if template.template_type == 'file' else 'secondary' }}">
+                        {{ template.template_type.title() }} Template
+                    </span>
+                </div>
+                <div class="text-end">
+                    <small class="text-muted">
+                        <i class="fas fa-clock me-1"></i>
+                        {% if template.updated_at %}
+                            {{ template.updated_at.strftime('%Y-%m-%d') }}
+                        {% else %}
+                            {{ template.created_at.strftime('%Y-%m-%d') }}
+                        {% endif %}
+                    </small>
+                </div>
+            </div>
+            
+            {% if template.content or template.file_path %}
+                <p class="card-text text-muted small">
+                    {% if template.template_type == 'file' %}
+                        File-based template with sections support
+                    {% else %}
+                        {% set content_preview = template.content[:100] if template.content else '' %}
+                        {{ content_preview }}{% if template.content and template.content|length > 100 %}...{% endif %}
+                    {% endif %}
+                </p>
+            {% endif %}
+            
+            {% if show_actions %}
+                <div class="mt-3 d-flex gap-2">
+                    <a href="{{ url_for('templates.view_template', template_id=template.id) }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-eye me-1"></i>View
+                    </a>
+                    <a href="{{ url_for('templates.edit_template', template_id=template.id) }}" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-edit me-1"></i>Edit
+                    </a>
+                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                            onclick="deleteTemplate({{ template.id }}, '{{ template.name }}')">
+                        <i class="fas fa-trash me-1"></i>Delete
+                    </button>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endmacro %}
+
+{% macro render_stats_card(title, value, subtitle="", icon="", color="primary", trend="") %}
+    <div class="card text-center h-100">
+        <div class="card-body">
+            {% if icon %}
+                <div class="mb-2">
+                    <i class="{{ icon }} fa-2x text-{{ color }}"></i>
+                </div>
+            {% endif %}
+            <h3 class="card-title text-{{ color }}">{{ value }}</h3>
+            <p class="card-text">{{ title }}</p>
+            {% if subtitle %}
+                <small class="text-muted">{{ subtitle }}</small>
+            {% endif %}
+            {% if trend %}
+                <div class="mt-2">
+                    <small class="text-{{ 'success' if trend.startswith('+') else 'danger' if trend.startswith('-') else 'muted' }}">
+                        {{ trend }}
+                    </small>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endmacro %}
+
+{% macro render_info_card(title, content, icon="", color="info", collapsible=false, collapsed=false) %}
+    <div class="card mb-3">
+        <div class="card-header bg-{{ color }}-subtle">
+            {% if collapsible %}
+                <h6 class="card-title mb-0">
+                    <button class="btn btn-link text-decoration-none p-0 text-start w-100 text-{{ color }}" type="button" 
+                            data-bs-toggle="collapse" data-bs-target="#info-{{ title|replace(' ', '-')|lower }}" 
+                            aria-expanded="{{ 'false' if collapsed else 'true' }}">
+                        {% if icon %}<i class="{{ icon }} me-2"></i>{% endif %}{{ title }}
+                        <i class="fas fa-chevron-down float-end mt-1"></i>
+                    </button>
+                </h6>
+            {% else %}
+                <h6 class="card-title mb-0 text-{{ color }}">
+                    {% if icon %}<i class="{{ icon }} me-2"></i>{% endif %}{{ title }}
+                </h6>
+            {% endif %}
+        </div>
+        <div class="card-body{% if collapsible %} collapse{% if not collapsed %} show{% endif %}{% endif %}" 
+             {% if collapsible %}id="info-{{ title|replace(' ', '-')|lower }}"{% endif %}>
+            {{ content|safe }}
+        </div>
+    </div>
+{% endmacro %}
+
+{% macro render_log_entry(log, show_relative_time=true) %}
+    <div class="card mb-2 log-entry" data-log-id="{{ log.id }}">
+        <div class="card-body py-2">
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="flex-grow-1">
+                    <p class="mb-1">{{ log.note }}</p>
+                </div>
+                <div class="text-end">
+                    <small class="text-muted">
+                        {{ log.created_at.strftime('%Y-%m-%d %H:%M') }}
+                        {% if show_relative_time %}
+                            <span class="relative-time" data-timestamp="{{ log.created_at.isoformat() }}"></span>
+                        {% endif %}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endmacro %}
+
+{% macro render_empty_state(title, message, icon="", action_text="", action_url="") %}
+    <div class="text-center py-5">
+        {% if icon %}
+            <div class="mb-3">
+                <i class="{{ icon }} fa-3x text-muted"></i>
+            </div>
+        {% endif %}
+        <h4 class="text-muted">{{ title }}</h4>
+        <p class="text-muted">{{ message }}</p>
+        {% if action_text and action_url %}
+            <a href="{{ action_url }}" class="btn btn-primary">
+                {{ action_text }}
+            </a>
+        {% endif %}
+    </div>
+{% endmacro %}
+
+{% macro render_loading_card(title="Loading...") %}
+    <div class="card mb-3">
+        <div class="card-body text-center py-4">
+            <div class="spinner-border text-primary mb-2" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="text-muted mb-0">{{ title }}</p>
+        </div>
+    </div>
+{% endmacro %}
+
+{% macro render_alert_card(message, type="info", dismissible=true, icon="") %}
+    <div class="alert alert-{{ type }}{% if dismissible %} alert-dismissible{% endif %} fade show" role="alert">
+        {% if icon %}<i class="{{ icon }} me-2"></i>{% endif %}
+        {{ message|safe }}
+        {% if dismissible %}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        {% endif %}
+    </div>
+{% endmacro %}

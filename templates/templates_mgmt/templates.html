@@ -1,0 +1,489 @@
+{% extends "base.html" %}
+
+{% block title %}Templates - Job Application Manager{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1><i class="fas fa-file-alt me-2"></i>LaTeX Templates</h1>
+        <p class="text-muted">Manage your CV and cover letter templates. Choose between database storage or file-based templates with sections.</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Create/Edit Template</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Template Name *</label>
+                        <input type="text" class="form-control" id="name" name="name" 
+                               placeholder="e.g., cv_classic, cover_letter_professional" required>
+                        <div class="form-text">Use descriptive names like "cv_classic" or "cover_letter_professional"</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="template_type" class="form-label">Template Type</label>
+                        <select class="form-select" id="template_type" name="template_type" onchange="toggleTemplateType()">
+                            <option value="database">Database Template (Simple)</option>
+                            <option value="file">File-based Template (With Sections)</option>
+                        </select>
+                        <div class="form-text">
+                            <strong>Database:</strong> Simple templates stored in database<br>
+                            <strong>File-based:</strong> Complex templates with section files (sections/, styles/, etc.)
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3" id="content-section">
+                        <label for="content" class="form-label">LaTeX Content *</label>
+                        <textarea class="form-control" id="content" name="content" rows="20" 
+                                  placeholder="Enter your LaTeX content here..." required></textarea>
+                        <div class="form-text">
+                            <strong>Available placeholders:</strong><br>
+                            {{NAME}}, {{EMAIL}}, {{PHONE}}, {{LINKEDIN}}, {{GITHUB}}, {{COMPANY}}, {{JOB_TITLE}}, {{CITY}}, {{ROLE}}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3" id="file-info" style="display: none;">
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-info-circle me-2"></i>File-based Template</h6>
+                            <p class="mb-2">This template will be saved as a file in <code>documents/templates_latex/</code> and can include section files.</p>
+                            <p class="mb-0"><strong>Note:</strong> Make sure to include <code>\input{sections/...}</code> commands for section files.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Save Template
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- File-based Template Management Section -->
+        <div class="card mt-3" id="file-management" style="display: none;">
+            <div class="card-header">
+                <h5 class="card-title mb-0">File-based Template Management</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Main Template File</h6>
+                        <button class="btn btn-outline-primary btn-sm" onclick="loadMainFile()">
+                            <i class="fas fa-edit me-1"></i>Edit Main File
+                        </button>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Section Files</h6>
+                        <button class="btn btn-outline-info btn-sm" onclick="loadSections()">
+                            <i class="fas fa-list me-1"></i>List Sections
+                        </button>
+                        <button class="btn btn-outline-success btn-sm" onclick="showUploadSection()">
+                            <i class="fas fa-upload me-1"></i>Upload Section
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Section Upload Form -->
+                <div id="upload-section-form" style="display: none;" class="mt-3">
+                    <hr>
+                    <h6>Upload Section File</h6>
+                    <form id="section-upload-form" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="section-file" class="form-label">Select LaTeX Section File</label>
+                            <input type="file" class="form-control" id="section-file" name="file" accept=".tex,.sty,.cls,.bib" required>
+                            <div class="form-text">Allowed file types: .tex, .sty, .cls, .bib</div>
+                        </div>
+                        <button type="submit" class="btn btn-success btn-sm">
+                            <i class="fas fa-upload me-1"></i>Upload Section
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="hideUploadSection()">
+                            <i class="fas fa-times me-1"></i>Cancel
+                        </button>
+                    </form>
+                </div>
+                
+                <!-- Sections List -->
+                <div id="sections-list" class="mt-3" style="display: none;">
+                    <hr>
+                    <h6>Available Sections</h6>
+                    <div id="sections-container"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main File Editor Modal -->
+        <div class="modal fade" id="mainFileModal" tabindex="-1">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Edit Main Template File</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <textarea class="form-control" id="main-file-content" rows="25" style="font-family: 'Courier New', monospace;"></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="saveMainFileContent()">Save Changes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Section Editor Modal -->
+        <div class="modal fade" id="sectionModal" tabindex="-1">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Edit Section: <span id="section-name"></span></h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <textarea class="form-control" id="section-content" rows="25" style="font-family: 'Courier New', monospace;"></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="saveSectionContent()">Save Changes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Existing Templates</h5>
+            </div>
+            <div class="card-body">
+                {% if templates %}
+                    <div class="list-group">
+                        {% for template in templates %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ template.name }}</h6>
+                                <small class="text-muted">{{ template.updated_at.strftime('%Y-%m-%d') }}</small>
+                            </div>
+                            <span class="badge bg-{{ 'info' if template.template_type == 'file' else 'secondary' }} mb-2">
+                                {{ template.template_type|title }}
+                            </span>
+                            <p class="mb-1 text-truncate">{{ template.get_content()[:100] }}...</p>
+                            <button class="btn btn-sm btn-outline-primary" onclick="loadTemplate('{{ template.name }}', '{{ template.template_type }}', `{{ template.get_content()|replace('\n', '\\n')|replace('"', '\\"') }}`)">
+                                <i class="fas fa-edit me-1"></i>Load
+                            </button>
+                            {% if template.template_type == 'file' %}
+                            <button class="btn btn-sm btn-outline-info" onclick="showFileManagement('{{ template.name }}')">
+                                <i class="fas fa-folder me-1"></i>Manage Files
+                            </button>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">No templates created yet.</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Template Tips</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <i class="fas fa-info-circle text-info me-2"></i>
+                        Always include \documentclass and \begin{document}...\end{document}
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-info-circle text-info me-2"></i>
+                        Use placeholders for dynamic content
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-info-circle text-info me-2"></i>
+                        File-based templates support \input{sections/...} commands
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-info-circle text-info me-2"></i>
+                        Test your templates before using them
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="card-title mb-0">File-based Template Structure</h5>
+            </div>
+            <div class="card-body">
+                <small class="text-muted">
+                    <strong>Recommended structure:</strong><br>
+                    <code>documents/templates_latex/</code><br>
+                    ├── your_template.tex<br>
+                    ├── _header.tex<br>
+                    ├── TLCresume.sty<br>
+                    └── sections/<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;├── education.tex<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;├── experience.tex<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;├── skills.tex<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;└── projects.tex
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentTemplateName = '';
+
+function toggleTemplateType() {
+    const templateType = document.getElementById('template_type').value;
+    const contentSection = document.getElementById('content-section');
+    const fileInfo = document.getElementById('file-info');
+    const fileManagement = document.getElementById('file-management');
+    
+    if (templateType === 'file') {
+        fileInfo.style.display = 'block';
+        fileManagement.style.display = 'block';
+        contentSection.querySelector('.form-text').innerHTML = `
+            <strong>Available placeholders:</strong><br>
+            {{NAME}}, {{EMAIL}}, {{PHONE}}, {{LINKEDIN}}, {{GITHUB}}, {{COMPANY}}, {{JOB_TITLE}}, {{CITY}}, {{ROLE}}<br>
+            <strong>Section files:</strong> Use \\input{sections/filename} to include section files
+        `;
+    } else {
+        fileInfo.style.display = 'none';
+        fileManagement.style.display = 'none';
+        contentSection.querySelector('.form-text').innerHTML = `
+            <strong>Available placeholders:</strong><br>
+            {{NAME}}, {{EMAIL}}, {{PHONE}}, {{LINKEDIN}}, {{GITHUB}}, {{COMPANY}}, {{JOB_TITLE}}, {{CITY}}, {{ROLE}}
+        `;
+    }
+}
+
+function loadTemplate(name, templateType, content) {
+    currentTemplateName = name;
+    document.getElementById('name').value = name;
+    document.getElementById('template_type').value = templateType;
+    document.getElementById('content').value = content.replace(/\\n/g, '\n');
+    toggleTemplateType();
+}
+
+function showFileManagement(templateName) {
+    currentTemplateName = templateName;
+    document.getElementById('template_type').value = 'file';
+    toggleTemplateType();
+    loadSections();
+}
+
+function showUploadSection() {
+    document.getElementById('upload-section-form').style.display = 'block';
+}
+
+function hideUploadSection() {
+    document.getElementById('upload-section-form').style.display = 'none';
+}
+
+function loadMainFile() {
+    if (!currentTemplateName) {
+        alert('Please select a template first');
+        return;
+    }
+    
+    fetch(`/templates/main_file/${currentTemplateName}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert('Error: ' + data.error);
+            } else {
+                document.getElementById('main-file-content').value = data.content;
+                const modal = new bootstrap.Modal(document.getElementById('mainFileModal'));
+                modal.show();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error loading main file');
+        });
+}
+
+function saveMainFileContent() {
+    const content = document.getElementById('main-file-content').value;
+    
+    const formData = new FormData();
+    formData.append('content', content);
+    
+    fetch(`/templates/main_file/${currentTemplateName}`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Main file saved successfully!');
+            const modal = bootstrap.Modal.getInstance(document.getElementById('mainFileModal'));
+            modal.hide();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error saving main file');
+    });
+}
+
+function loadSections() {
+    if (!currentTemplateName) {
+        alert('Please select a template first');
+        return;
+    }
+    
+    fetch(`/templates/list_sections/${currentTemplateName}`)
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('sections-container');
+            if (data.sections && data.sections.length > 0) {
+                let html = '<div class="list-group">';
+                data.sections.forEach(section => {
+                    html += `
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>${section.name}</strong>
+                                <br><small class="text-muted">${section.filename}</small>
+                            </div>
+                            <div>
+                                <button class="btn btn-sm btn-outline-primary" onclick="loadSection('${section.name}')">
+                                    <i class="fas fa-edit me-1"></i>Edit
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteSection('${section.name}')">
+                                    <i class="fas fa-trash me-1"></i>Delete
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = '<p class="text-muted">No sections found.</p>';
+            }
+            document.getElementById('sections-list').style.display = 'block';
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error loading sections');
+        });
+}
+
+function loadSection(sectionName) {
+    fetch(`/templates/section/${currentTemplateName}/${sectionName}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert('Error: ' + data.error);
+            } else {
+                document.getElementById('section-name').textContent = sectionName;
+                document.getElementById('section-content').value = data.content;
+                const modal = new bootstrap.Modal(document.getElementById('sectionModal'));
+                modal.show();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error loading section');
+        });
+}
+
+function saveSectionContent() {
+    const content = document.getElementById('section-content').value;
+    const sectionName = document.getElementById('section-name').textContent;
+    
+    const formData = new FormData();
+    formData.append('content', content);
+    
+    fetch(`/templates/section/${currentTemplateName}/${sectionName}`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Section saved successfully!');
+            const modal = bootstrap.Modal.getInstance(document.getElementById('sectionModal'));
+            modal.hide();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error saving section');
+    });
+}
+
+function deleteSection(sectionName) {
+    if (!confirm(`Are you sure you want to delete section "${sectionName}"?`)) {
+        return;
+    }
+    
+    fetch(`/templates/delete_section/${currentTemplateName}/${sectionName}`, {
+        method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Section deleted successfully!');
+            loadSections(); // Refresh the sections list
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error deleting section');
+    });
+}
+
+// Handle section upload form submission
+document.getElementById('section-upload-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    if (!currentTemplateName) {
+        alert('Please select a template first');
+        return;
+    }
+    
+    const formData = new FormData();
+    const fileInput = document.getElementById('section-file');
+    formData.append('file', fileInput.files[0]);
+    formData.append('template_name', currentTemplateName);
+    
+    fetch('/templates/upload_section', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Section uploaded successfully!');
+            hideUploadSection();
+            loadSections(); // Refresh the sections list
+            fileInput.value = ''; // Clear the file input
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error uploading section');
+    });
+});
+</script>
+{% endblock %}
