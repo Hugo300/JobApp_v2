@@ -1,6 +1,9 @@
 {% extends "base.html" %}
+{% from "components/forms.html" import render_search_form %}
+{% from "components/cards.html" import render_job_card, render_stats_card, render_empty_state %}
 
 {% block title %}Dashboard - Job Application Manager{% endblock %}
+{% block page_name %}dashboard{% endblock %}
 
 {% block content %}
 <div class="row">
@@ -14,63 +17,231 @@
     </div>
 </div>
 
-{% if jobs %}
-    <div class="row">
-        {% for job in jobs %}
-        <div class="col-md-6 col-lg-4 mb-4">
-            <div class="card h-100">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">{{ job.title }}</h5>
-                    <span class="badge bg-{{ 
-                        'success' if job.status == 'Completed' 
-                        else 'info' if job.status == 'Process' 
-                        else 'warning' if job.status in ['Applied', 'Waiting Decision'] 
-                        else 'secondary' if job.status == 'Collected'
-                        else 'danger' if job.status == 'Rejected'
-                        else 'primary' 
-                    }}">
-                        {{ job.status }}
-                    </span>
-                </div>
-                <div class="card-body">
-                    <h6 class="card-subtitle mb-2 text-muted">
-                        <i class="fas fa-building me-1"></i>{{ job.company }}
-                    </h6>
-                    {% if job.description %}
-                        <p class="card-text text-truncate">{{ job.description[:150] }}{% if job.description|length > 150 %}...{% endif %}</p>
-                    {% endif %}
-                    <small class="text-muted">
-                        <i class="fas fa-clock me-1"></i>Last updated: {{ job.last_update.strftime('%Y-%m-%d %H:%M') }}
-                    </small>
-                </div>
-                <div class="card-footer">
-                    <div class="btn-group w-100" role="group">
-                        <a href="{{ url_for('jobs.job_detail', job_id=job.id) }}" class="btn btn-outline-primary btn-sm">
-                            <i class="fas fa-eye me-1"></i>View Details
-                        </a>
-                        {% if job.documents %}
-                            <a href="{{ url_for('jobs.download_document', job_id=job.id, document_id=job.documents[-1].id) }}" class="btn btn-outline-success btn-sm">
-                                <i class="fas fa-download me-1"></i>Latest PDF
-                            </a>
+<!-- Summary Statistics -->
+{% if summary and summary.total_jobs > 0 %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>Application Summary
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- Total Jobs -->
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        {{ render_stats_card(
+                            title="Total Applications",
+                            value=summary.total_jobs,
+                            icon="fas fa-briefcase",
+                            color="primary"
+                        ) }}
+                    </div>
+
+                    <!-- Status Breakdown Chart -->
+                    <div class="col-md-6 mb-3">
+                        <h6 class="mb-3">Status Breakdown</h6>
+                        <div class="row">
+                            <div class="col-md-8">
+                                <canvas id="statusChart" width="200" height="200"></canvas>
+                            </div>
+                            <div class="col-md-4">
+                                {% for status, count in summary.status_counts.items() %}
+                                <div class="d-flex justify-content-between align-items-center mb-1 small">
+                                    <span class="badge bg-{{
+                                        'success' if status == 'Completed'
+                                        else 'info' if status == 'Process'
+                                        else 'warning' if status in ['Applied', 'Waiting Decision']
+                                        else 'secondary' if status == 'Collected'
+                                        else 'danger' if status == 'Rejected'
+                                        else 'primary'
+                                    }}">{{ status }}</span>
+                                    <span>{{ count }}</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Job Modes Chart and Countries -->
+                    <div class="col-md-3 mb-3">
+                        {% if summary.job_mode_counts %}
+                        <h6 class="mb-2">Job Modes</h6>
+                        <div class="mb-3">
+                            <canvas id="jobModeChart" width="150" height="150"></canvas>
+                        </div>
+                        {% endif %}
+
+                        {% if summary.top_countries %}
+                        <h6 class="mb-2">Top Countries</h6>
+                        {% for country, count in summary.top_countries %}
+                        <div class="small text-muted mb-1">
+                            <i class="fas fa-globe me-1"></i>{{ country }}: {{ count }}
+                        </div>
+                        {% endfor %}
                         {% endif %}
                     </div>
                 </div>
             </div>
         </div>
-        {% endfor %}
     </div>
-{% else %}
-    <div class="row">
-        <div class="col-12">
-            <div class="text-center py-5">
-                <i class="fas fa-briefcase fa-3x text-muted mb-3"></i>
-                <h3 class="text-muted">No job applications yet</h3>
-                <p class="text-muted">Start by adding your first job application.</p>
-                <a href="{{ url_for('jobs.new_job') }}" class="btn btn-primary">
-                    <i class="fas fa-plus me-1"></i>Add First Job
-                </a>
+</div>
+{% endif %}
+
+<!-- Search and Filter Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-search me-2"></i>Search & Filter
+                </h5>
+            </div>
+            <div class="card-body">
+                {{ render_search_form(
+                    search_value=search_query,
+                    status_filter=status_filter,
+                    job_mode_filter=job_mode_filter,
+                    country_filter=country_filter,
+                    status_options=status_options,
+                    job_mode_options=job_mode_options,
+                    countries=countries
+                ) }}
             </div>
         </div>
     </div>
+</div>
+
+{% if jobs %}
+    <div class="row">
+        {% for job in jobs %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            {{ render_job_card(job, show_actions=true) }}
+        </div>
+        {% endfor %}
+    </div>
+{% else %}
+    {{ render_empty_state(
+        title="No job applications yet",
+        message="Start by adding your first job application.",
+        icon="fas fa-briefcase",
+        action_text="Add First Job",
+        action_url=url_for('jobs.new_job')
+    ) }}
 {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    {% if summary and summary.total_jobs > 0 %}
+
+    // Status Breakdown Pie Chart
+    {% if summary.status_counts %}
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    const statusChart = new Chart(statusCtx, {
+        type: 'pie',
+        data: {
+            labels: [{% for status in summary.status_counts.keys() %}'{{ status }}'{% if not loop.last %}, {% endif %}{% endfor %}],
+            datasets: [{
+                data: [{% for count in summary.status_counts.values() %}{{ count }}{% if not loop.last %}, {% endif %}{% endfor %}],
+                backgroundColor: [
+                    {% for status in summary.status_counts.keys() %}
+                    '{% if status == "Completed" %}#198754{% elif status == "Process" %}#0dcaf0{% elif status in ["Applied", "Waiting Decision"] %}#ffc107{% elif status == "Collected" %}#6c757d{% elif status == "Rejected" %}#dc3545{% else %}#0d6efd{% endif %}'{% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                ],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = Math.round((value / total) * 100);
+                            return label + ': ' + value + ' (' + percentage + '%)';
+                        }
+                    }
+                }
+            }
+        }
+    });
+    {% endif %}
+
+    // Job Mode Pie Chart
+    {% if summary.job_mode_counts %}
+    const jobModeCtx = document.getElementById('jobModeChart').getContext('2d');
+    const jobModeChart = new Chart(jobModeCtx, {
+        type: 'pie',
+        data: {
+            labels: [{% for mode in summary.job_mode_counts.keys() %}'{{ mode }}'{% if not loop.last %}, {% endif %}{% endfor %}],
+            datasets: [{
+                data: [{% for count in summary.job_mode_counts.values() %}{{ count }}{% if not loop.last %}, {% endif %}{% endfor %}],
+                backgroundColor: [
+                    '#28a745', // Remote - Green
+                    '#ffc107', // Hybrid - Yellow
+                    '#dc3545'  // On-site - Red
+                ],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = Math.round((value / total) * 100);
+                            return label + ': ' + value + ' (' + percentage + '%)';
+                        }
+                    }
+                }
+            }
+        }
+    });
+    {% endif %}
+
+    {% endif %}
+});
+
+// Delete confirmation functionality for dashboard
+function confirmDeleteJob(jobId, jobTitle, jobCompany) {
+    if (confirm(`Are you sure you want to delete the job application "${jobTitle}" at ${jobCompany}?\n\nThis action cannot be undone and will also delete:\n• All log entries\n• All generated documents\n• All associated data`)) {
+        // Create and submit delete form
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/job/${jobId}/delete`;
+
+        // Add CSRF token
+        const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrf_token';
+        csrfInput.value = csrfToken;
+        form.appendChild(csrfInput);
+
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
 {% endblock %}
