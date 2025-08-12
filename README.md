@@ -6,21 +6,17 @@ A comprehensive Flask web application for managing job applications, generating 
 
 - **Job Application Management**: Track job applications with company, title, description, and status
 - **Web Scraping**: Automatically extract job details from posting URLs
-- **AI-Powered Skill Extraction**: Automatically extract skills from job descriptions using spaCy and SkillNER
-- **Advanced Skills Analysis**: Match your skills against extracted job requirements with intelligent scoring
-- **Manual Skill Re-extraction**: Re-run skill extraction on job descriptions with a single click
 - **LaTeX Document Generation**: Create professional CVs and cover letters using LaTeX templates
 - **PDF Generation**: Compile LaTeX documents to PDF format with section file support
 - **Template Management**: Create and manage reusable LaTeX templates (database or file-based)
 - **File-based Templates**: Support for complex LaTeX templates with section files (sections/, styles/, etc.)
-- **User Profile**: Store personal information and skills for document generation
+- **User Profile**: Store personal information for document generation
 
 ## Technical Stack
 
 - **Backend**: Python 3, Flask
 - **Database**: SQLite3 (using Flask-SQLAlchemy)
 - **Frontend**: Bootstrap 5, Font Awesome
-- **AI/NLP**: spaCy, SkillNER for intelligent skill extraction
 - **PDF Generation**: LaTeX compiler (pdflatex)
 - **Web Scraping**: BeautifulSoup4, requests
 
@@ -62,8 +58,7 @@ A comprehensive Flask web application for managing job applications, generating 
 
 1. Navigate to "Profile" in the navigation menu
 2. Fill in your personal information (name, email, phone, LinkedIn, GitHub)
-3. Add your skills (comma-separated)
-4. Save your profile
+3. Save your profile
 
 ### 2. Create LaTeX Templates
 
@@ -110,36 +105,10 @@ A comprehensive Flask web application for managing job applications, generating 
 ### 4. Analyze and Generate Documents
 
 1. Click on a job application to view details
-2. Review the automatically extracted skills and match score
-3. Use the "Extract Skills" button on the edit page to re-run skill extraction
-4. Select a template and document type
-5. Generate and download PDF documents
+2. Select a template and document type
+3. Generate and download PDF documents
 
-## 🤖 AI-Powered Skill Extraction
 
-The application uses advanced NLP techniques to automatically extract skills from job descriptions:
-
-### Features
-- **Automatic Extraction**: Skills are extracted when creating or editing jobs
-- **Manual Re-extraction**: Click "Extract Skills from Description" button to re-run extraction
-- **Intelligent Matching**: Advanced similarity algorithms match your skills against job requirements
-- **Visual Display**: Extracted skills are displayed as styled badges with counts
-- **Persistent Storage**: Extracted skills are saved to the database for future reference
-
-### Technology
-- **spaCy**: Industrial-strength NLP library for text processing
-- **SkillNER**: Specialized Named Entity Recognition for skill extraction
-- **Custom Matching**: Intelligent similarity algorithms including:
-  - Exact matching
-  - Substring matching
-  - Word overlap analysis (Jaccard similarity)
-  - Fuzzy matching for compound skills
-
-### Usage
-1. **Automatic**: Skills are extracted automatically when you create or edit a job with a description
-2. **Manual**: On the job edit page, click "Extract Skills from Description" to re-run extraction
-3. **View**: Extracted skills appear in the job detail page below the description
-4. **Match**: Your profile skills are automatically matched against extracted job skills with scoring
 
 ## Project Structure
 
@@ -296,11 +265,12 @@ The application uses the following configuration options (in `config.py`):
 
 ## Dependencies
 
-- Flask 2.3.3
-- Flask-SQLAlchemy 3.0.5
-- BeautifulSoup4 4.12.2
-- requests 2.31.0
-- lxml 4.9.3
+- Flask 3.1.1
+- Flask-SQLAlchemy 3.1.1
+- Werkzeug 3.1.3
+- BeautifulSoup4 4.13.4
+- requests 2.32.4
+- lxml 4.9.3+
 
 ## Contributing
 
@@ -325,29 +295,16 @@ This project includes extensive documentation covering all aspects of the system
 - **[API_DOCUMENTATION.md](API_DOCUMENTATION.md)** - Complete API reference with examples
 - **[DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)** - Production deployment and configuration guide
 
-#### **Skill Management System**
-- **[SKILL_MANAGEMENT_DOCUMENTATION.md](SKILL_MANAGEMENT_DOCUMENTATION.md)** - Comprehensive skill management system guide
-  - Architecture overview and components
-  - Skill extraction and categorization
-  - Blacklist management and performance optimization
-  - API reference and configuration options
-  - Testing and troubleshooting guides
+
 
 #### **Quick Navigation**
 - **Getting Started**: See [Installation](#installation) section above
 - **API Usage**: Check [API_DOCUMENTATION.md](API_DOCUMENTATION.md)
 - **Production Deployment**: Follow [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)
-- **Skill System**: Explore [SKILL_MANAGEMENT_DOCUMENTATION.md](SKILL_MANAGEMENT_DOCUMENTATION.md)
 
 ### 🔧 **Enhanced Features & Recent Improvements**
 
-#### **Advanced Skill Management System**
-- ✅ **Intelligent Skill Extraction**: AI-powered skill extraction using spaCy and SkillNER
-- ✅ **Skill Categorization**: Hierarchical organization with custom categories
-- ✅ **Smart Blacklisting**: Automatic filtering of non-skills and noise terms
-- ✅ **Performance Optimization**: Caching, batch processing, and performance monitoring
-- ✅ **Comprehensive UI**: Modern, responsive skill management interface
-- ✅ **API-First Design**: RESTful APIs for all skill management operations
+
 
 #### **Enhanced User Experience**
 - ✅ **Improved UI/UX**: Modern, responsive design with dark/light theme support
@@ -372,4 +329,3 @@ For issues and questions:
 3. **Create Issue**: Submit a new issue with detailed information
 4. **API Questions**: Refer to [API_DOCUMENTATION.md](API_DOCUMENTATION.md)
 5. **Deployment Help**: Check [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)
-6. **Skill System**: See [SKILL_MANAGEMENT_DOCUMENTATION.md](SKILL_MANAGEMENT_DOCUMENTATION.md)
