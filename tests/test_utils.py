@@ -2,85 +2,102 @@
 Test utility functions
 """
 import pytest
-from utils.analysis import analyze_job_match, extract_keywords_from_description
+from unittest.mock import Mock, patch
+from services.skill_matching_service import SkillMatchingService
 from utils.latex import validate_latex_content
 
 
-class TestAnalysis:
-    """Test analysis utilities"""
-    
-    def test_analyze_job_match_perfect_match(self):
-        """Test perfect skills match"""
-        job_description = "We need Python, Flask, and JavaScript skills"
-        skills = ["Python", "Flask", "JavaScript"]
-        
-        score, matched, unmatched = analyze_job_match(job_description, skills)
-        
-        assert score == 100.0
-        assert len(matched) == 3
-        assert len(unmatched) == 0
-    
-    def test_analyze_job_match_partial_match(self):
-        """Test partial skills match"""
-        job_description = "We need Python and Flask skills"
-        skills = ["Python", "Flask", "JavaScript", "SQL"]
-        
-        score, matched, unmatched = analyze_job_match(job_description, skills)
-        
-        assert score == 50.0  # 2 out of 4 skills matched
-        assert "python" in matched
-        assert "flask" in matched
-        assert "javascript" in unmatched
-        assert "sql" in unmatched
-    
-    def test_analyze_job_match_no_match(self):
-        """Test no skills match"""
-        job_description = "We need Java and C++ skills"
-        skills = ["Python", "Flask"]
-        
-        score, matched, unmatched = analyze_job_match(job_description, skills)
-        
-        assert score == 0.0
-        assert len(matched) == 0
-        assert len(unmatched) == 2
-    
-    def test_analyze_job_match_empty_skills(self):
+class TestSkillMatching:
+    """Test skill matching service"""
+
+    @patch('services.skill_matching_service.SkillExtractionService')
+    def test_skill_matching_perfect_match(self, mock_skill_service_class):
+        """Test perfect skills match using new service"""
+        # Mock skill extraction service
+        mock_skill_service = Mock()
+        mock_skill_service.is_available.return_value = True
+        mock_skill_service.extract_skills_simple.return_value = ["Python", "Flask", "JavaScript"]
+        mock_skill_service_class.return_value = mock_skill_service
+
+        skill_matcher = SkillMatchingService()
+        user_skills = ["Python", "Flask", "JavaScript"]
+        job_skills = ["Python", "Flask", "JavaScript"]
+
+        result = skill_matcher.match_skills_against_job(user_skills, job_skills)
+
+        assert result['match_score'] == 100.0
+        assert len(result['matched_skills']) == 3
+        assert len(result['unmatched_user_skills']) == 0
+
+    @patch('services.skill_matching_service.SkillExtractionService')
+    def test_skill_matching_partial_match(self, mock_skill_service_class):
+        """Test partial skills match using new service"""
+        mock_skill_service = Mock()
+        mock_skill_service.is_available.return_value = True
+        mock_skill_service_class.return_value = mock_skill_service
+
+        skill_matcher = SkillMatchingService()
+        user_skills = ["Python", "Flask", "JavaScript", "SQL"]
+        job_skills = ["Python", "Flask"]
+
+        result = skill_matcher.match_skills_against_job(user_skills, job_skills)
+
+        assert result['match_score'] == 50.0  # 2 out of 4 skills matched
+        assert len(result['matched_skills']) == 2
+        assert len(result['unmatched_user_skills']) == 2
+
+    @patch('services.skill_matching_service.SkillExtractionService')
+    def test_skill_matching_no_match(self, mock_skill_service_class):
+        """Test no skills match using new service"""
+        mock_skill_service = Mock()
+        mock_skill_service.is_available.return_value = True
+        mock_skill_service_class.return_value = mock_skill_service
+
+        skill_matcher = SkillMatchingService()
+        user_skills = ["Python", "Flask"]
+        job_skills = ["Java", "C++"]
+
+        result = skill_matcher.match_skills_against_job(user_skills, job_skills)
+
+        assert result['match_score'] == 0.0
+        assert len(result['matched_skills']) == 0
+        assert len(result['unmatched_user_skills']) == 2
+
+    @patch('services.skill_matching_service.SkillExtractionService')
+    def test_skill_matching_empty_skills(self, mock_skill_service_class):
         """Test with empty skills list"""
-        job_description = "We need Python skills"
-        skills = []
-        
-        score, matched, unmatched = analyze_job_match(job_description, skills)
-        
-        assert score == 0
-        assert len(matched) == 0
-        assert len(unmatched) == 0
-    
-    def test_analyze_job_match_empty_description(self):
-        """Test with empty job description"""
-        job_description = ""
-        skills = ["Python", "Flask"]
-        
-        score, matched, unmatched = analyze_job_match(job_description, skills)
-        
-        assert score == 0
-        assert len(matched) == 0
-        assert len(unmatched) == 0
-    
-    def test_extract_keywords_from_description(self):
-        """Test keyword extraction"""
-        description = "We are looking for a Python developer with Flask experience"
-        keywords = extract_keywords_from_description(description)
-        
-        assert isinstance(keywords, list)
-        assert len(keywords) > 0
-        # Should extract meaningful words, not stop words
-        assert "python" in [k.lower() for k in keywords]
-        assert "flask" in [k.lower() for k in keywords]
-    
-    def test_extract_keywords_empty_description(self):
-        """Test keyword extraction with empty description"""
-        keywords = extract_keywords_from_description("")
-        assert keywords == []
+        mock_skill_service = Mock()
+        mock_skill_service.is_available.return_value = True
+        mock_skill_service_class.return_value = mock_skill_service
+
+        skill_matcher = SkillMatchingService()
+        user_skills = []
+        job_skills = ["Python", "Flask"]
+
+        result = skill_matcher.match_skills_against_job(user_skills, job_skills)
+
+        assert result['match_score'] == 0.0
+        assert len(result['matched_skills']) == 0
+        assert len(result['unmatched_user_skills']) == 0
+
+    @patch('services.skill_matching_service.SkillExtractionService')
+    def test_analyze_job_match_integration(self, mock_skill_service_class):
+        """Test full job match analysis"""
+        mock_skill_service = Mock()
+        mock_skill_service.is_available.return_value = True
+        mock_skill_service.extract_skills_simple.return_value = ["Python", "Django", "PostgreSQL"]
+        mock_skill_service_class.return_value = mock_skill_service
+
+        skill_matcher = SkillMatchingService()
+        job_description = "We need a Python developer with Django and PostgreSQL experience"
+        user_skills = "Python, Django, JavaScript"
+
+        result = skill_matcher.analyze_job_match(job_description, user_skills)
+
+        assert result['match_score'] > 0
+        assert 'matched_skills' in result
+        assert 'skill_matches' in result
+        assert 'matched_keywords' in result  # Legacy compatibility
 
 
 class TestLatex:

@@ -1,39 +1,130 @@
 """
 Job service for handling job application business logic
 """
-from datetime import datetime
+from datetime import datetime, timezone
+from typing import Optional, List, Dict, Any, Tuple
 from models import JobApplication, ApplicationStatus, JobMode, db
 from .base_service import BaseService
-from utils.analysis import analyze_job_match
+from .database_service import db_service, DatabaseError
+from .skill_extraction_service import SkillExtractionService
+from .skill_matching_service import SkillMatchingService
+# Removed SkillCategorizationService - functionality moved to other services
+from .industry_service import IndustryService
 from utils.scraper import scrape_job_details
-from utils.responses import handle_scraping_response, handle_job_match_response
+from utils.responses import handle_scraping_response
+from utils.forms import sanitize_input
 
 
 class JobService(BaseService):
     """Service for job application operations"""
-    
+
+    def __init__(self):
+        super().__init__()
+        self.skill_extractor = SkillExtractionService()
+        self.skill_matcher = SkillMatchingService()
+        # Skill categorizer removed - using built-in categorization
+        self.industry_service = IndustryService()
+
     def get_job_by_id(self, job_id):
         """Get job application by ID"""
         return self.get_by_id(JobApplication, job_id)
     
-    def get_all_jobs(self, order_by=None):
-        """Get all job applications"""
+    def get_all_jobs(self, order_by=None, include_relationships=False):
+        """
+        Get all job applications with optimized queries
+
+        Args:
+            order_by: Order by clause
+            include_relationships: Whether to eagerly load relationships
+
+        Returns:
+            List[JobApplication]: List of job applications
+        """
         try:
             query = JobApplication.query
+
+            # Eagerly load relationships to prevent N+1 queries
+            if include_relationships:
+                from sqlalchemy.orm import joinedload
+                query = query.options(
+                    joinedload(JobApplication.documents),
+                    joinedload(JobApplication.logs)
+                )
+
             if order_by is None:
                 query = query.order_by(JobApplication.last_update.desc())
             else:
                 query = query.order_by(order_by)
+
             return query.all()
         except Exception as e:
             self.logger.error(f"Error getting all jobs: {str(e)}")
             return []
+
+    def get_jobs_paginated(self, page=1, per_page=20, search_query=None, status_filter=None,
+                          job_mode_filter=None, country_filter=None):
+        """
+        Get paginated job applications with filtering
+
+        Args:
+            page: Page number
+            per_page: Items per page
+            search_query: Search term
+            status_filter: Status filter
+            job_mode_filter: Job mode filter
+            country_filter: Country filter
+
+        Returns:
+            Pagination object with optimized queries
+        """
+        try:
+            from sqlalchemy.orm import joinedload
+
+            query = JobApplication.query.options(
+                joinedload(JobApplication.documents),
+                joinedload(JobApplication.logs).limit(5)  # Only load recent logs
+            )
+
+            # Apply filters
+            if search_query:
+                search_term = f"%{search_query}%"
+                query = query.filter(
+                    db.or_(
+                        JobApplication.company.ilike(search_term),
+                        JobApplication.title.ilike(search_term),
+                        JobApplication.description.ilike(search_term)
+                    )
+                )
+
+            if status_filter:
+                query = query.filter(JobApplication.status == status_filter)
+
+            if job_mode_filter:
+                query = query.filter(JobApplication.job_mode == job_mode_filter)
+
+            if country_filter:
+                query = query.filter(JobApplication.country == country_filter)
+
+            # Order by last update
+            query = query.order_by(JobApplication.last_update.desc())
+
+            return query.paginate(
+                page=page,
+                per_page=per_page,
+                error_out=False
+            )
+
+        except Exception as e:
+            self.logger.error(f"Error getting paginated jobs: {str(e)}")
+            # Return empty pagination object
+            from flask_sqlalchemy import Pagination
+            return Pagination(query=None, page=page, per_page=per_page, total=0, items=[])
     
-    def create_job(self, company, title, description=None, url=None, 
+    def create_job(self, company, title, description=None, url=None,
                    office_location=None, country=None, job_mode=None):
         """
         Create a new job application
-        
+
         Args:
             company: Company name
             title: Job title
@@ -42,10 +133,43 @@ class JobService(BaseService):
             office_location: Office location
             country: Country
             job_mode: Job mode (remote, hybrid, on-site)
-            
+
         Returns:
             tuple: (success: bool, job: JobApplication, error: str)
         """
+        # Extract skills from job description if available
+        extracted_skills = []
+        if description and self.skill_extractor.is_available():
+            try:
+                extracted_skills = self.skill_extractor.extract_skills_simple(description)
+                self.logger.info(f"Extracted {len(extracted_skills)} skills during job creation")
+            except Exception as e:
+                self.logger.warning(f"Skill extraction failed during job creation: {str(e)}")
+
+        # Validate and sanitize inputs
+        try:
+            if not company or not company.strip():
+                return False, None, "Company name is required"
+
+            if not title or not title.strip():
+                return False, None, "Job title is required"
+
+            # Sanitize all string inputs
+            company = sanitize_input(company)
+            title = sanitize_input(title)
+            description = sanitize_input(description) if description else None
+            url = sanitize_input(url) if url else None
+            office_location = sanitize_input(office_location) if office_location else None
+            country = sanitize_input(country) if country else None
+
+            # Validate job mode
+            if job_mode and job_mode not in [mode.value for mode in JobMode]:
+                job_mode = JobMode.ON_SITE.value
+
+        except Exception as e:
+            self.logger.error(f"Error validating job data: {str(e)}")
+            return False, None, f"Validation error: {str(e)}"
+
         job_data = {
             'company': company,
             'title': title,
@@ -53,33 +177,81 @@ class JobService(BaseService):
             'url': url,
             'office_location': office_location,
             'country': country,
-            'job_mode': job_mode,
+            'job_mode': job_mode or JobMode.ON_SITE.value,
             'status': ApplicationStatus.COLLECTED.value,
-            'created_at': datetime.utcnow(),
-            'last_update': datetime.utcnow()
+            'last_update': datetime.now(timezone.utc)
         }
-        
-        return self.create(JobApplication, **job_data)
+
+        # Create the job
+        success, job, error = self.create(JobApplication, **job_data)
+
+        # Set extracted skills if job creation was successful
+        if success and job and extracted_skills:
+            try:
+                job.set_extracted_skills(extracted_skills)
+                db.session.commit()
+                self.logger.info(f"Skills saved for job {job.id}: {len(extracted_skills)} skills")
+            except Exception as e:
+                self.logger.warning(f"Failed to save extracted skills for job {job.id}: {str(e)}")
+
+        # Auto-detect and assign industry if job creation was successful
+        if success and job:
+            try:
+                detected_industry = self.industry_service.detect_job_industry(
+                    job.title, job.company, job.description
+                )
+                if detected_industry:
+                    job.industry_id = detected_industry.id
+                    db.session.commit()
+                    self.logger.info(f"Auto-assigned industry '{detected_industry.name}' to job {job.id}")
+            except Exception as e:
+                self.logger.warning(f"Failed to auto-assign industry to job {job.id}: {str(e)}")
+
+        return success, job, error
     
     def update_job(self, job_id, **kwargs):
         """
         Update a job application
-        
+
         Args:
             job_id: Job ID
             **kwargs: Fields to update
-            
+
         Returns:
             tuple: (success: bool, job: JobApplication, error: str)
         """
         job = self.get_job_by_id(job_id)
         if not job:
             return False, None, "Job not found"
-        
+
+        # Check if description is being updated and extract skills
+        if 'description' in kwargs and kwargs['description'] and self.skill_extractor.is_available():
+            try:
+                extracted_skills = self.skill_extractor.extract_skills_simple(kwargs['description'])
+                self.logger.info(f"Extracted {len(extracted_skills)} skills during job update")
+                # We'll set the skills after the update is successful
+            except Exception as e:
+                self.logger.warning(f"Skill extraction failed during job update: {str(e)}")
+                extracted_skills = []
+        else:
+            extracted_skills = []
+
         # Update last_update timestamp
-        kwargs['last_update'] = datetime.utcnow()
-        
-        return self.update(job, **kwargs)
+        kwargs['last_update'] = datetime.now(timezone.utc)
+
+        # Update the job
+        success, updated_job, error = self.update(job, **kwargs)
+
+        # Set extracted skills if update was successful and we have new skills
+        if success and updated_job and extracted_skills:
+            try:
+                updated_job.set_extracted_skills(extracted_skills)
+                db.session.commit()
+                self.logger.info(f"Skills updated for job {job_id}: {len(extracted_skills)} skills")
+            except Exception as e:
+                self.logger.warning(f"Failed to update extracted skills for job {job_id}: {str(e)}")
+
+        return success, updated_job, error
     
     def delete_job(self, job_id):
         """
@@ -237,12 +409,12 @@ class JobService(BaseService):
     
     def analyze_job_match(self, job_id, user_skills):
         """
-        Analyze job match against user skills
-        
+        Analyze job match against user skills using new skill extraction service
+
         Args:
             job_id: Job ID
             user_skills: User skills string
-            
+
         Returns:
             dict: Match analysis results
         """
@@ -250,9 +422,11 @@ class JobService(BaseService):
             job = self.get_job_by_id(job_id)
             if not job:
                 return {'match_score': 0, 'matched_keywords': [], 'unmatched_keywords': []}
-            
-            result = analyze_job_match(job.description or '', user_skills or '')
-            return handle_job_match_response(result)
+
+            # Use new skill matching service
+            result = self.skill_matcher.analyze_job_match(job.description or '', user_skills or '')
+            return result
+
         except Exception as e:
             self.logger.error(f"Error analyzing job match: {str(e)}")
             return {'match_score': 0, 'matched_keywords': [], 'unmatched_keywords': []}

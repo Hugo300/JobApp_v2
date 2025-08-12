@@ -29,6 +29,11 @@
                             <i class="fas fa-laptop-house me-1"></i>{{ job.job_mode }}
                         </span>
                     {% endif %}
+                    {% if job.industry %}
+                        <span class="ms-3">
+                            <i class="fas fa-industry me-1"></i>{{ job.industry.name }}
+                        </span>
+                    {% endif %}
                 </p>
                 {% endif %}
             </div>
@@ -52,62 +57,162 @@
     <div class="col-lg-8">
         <div class="card mb-4">
             <div class="card-header">
-                <h5 class="card-title mb-0">Job Description</h5>
-            </div>
-            <div class="card-body">
-                {% if job.description %}
-                    <div class="job-description">
-                        {% for paragraph in job.description.split('\n') %}
-                            {% if paragraph.strip() %}
-                                <p>{{ paragraph }}</p>
-                            {% endif %}
-                        {% endfor %}
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="flex-grow-1">
+                        <h5 class="card-title mb-0">Job Description</h5>
                     </div>
-                {% else %}
-                    <p class="text-muted">No description available.</p>
-                {% endif %}
+                    <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#jobDescriptionCollapse" aria-expanded="false" aria-controls="jobDescriptionCollapse" id="descriptionToggleBtn">
+                        <i class="fas fa-chevron-down" id="descriptionToggleIcon"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Collapsed preview (shown when collapsed) -->
+            <div class="collapse show" id="jobDescriptionPreview">
+                <div class="card-body job-description-preview">
+                    {% if job.description %}
+                        <div class="job-description-collapsed">
+                            <pre class="job-description-text-preview">{{ job.description[:200] }}{% if job.description|length > 200 %}...{% endif %}</pre>
+                            <div class="text-center mt-2">
+                                <small class="text-muted">Click to expand full description</small>
+                            </div>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No description available.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Full description (shown when expanded) -->
+            <div class="collapse" id="jobDescriptionCollapse">
+                <div class="card-body">
+                    {% if job.description %}
+                        <div class="job-description">
+                            <pre class="job-description-text">{{ job.description }}</pre>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No description available.</p>
+                    {% endif %}
+                </div>
             </div>
         </div>
 
-        <!-- Skills Analysis -->
-        {% if user_data and user_data.skills %}
+        <!-- Extracted Skills -->
+        {% if extracted_skills %}
         <div class="card mb-4">
             <div class="card-header">
-                <h5 class="card-title mb-0">Skills Analysis</h5>
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-cogs me-2"></i>Extracted Skills
+                        <span class="badge bg-primary ms-2">{{ extracted_skills|length }}</span>
+                    </h5>
+                    <div class="d-flex align-items-center gap-2">
+                        {% if user_data and user_data.skills %}
+                            <div class="skill-match-score">
+                                <span class="badge bg-{% if match_score >= 80 %}success{% elif match_score >= 60 %}warning{% else %}danger{% endif %} fs-6">
+                                    <i class="fas fa-chart-line me-1"></i>{{ match_score }}% Match
+                                </span>
+                            </div>
+                        {% endif %}
+                        <a href="{{ url_for('skills.manage_skills') }}" class="btn btn-sm btn-outline-secondary" title="Manage Skills">
+                            <i class="fas fa-cog"></i>
+                        </a>
+                    </div>
+                </div>
             </div>
             <div class="card-body">
-                <div class="row align-items-center mb-3">
-                    <div class="col-md-6">
-                        <h6 class="mb-0">Match Score</h6>
-                        <div class="match-score text-{{ 'success' if match_score >= 70 else 'warning' if match_score >= 40 else 'danger' }}">
-                            {{ match_score }}%
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="progress">
-                            <div class="progress-bar bg-{{ 'success' if match_score >= 70 else 'warning' if match_score >= 40 else 'danger' }}" 
-                                 role="progressbar" style="width: {{ match_score }}%"></div>
-                        </div>
-                    </div>
+                <div class="skills-container">
+                    {% if categorized_skills %}
+                        <!-- Hard Skills Section -->
+                        {% set hard_skills = categorized_skills.hard_skills %}
+                        {% if hard_skills.matched or hard_skills.unmatched %}
+                            <div class="skill-category mb-3">
+                                <h6 class="skill-category-title">
+                                    <i class="fas fa-code me-1"></i>Technical Skills
+                                    <span class="badge bg-info ms-2">{{ (hard_skills.matched|length + hard_skills.unmatched|length) }}</span>
+                                </h6>
+                                <div class="skill-category-items">
+                                    <!-- Matched hard skills -->
+                                    {% for skill in hard_skills.matched %}
+                                        <span class="badge me-2 mb-2 skill-badge bg-success text-white skill-matched">
+                                            <i class="fas fa-check-circle me-1"></i>{{ skill }}
+                                        </span>
+                                    {% endfor %}
+                                    <!-- Unmatched hard skills -->
+                                    {% for skill in hard_skills.unmatched %}
+                                        <span class="badge me-2 mb-2 skill-badge bg-light text-dark border">
+                                            <i class="fas fa-code me-1"></i>{{ skill }}
+                                        </span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        <!-- Soft Skills Section -->
+                        {% set soft_skills = categorized_skills.soft_skills %}
+                        {% if soft_skills.matched or soft_skills.unmatched %}
+                            <div class="skill-category mb-3">
+                                <h6 class="skill-category-title">
+                                    <i class="fas fa-users me-1"></i>Soft Skills
+                                    <span class="badge bg-info ms-2">{{ (soft_skills.matched|length + soft_skills.unmatched|length) }}</span>
+                                </h6>
+                                <div class="skill-category-items">
+                                    <!-- Matched soft skills -->
+                                    {% for skill in soft_skills.matched %}
+                                        <span class="badge me-2 mb-2 skill-badge bg-success text-white skill-matched">
+                                            <i class="fas fa-check-circle me-1"></i>{{ skill }}
+                                        </span>
+                                    {% endfor %}
+                                    <!-- Unmatched soft skills -->
+                                    {% for skill in soft_skills.unmatched %}
+                                        <span class="badge me-2 mb-2 skill-badge bg-light text-dark border">
+                                            <i class="fas fa-users me-1"></i>{{ skill }}
+                                        </span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        <!-- Other Skills Section -->
+                        {% set other_skills = categorized_skills.other_skills %}
+                        {% if other_skills.matched or other_skills.unmatched %}
+                            <div class="skill-category mb-3">
+                                <h6 class="skill-category-title">
+                                    <i class="fas fa-tag me-1"></i>Other Skills
+                                    <span class="badge bg-info ms-2">{{ (other_skills.matched|length + other_skills.unmatched|length) }}</span>
+                                </h6>
+                                <div class="skill-category-items">
+                                    <!-- Matched other skills -->
+                                    {% for skill in other_skills.matched %}
+                                        <span class="badge me-2 mb-2 skill-badge bg-success text-white skill-matched">
+                                            <i class="fas fa-check-circle me-1"></i>{{ skill }}
+                                        </span>
+                                    {% endfor %}
+                                    <!-- Unmatched other skills -->
+                                    {% for skill in other_skills.unmatched %}
+                                        <span class="badge me-2 mb-2 skill-badge bg-light text-dark border">
+                                            <i class="fas fa-tag me-1"></i>{{ skill }}
+                                        </span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <!-- Fallback to simple display if categorization fails -->
+                        {% for skill in extracted_skills %}
+                            {% set is_matched = skill.lower() in (matched_keywords | map('lower') | list) %}
+                            <span class="badge me-2 mb-2 skill-badge {% if is_matched %}bg-success text-white skill-matched{% else %}bg-light text-dark border{% endif %}">
+                                <i class="fas fa-{% if is_matched %}check-circle{% else %}tag{% endif %} me-1"></i>{{ skill }}
+                            </span>
+                        {% endfor %}
+                    {% endif %}
                 </div>
-                
-                {% if matched_keywords %}
-                <div class="mb-3">
-                    <h6>Matched Skills:</h6>
-                    {% for keyword in matched_keywords %}
-                        <span class="keyword-match">{{ keyword }}</span>
-                    {% endfor %}
+                <div class="mt-3">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Skills automatically extracted from job description using AI
+                    </small>
                 </div>
-                {% endif %}
-                
-                {% if unmatched_keywords %}
-                <div class="mb-3">
-                    <h6>Missing Skills:</h6>
-                    {% for keyword in unmatched_keywords %}
-                        <span class="keyword-unmatch">{{ keyword }}</span>
-                    {% endfor %}
-                </div>
-                {% endif %}
             </div>
         </div>
         {% endif %}
@@ -188,15 +293,35 @@
                             </div>
                             <div class="timeline-content">
                                 <div class="timeline-header">
-                                    <div class="timeline-date">
-                                        <strong>{{ log.created_at.strftime('%b %d, %Y') }}</strong>
-                                        <span class="text-muted">at {{ log.created_at.strftime('%I:%M %p') }}</span>
-                                        <small class="text-muted ms-2 relative-time" title="{{ log.created_at.strftime('%Y-%m-%d %H:%M:%S') }}" data-timestamp="{{ log.created_at.isoformat() }}">
-                                            ({{ log.created_at.strftime('%b %d') }})
-                                        </small>
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="timeline-date">
+                                            <strong>{{ log.created_at.strftime('%b %d, %Y') }}</strong>
+                                            <span class="text-muted">at {{ log.created_at.strftime('%I:%M %p') }}</span>
+                                            <small class="text-muted ms-2 relative-time" title="{{ log.created_at.strftime('%Y-%m-%d %H:%M:%S') }}" data-timestamp="{{ log.created_at.isoformat() }}">
+                                                ({{ log.created_at.strftime('%b %d') }})
+                                            </small>
+                                        </div>
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="fas fa-ellipsis-v"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                <li>
+                                                    <a class="dropdown-item" href="{{ url_for('jobs.edit_log', job_id=job.id, log_id=log.id) }}">
+                                                        <i class="fas fa-edit me-2"></i>Edit
+                                                    </a>
+                                                </li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <a class="dropdown-item text-danger" href="#" onclick="confirmDeleteLog({{ log.id }}, '{{ log.note[:30]|e }}{% if log.note|length > 30 %}...{% endif %}')">
+                                                        <i class="fas fa-trash me-2"></i>Delete
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
                                     </div>
                                     {% if log.status_change_from and log.status_change_to %}
-                                        <div class="status-change-badges">
+                                        <div class="status-change-badges mt-1">
                                             <span class="badge bg-secondary">{{ log.status_change_from }}</span>
                                             <i class="fas fa-arrow-right mx-1 text-muted"></i>
                                             <span class="badge bg-success">{{ log.status_change_to }}</span>
@@ -206,7 +331,7 @@
                                 <div class="timeline-note">
                                     {% for paragraph in log.note.split('\n') %}
                                         {% if paragraph.strip() %}
-                                            <p class="mb-2">{{ paragraph }}</p>
+                                            <p class="mb-2">{{ paragraph|e }}</p>
                                         {% endif %}
                                     {% endfor %}
                                 </div>
@@ -500,6 +625,29 @@ document.addEventListener('DOMContentLoaded', function() {
         // Initialize count
         quickCharCount.textContent = quickNote.value.length;
     }
+
+    // Job description collapse toggle
+    const descriptionCollapse = document.getElementById('jobDescriptionCollapse');
+    const descriptionToggleIcon = document.getElementById('descriptionToggleIcon');
+    const descriptionPreview = document.getElementById('descriptionPreview');
+
+    if (descriptionCollapse && descriptionToggleIcon) {
+        descriptionCollapse.addEventListener('show.bs.collapse', function() {
+            // When expanding
+            descriptionToggleIcon.className = 'fas fa-chevron-up';
+            if (descriptionPreview) {
+                descriptionPreview.classList.remove('show');
+            }
+        });
+
+        descriptionCollapse.addEventListener('hide.bs.collapse', function() {
+            // When collapsing
+            descriptionToggleIcon.className = 'fas fa-chevron-down';
+            if (descriptionPreview) {
+                descriptionPreview.classList.add('show');
+            }
+        });
+    }
 });
 
 
@@ -542,6 +690,38 @@ function loadTemplateContent() {
         });
 }
 
+// Toggle description collapse icon and preview/full view
+document.addEventListener('DOMContentLoaded', function() {
+    const collapseElement = document.getElementById('jobDescriptionCollapse');
+    const previewElement = document.getElementById('jobDescriptionPreview');
+    const toggleIcon = document.getElementById('descriptionToggleIcon');
+
+    if (collapseElement && toggleIcon && previewElement) {
+        // Handle expand/collapse
+        collapseElement.addEventListener('show.bs.collapse', function () {
+            toggleIcon.classList.remove('fa-chevron-down');
+            toggleIcon.classList.add('fa-chevron-up');
+            previewElement.classList.remove('show');
+        });
+
+        collapseElement.addEventListener('hide.bs.collapse', function () {
+            toggleIcon.classList.remove('fa-chevron-up');
+            toggleIcon.classList.add('fa-chevron-down');
+            previewElement.classList.add('show');
+        });
+
+        // Make preview clickable to expand
+        const previewCard = document.querySelector('.job-description-preview');
+        if (previewCard) {
+            previewCard.addEventListener('click', function() {
+                const collapse = new bootstrap.Collapse(collapseElement, {
+                    show: true
+                });
+            });
+        }
+    }
+});
+
 // Delete confirmation functionality
 function confirmDelete() {
     const jobTitle = "{{ job.title }}";
@@ -552,6 +732,27 @@ function confirmDelete() {
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = "{{ url_for('jobs.delete_job', job_id=job.id) }}";
+
+        // Add CSRF token
+        const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrf_token';
+        csrfInput.value = csrfToken;
+        form.appendChild(csrfInput);
+
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+// Log delete confirmation functionality
+function confirmDeleteLog(logId, logPreview) {
+    if (confirm(`Are you sure you want to delete this log entry?\n\n"${logPreview}"\n\nThis action cannot be undone.`)) {
+        // Create and submit delete form
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/job/{{ job.id }}/logs/${logId}/delete`;
 
         // Add CSRF token
         const csrfToken = document.querySelector('input[name="csrf_token"]').value;

@@ -54,7 +54,9 @@ def sample_user(app):
         )
         db.session.add(user)
         db.session.commit()
-        return user
+        # Refresh to ensure object is attached to session
+        db.session.refresh(user)
+        yield user
 
 
 @pytest.fixture
@@ -70,7 +72,9 @@ def sample_job(app):
         )
         db.session.add(job)
         db.session.commit()
-        return job
+        # Refresh to ensure object is attached to session
+        db.session.refresh(job)
+        yield job
 
 
 @pytest.fixture
@@ -83,19 +87,25 @@ def sample_template(app):
         )
         db.session.add(template)
         db.session.commit()
-        return template
+        # Refresh to ensure object is attached to session
+        db.session.refresh(template)
+        yield template
 
 
 @pytest.fixture
 def sample_log(app, sample_job):
     """Create a sample log entry for testing"""
     with app.app_context():
+        # Get the job ID while we're in the context
+        job_id = sample_job.id
         log = JobLog(
-            job_id=sample_job.id,
+            job_id=job_id,
             note="Test log entry",
             status_change_from=ApplicationStatus.COLLECTED.value,
             status_change_to=ApplicationStatus.APPLIED.value
         )
         db.session.add(log)
         db.session.commit()
-        return log
+        # Refresh to ensure object is attached to session
+        db.session.refresh(log)
+        yield log

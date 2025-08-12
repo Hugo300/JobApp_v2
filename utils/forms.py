@@ -5,10 +5,59 @@ from flask import request
 from wtforms.validators import ValidationError
 from models import ApplicationStatus, JobMode
 import re
+import html
+from typing import Dict, Tuple, List, Optional, Any
 from urllib.parse import urlparse
+from markupsafe import escape
 
 
-def validate_url(url):
+def sanitize_input(value: Any) -> str:
+    """
+    Sanitize user input to prevent XSS attacks
+
+    Args:
+        value: Input value to sanitize
+
+    Returns:
+        str: Sanitized string
+    """
+    if value is None:
+        return ""
+
+    # Convert to string and strip whitespace
+    sanitized = str(value).strip()
+
+    # HTML escape to prevent XSS
+    sanitized = html.escape(sanitized)
+
+    # Remove null bytes and other control characters
+    sanitized = re.sub(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]', '', sanitized)
+
+    return sanitized
+
+
+def sanitize_form_data(data: Dict[str, Any]) -> Dict[str, str]:
+    """
+    Sanitize all form data
+
+    Args:
+        data: Dictionary of form data
+
+    Returns:
+        Dict[str, str]: Sanitized form data
+    """
+    sanitized = {}
+    for key, value in data.items():
+        if isinstance(value, (list, tuple)):
+            # Handle multiple values (like checkboxes)
+            sanitized[key] = [sanitize_input(v) for v in value]
+        else:
+            sanitized[key] = sanitize_input(value)
+
+    return sanitized
+
+
+def validate_url(url: Optional[str]) -> bool:
     """
     Validate URL format
     

@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, send_file
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, send_file, abort
 from app import db
 from pathlib import Path
 from datetime import datetime
@@ -60,7 +60,9 @@ def create_template():
 @templates_bp.route('/<int:template_id>/view')
 def view_template(template_id):
     """View a template (read-only)"""
-    template = MasterTemplate.query.get_or_404(template_id)
+    template = db.session.get(MasterTemplate, template_id)
+    if not template:
+        abort(404)
     
     # Get the main content
     if template.template_type == TemplateType.FILE.value:
@@ -76,7 +78,9 @@ def view_template(template_id):
 @templates_bp.route('/<int:template_id>/edit')
 def edit_template(template_id):
     """Edit a template"""
-    template = MasterTemplate.query.get_or_404(template_id)
+    template = db.session.get(MasterTemplate, template_id)
+    if not template:
+        abort(404)
     
     # Get the main content
     if template.template_type == TemplateType.FILE.value:
@@ -92,7 +96,9 @@ def edit_template(template_id):
 @templates_bp.route('/<int:template_id>/delete', methods=['DELETE'])
 def delete_template(template_id):
     """Delete a template"""
-    template = MasterTemplate.query.get_or_404(template_id)
+    template = db.session.get(MasterTemplate, template_id)
+    if not template:
+        abort(404)
     
     try:
         # If it's a file-based template, delete the files
@@ -164,7 +170,9 @@ def templates():
 @templates_bp.route('/<int:template_id>')
 def get_template(template_id):
     """Get template content for AJAX requests"""
-    template = MasterTemplate.query.get_or_404(template_id)
+    template = db.session.get(MasterTemplate, template_id)
+    if not template:
+        abort(404)
     return {'content': template.get_content()}
 
 @templates_bp.route('/file/<path:template_name>')

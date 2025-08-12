@@ -1,7 +1,7 @@
 """
 Log service for handling job log business logic
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from models import JobLog, JobApplication, ApplicationStatus, db
 from .base_service import BaseService
 
@@ -49,7 +49,7 @@ class LogService(BaseService):
             tuple: (success: bool, log: JobLog, error: str)
         """
         # Verify job exists
-        job = JobApplication.query.get(job_id)
+        job = db.session.get(JobApplication, job_id)
         if not job:
             return False, None, "Job not found"
         
@@ -57,7 +57,7 @@ class LogService(BaseService):
             log_data = {
                 'job_id': job_id,
                 'note': note,
-                'created_at': datetime.utcnow()
+                'created_at': datetime.now(timezone.utc)
             }
             
             # Handle status change
@@ -69,9 +69,11 @@ class LogService(BaseService):
                 
                 old_status = job.status
                 job.status = status_change
-                job.last_update = datetime.utcnow()
-                
-                # Update log note to include status change
+                job.last_update = datetime.now(timezone.utc)
+
+                # Update log data to include status change
+                log_data['status_change_from'] = old_status
+                log_data['status_change_to'] = status_change
                 log_data['note'] = f"Status changed from {old_status} to {status_change}. {note}"
             
             log = JobLog(**log_data)
@@ -79,6 +81,48 @@ class LogService(BaseService):
             return log
         
         return self.safe_execute(_create_log)
+
+    def update_log(self, log_id, note):
+        """
+        Update an existing log entry
+
+        Args:
+            log_id: ID of the log entry to update
+            note: New note content
+
+        Returns:
+            tuple: (success: bool, log: JobLog, error: str)
+        """
+        log = db.session.get(JobLog, log_id)
+        if not log:
+            return False, None, "Log entry not found"
+
+        def _update_log():
+            log.note = note
+            log.updated_at = datetime.utcnow()  # Add this field if needed
+            return log
+
+        return self.safe_execute(_update_log)
+
+    def delete_log(self, log_id):
+        """
+        Delete a log entry
+
+        Args:
+            log_id: ID of the log entry to delete
+
+        Returns:
+            tuple: (success: bool, log: None, error: str)
+        """
+        log = db.session.get(JobLog, log_id)
+        if not log:
+            return False, None, "Log entry not found"
+
+        def _delete_log():
+            db.session.delete(log)
+            return None
+
+        return self.safe_execute(_delete_log)
     
     def update_log(self, log_id, note):
         """
@@ -202,8 +246,8 @@ class LogService(BaseService):
             ).count()
             
             # Get logs by month for the last 6 months
-            from datetime import datetime, timedelta
-            six_months_ago = datetime.utcnow() - timedelta(days=180)
+            from datetime import timedelta
+            six_months_ago = datetime.now(timezone.utc) - timedelta(days=180)
             recent_logs = query.filter(
                 JobLog.created_at >= six_months_ago
             ).count()

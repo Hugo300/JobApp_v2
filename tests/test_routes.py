@@ -111,8 +111,8 @@ class TestJobRoutes:
             assert response.status_code == 200
             
             # Check status was updated
-            db.session.refresh(sample_job)
-            assert sample_job.status == ApplicationStatus.APPLIED.value
+            updated_job = db.session.get(JobApplication, sample_job.id)
+            assert updated_job.status == ApplicationStatus.APPLIED.value
             
             # Check log was created with status change
             log = JobLog.query.filter_by(job_id=sample_job.id).first()
@@ -129,5 +129,5 @@ class TestJobRoutes:
             assert response.status_code == 200
             
             # Check status was updated
-            db.session.refresh(sample_job)
-            assert sample_job.status == ApplicationStatus.APPLIED.value
+            updated_job = db.session.get(JobApplication, sample_job.id)
+            assert updated_job.status == ApplicationStatus.APPLIED.value

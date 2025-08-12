@@ -1,0 +1,505 @@
+{% extends "base.html" %}
+
+{% block title %}Job Analytics Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+.analytics-card {
+    transition: transform 0.2s ease;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.analytics-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.metric-value {
+    font-size: 2.5rem;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.metric-label {
+    font-size: 0.875rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.trend-positive {
+    color: #28a745;
+}
+
+.trend-negative {
+    color: #dc3545;
+}
+
+.chart-container {
+    position: relative;
+    height: 300px;
+}
+
+.skill-tag {
+    display: inline-block;
+    margin: 2px;
+    padding: 4px 8px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 12px;
+    font-size: 0.875rem;
+}
+
+.company-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.company-item:last-child {
+    border-bottom: none;
+}
+
+.progress-thin {
+    height: 8px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2><i class="fas fa-chart-line me-2"></i>Job Analytics Dashboard</h2>
+                    <p class="text-muted mb-0">Comprehensive insights into your job application journey</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-primary" onclick="refreshAnalytics()">
+                        <i class="fas fa-sync me-1"></i>Refresh
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="exportAnalytics()">
+                        <i class="fas fa-download me-1"></i>Export
+                    </button>
+                    <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overview Statistics -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card analytics-card bg-primary text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="metric-value">{{ overview_stats.total_jobs }}</div>
+                            <div class="metric-label">Total Applications</div>
+                            <small class="opacity-75">{{ overview_stats.recent_jobs }} in last 30 days</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-briefcase fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card analytics-card bg-success text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="metric-value">{{ overview_stats.success_rate }}%</div>
+                            <div class="metric-label">Success Rate</div>
+                            <small class="opacity-75">Applied + Interview + Offer</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-chart-line fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card analytics-card bg-warning text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="metric-value">{{ overview_stats.active_applications }}</div>
+                            <div class="metric-label">Active Applications</div>
+                            <small class="opacity-75">Applied + Interview</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-clock fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card analytics-card bg-info text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="metric-value">{{ performance_metrics.interview_rate }}%</div>
+                            <div class="metric-label">Interview Rate</div>
+                            <small class="opacity-75">{{ performance_metrics.offer_rate }}% offer rate</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-handshake fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <!-- Application Timeline -->
+        <div class="col-lg-8 mb-4">
+            <div class="card analytics-card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-area me-2"></i>Application Timeline
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="timelineChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Status Distribution -->
+        <div class="col-lg-4 mb-4">
+            <div class="card analytics-card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-pie me-2"></i>Status Distribution
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Skills and Companies Row -->
+    <div class="row mb-4">
+        <!-- Top Skills -->
+        <div class="col-lg-6 mb-4">
+            <div class="card analytics-card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-cogs me-2"></i>Top Skills
+                        </h5>
+                        <span class="badge bg-primary">{{ skill_analytics.total_unique_skills }} total</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if skill_analytics.top_skills %}
+                        <div class="row">
+                            {% for skill_data in skill_analytics.top_skills[:15] %}
+                            <div class="col-md-6 mb-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="skill-tag">{{ skill_data.skill }}</span>
+                                    <span class="badge bg-secondary">{{ skill_data.count }}</span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Skill coverage: {{ "%.1f"|format(skill_analytics.skill_coverage) }}% of jobs have extracted skills
+                            </small>
+                        </div>
+                    {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-cogs fa-3x mb-3 opacity-50"></i>
+                            <p>No skill data available yet</p>
+                            <small>Skills will appear as you add job descriptions</small>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Top Companies -->
+        <div class="col-lg-6 mb-4">
+            <div class="card analytics-card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-building me-2"></i>Top Companies
+                        </h5>
+                        <span class="badge bg-primary">{{ company_analytics.total_companies }} total</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if company_analytics.top_companies %}
+                        {% for company_data in company_analytics.top_companies[:10] %}
+                        <div class="company-item">
+                            <div>
+                                <strong>{{ company_data.company }}</strong>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-primary">{{ company_data.count }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-building fa-3x mb-3 opacity-50"></i>
+                            <p>No company data available yet</p>
+                            <small>Companies will appear as you add job applications</small>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Metrics Row -->
+    <div class="row mb-4">
+        <!-- Conversion Funnel -->
+        <div class="col-lg-6 mb-4">
+            <div class="card analytics-card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-funnel-dollar me-2"></i>Application Funnel
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if status_analytics.conversion_rates %}
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>Collected → Applied</span>
+                                <span>{{ "%.1f"|format(status_analytics.conversion_rates.collected_to_applied) }}%</span>
+                            </div>
+                            <div class="progress progress-thin">
+                                <div class="progress-bar bg-primary" style="width: {{ status_analytics.conversion_rates.collected_to_applied }}%"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>Applied → Interview</span>
+                                <span>{{ "%.1f"|format(status_analytics.conversion_rates.applied_to_interview) }}%</span>
+                            </div>
+                            <div class="progress progress-thin">
+                                <div class="progress-bar bg-success" style="width: {{ status_analytics.conversion_rates.applied_to_interview }}%"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>Interview → Offer</span>
+                                <span>{{ "%.1f"|format(status_analytics.conversion_rates.interview_to_offer) }}%</span>
+                            </div>
+                            <div class="progress progress-thin">
+                                <div class="progress-bar bg-warning" style="width: {{ status_analytics.conversion_rates.interview_to_offer }}%"></div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-funnel-dollar fa-3x mb-3 opacity-50"></i>
+                            <p>No conversion data available yet</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Location Analytics -->
+        <div class="col-lg-6 mb-4">
+            <div class="card analytics-card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-globe me-2"></i>Location & Work Mode
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Remote Work Percentage -->
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span><i class="fas fa-home me-1"></i>Remote Work</span>
+                            <span class="fw-bold">{{ "%.1f"|format(location_analytics.remote_percentage) }}%</span>
+                        </div>
+                        <div class="progress progress-thin">
+                            <div class="progress-bar bg-success" style="width: {{ location_analytics.remote_percentage }}%"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Top Countries -->
+                    {% if location_analytics.country_distribution %}
+                        <h6 class="mb-2">Top Countries</h6>
+                        {% for country_data in location_analytics.country_distribution[:5] %}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span>{{ country_data.country }}</span>
+                            <span class="badge bg-primary">{{ country_data.count }}</span>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trends Row -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card analytics-card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-trending-up me-2"></i>Trends & Insights
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="text-center">
+                                <div class="metric-value {{ 'trend-positive' if trends.month_over_month_change > 0 else 'trend-negative' if trends.month_over_month_change < 0 else '' }}">
+                                    {{ "%.1f"|format(trends.month_over_month_change) }}%
+                                </div>
+                                <div class="metric-label">Month-over-Month Change</div>
+                                <small class="text-muted">{{ trends.current_month_applications }} this month vs {{ trends.previous_month_applications }} last month</small>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <h6>Trending Skills</h6>
+                            {% if trends.trending_skills %}
+                                {% for skill in trends.trending_skills %}
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="skill-tag">{{ skill.skill }}</span>
+                                    <span class="badge bg-success">+{{ "%.1f"|format(skill.trend) }}%</span>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-muted small">No trending skills data</p>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <h6>Trending Companies</h6>
+                            {% if trends.trending_companies %}
+                                {% for company in trends.trending_companies %}
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span>{{ company.company }}</span>
+                                    <span class="badge bg-success">+{{ "%.1f"|format(company.trend) }}%</span>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-muted small">No trending companies data</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+// Initialize charts when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    initializeCharts();
+});
+
+function initializeCharts() {
+    // Timeline Chart
+    const timelineCtx = document.getElementById('timelineChart').getContext('2d');
+    new Chart(timelineCtx, {
+        type: 'line',
+        data: {
+            labels: {{ timeline_data.weekly_applications | map(attribute='week') | list | tojson }},
+            datasets: [{
+                label: 'Applications per Week',
+                data: {{ timeline_data.weekly_applications | map(attribute='count') | list | tojson }},
+                borderColor: '#007bff',
+                backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Status Distribution Chart
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    const statusData = {{ overview_stats.status_distribution | tojson }};
+    const statusLabels = Object.keys(statusData);
+    const statusValues = Object.values(statusData);
+    
+    new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: statusLabels,
+            datasets: [{
+                data: statusValues,
+                backgroundColor: [
+                    '#6c757d', // collected
+                    '#007bff', // applied
+                    '#ffc107', // interview
+                    '#28a745', // offer
+                    '#dc3545'  // rejected
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+
+function refreshAnalytics() {
+    location.reload();
+}
+
+function exportAnalytics() {
+    // Implement analytics export functionality
+    alert('Export functionality coming soon!');
+}
+</script>
+{% endblock %}

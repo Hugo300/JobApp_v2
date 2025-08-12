@@ -316,3 +316,185 @@ pre {
         transition-duration: 0.01ms !important;
     }
 }
+
+/* Skills display styles */
+.skills-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.skill-badge {
+    font-size: 0.875rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    transition: all 0.2s ease-in-out;
+    cursor: default;
+}
+
+.skill-badge:hover {
+    background-color: #e9ecef !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.skill-badge-sm {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    transition: all 0.2s ease-in-out;
+    cursor: default;
+}
+
+.skill-badge-sm:hover {
+    background-color: #e9ecef !important;
+    transform: translateY(-1px);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+/* Matched skills styling */
+.skill-matched {
+    background-color: #198754 !important;
+    color: white !important;
+    border: 1px solid #146c43 !important;
+    box-shadow: 0 2px 4px rgba(25, 135, 84, 0.2);
+}
+
+.skill-matched:hover {
+    background-color: #157347 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(25, 135, 84, 0.3);
+}
+
+.skill-matched i {
+    color: white !important;
+}
+
+/* Small matched skills styling */
+.skill-badge-sm.skill-matched {
+    background-color: #198754 !important;
+    color: white !important;
+    border: 1px solid #146c43 !important;
+    box-shadow: 0 1px 2px rgba(25, 135, 84, 0.2);
+}
+
+.skill-badge-sm.skill-matched:hover {
+    background-color: #157347 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(25, 135, 84, 0.3);
+}
+
+/* Skill categorization styles */
+.skill-category {
+    border-left: 3px solid #dee2e6;
+    padding-left: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.skill-category-title {
+    color: #495057;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    font-size: 0.95rem;
+}
+
+.skill-category-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.skill-category:first-child {
+    border-left-color: #007bff; /* Blue for technical skills */
+}
+
+.skill-category:nth-child(2) {
+    border-left-color: #28a745; /* Green for soft skills */
+}
+
+.skill-category:nth-child(3) {
+    border-left-color: #ffc107; /* Yellow for other skills */
+}
+
+/* Collapsible description styles */
+.card-header .btn {
+    border: none;
+    padding: 0.25rem 0.5rem;
+    transition: all 0.2s ease-in-out;
+}
+
+.card-header .btn:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    transform: scale(1.05);
+}
+
+.card-header .btn i {
+    transition: transform 0.2s ease-in-out;
+}
+
+.job-description {
+    line-height: 1.6;
+}
+
+.job-description p {
+    margin-bottom: 1rem;
+}
+
+.job-description p:last-child {
+    margin-bottom: 0;
+}
+
+.job-description-text {
+    font-family: inherit;
+    font-size: inherit;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: none;
+    color: inherit;
+    min-height: 150px; /* Minimum height for job description */
+}
+
+/* Job description card body minimum height */
+.job-description .card-body {
+    min-height: 200px;
+}
+
+/* Job description preview styles */
+.job-description-preview {
+    min-height: 120px;
+    background-color: var(--card-bg);
+    border-top: 1px solid var(--card-border);
+}
+
+.job-description-collapsed {
+    position: relative;
+}
+
+.job-description-text-preview {
+    font-family: inherit;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--bs-body-color);
+    opacity: 0.8;
+    max-height: 80px;
+    overflow: hidden;
+}
+
+.job-description-preview:hover {
+    background-color: var(--bs-gray-50);
+    cursor: pointer;
+}
+
+[data-bs-theme="dark"] .job-description-preview:hover {
+    background-color: var(--bs-gray-800);
+}

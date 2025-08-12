@@ -3,7 +3,7 @@ Test models
 """
 import pytest
 from datetime import datetime
-from models import UserData, JobApplication, ApplicationStatus, MasterTemplate, JobLog, Document
+from models import UserData, JobApplication, ApplicationStatus, MasterTemplate, JobLog, Document, db
 
 
 class TestUserData:
@@ -55,6 +55,10 @@ class TestJobApplication:
                 title="Software Developer",
                 description="Test job description"
             )
+            # Add to database to trigger default values
+            db.session.add(job)
+            db.session.commit()
+
             assert job.company == "Test Company"
             assert job.title == "Software Developer"
             assert job.status == ApplicationStatus.COLLECTED.value
@@ -81,6 +85,8 @@ class TestJobLog:
                 job_id=sample_job.id,
                 note="Test log entry"
             )
+            db.session.add(log)
+            db.session.commit()
             assert log.job_id == sample_job.id
             assert log.note == "Test log entry"
             assert log.created_at is not None
@@ -94,8 +100,13 @@ class TestJobLog:
                 status_change_from=ApplicationStatus.COLLECTED.value,
                 status_change_to=ApplicationStatus.APPLIED.value
             )
+            db.session.add(log)
+            db.session.commit()
+            assert log.job_id == sample_job.id
+            assert log.note == "Applied to job"
             assert log.status_change_from == ApplicationStatus.COLLECTED.value
             assert log.status_change_to == ApplicationStatus.APPLIED.value
+            assert log.created_at is not None
 
 
 class TestMasterTemplate:
@@ -108,6 +119,8 @@ class TestMasterTemplate:
                 name="Test Template",
                 content="Test LaTeX content"
             )
+            db.session.add(template)
+            db.session.commit()
             assert template.name == "Test Template"
             assert template.content == "Test LaTeX content"
             assert template.created_at is not None

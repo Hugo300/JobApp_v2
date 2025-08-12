@@ -1,13 +1,16 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, send_file, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, send_file, current_app, abort
 import os
 import logging
+from typing import Tuple, Optional, Dict, Any
 from models import JobApplication, ApplicationStatus, UserData, MasterTemplate, Document, TemplateType, JobMode, JobLog, db
 from datetime import datetime
 from services import JobService, UserService, LogService, TemplateService
+from services.database_service import db_service, DatabaseError
 from utils.latex import compile_latex, compile_latex_template
 from utils.scraper import scrape_job_details
 from utils.responses import success_response, error_response, flash_success, flash_error
-from utils.forms import populate_job_form_choices, populate_log_form_choices, validate_job_form_data, extract_form_data
+from utils.forms import populate_job_form_choices, populate_log_form_choices, validate_job_form_data, extract_form_data, sanitize_form_data
+from utils.validation import validate_job_data, ValidationError
 from routes.forms import JobForm, LogForm, QuickLogForm
 from markupsafe import escape
 
@@ -15,7 +18,7 @@ jobs_bp = Blueprint('jobs', __name__)
 
 @jobs_bp.route('/new_job', methods=['GET', 'POST'])
 def new_job():
-    """Create a new job application"""
+    """Create a new job application with improved validation and error handling"""
     form = JobForm()
     job_service = JobService()
 
@@ -25,41 +28,56 @@ def new_job():
     if request.method == 'POST':
         if form.validate_on_submit():
             try:
-                # Extract form data
+                # Extract and sanitize form data
                 form_fields = ['company', 'title', 'description', 'url', 'office_location', 'country', 'job_mode']
-                data = extract_form_data(form_fields)
+                raw_data = extract_form_data(form_fields)
 
-                # Additional validation
-                is_valid, errors = validate_job_form_data(data)
+                # Sanitize all form data
+                sanitized_data = sanitize_form_data(raw_data)
+
+                # Comprehensive validation using new validation utility
+                is_valid, validated_data, validation_errors = validate_job_data(sanitized_data)
+
                 if not is_valid:
-                    for field, error_list in errors.items():
-                        flash_error(f"{field.title()}: {error_list[0]}")
+                    # Display validation errors
+                    for field, error_list in validation_errors.items():
+                        for error in error_list:
+                            flash_error(f"{field.replace('_', ' ').title()}: {error}")
                     return render_template('jobs/new_job.html', form=form)
 
-                # Create job using service
+                # Create job using service with validated data
                 success, job, error = job_service.create_job(
-                    company=data['company'],
-                    title=data['title'],
-                    description=data['description'] if data['description'] else None,
-                    url=data['url'] if data['url'] else None,
-                    office_location=data['office_location'] if data['office_location'] else None,
-                    country=data['country'] if data['country'] else None,
-                    job_mode=data['job_mode'] if data['job_mode'] else None
+                    company=validated_data.get('company'),
+                    title=validated_data.get('title'),
+                    description=validated_data.get('description'),
+                    url=validated_data.get('url'),
+                    office_location=validated_data.get('office_location'),
+                    country=validated_data.get('country'),
+                    job_mode=validated_data.get('job_mode')
                 )
 
-                if success:
+                if success and job:
                     current_app.logger.info(f'New job application created: {job.title} at {job.company}')
                     flash_success(f'Job application for {job.title} at {job.company} created successfully!')
                     return redirect(url_for('jobs.job_detail', job_id=job.id))
                 else:
-                    flash_error(f'Error creating job application: {error}')
+                    flash_error(f'Error creating job application: {error or "Unknown error"}')
                     current_app.logger.error(f'Error creating job application: {error}')
 
+            except ValidationError as e:
+                flash_error(f'Validation error: {str(e)}')
+                current_app.logger.warning(f'Validation error in new_job: {str(e)}')
+            except DatabaseError as e:
+                flash_error('Database error occurred. Please try again.')
+                current_app.logger.error(f'Database error in new_job: {str(e)}')
             except Exception as e:
                 current_app.logger.error(f'Unexpected error in new_job: {str(e)}')
-                flash_error('An unexpected error occurred.')
+                flash_error('An unexpected error occurred. Please try again.')
         else:
-            flash_error('Please correct the errors in the form.')
+            # Form validation failed
+            for field, errors in form.errors.items():
+                for error in errors:
+                    flash_error(f"{field.replace('_', ' ').title()}: {error}")
 
     return render_template('jobs/new_job.html', form=form)
 
@@ -96,7 +114,22 @@ def job_detail(job_id):
         else:
             recent_logs = all_logs[:10]  # Limit to 10
 
-        print(job_id)
+        # Get extracted skills
+        extracted_skills = job.get_extracted_skills()
+
+        # Debug logging for skill matching
+        current_app.logger.info(f"Job {job_id} - Match score: {match_score}%")
+        current_app.logger.info(f"Job {job_id} - Matched keywords: {matched_keywords}")
+        current_app.logger.info(f"Job {job_id} - Extracted skills: {extracted_skills}")
+
+        # Categorize extracted skills
+        try:
+            categorized_skills = job_service.skill_categorizer.categorize_skills_with_matching(
+                extracted_skills, matched_keywords
+            )
+        except Exception as e:
+            current_app.logger.error(f"Error categorizing skills for job {job_id}: {str(e)}")
+            categorized_skills = None
 
         return render_template('jobs/job_detail.html',
                              job=job,
@@ -105,6 +138,8 @@ def job_detail(job_id):
                              match_score=match_score,
                              matched_keywords=matched_keywords,
                              unmatched_keywords=unmatched_keywords,
+                             extracted_skills=extracted_skills,
+                             categorized_skills=categorized_skills,
                              status_options=ApplicationStatus,
                              recent_logs=recent_logs,
                              total_logs=len(all_logs))
@@ -150,7 +185,9 @@ def scrape_new_job():
 @jobs_bp.route('/<int:job_id>/scrape', methods=['POST'])
 def scrape_job(job_id):
     """Scrape job details from URL for existing job"""
-    job = JobApplication.query.get_or_404(job_id)
+    job = db.session.get(JobApplication, job_id)
+    if not job:
+        abort(404)
     url = request.json.get('url')
 
     if not url:
@@ -196,8 +233,10 @@ def scrape_job(job_id):
 @jobs_bp.route('/<int:job_id>/generate-pdf', methods=['POST'])
 def generate_pdf(job_id):
     """Generate PDF from LaTeX content"""
-    
-    job = JobApplication.query.get_or_404(job_id)
+
+    job = db.session.get(JobApplication, job_id)
+    if not job:
+        abort(404)
     user_data = UserData.query.first()
     
     if not user_data:
@@ -212,7 +251,7 @@ def generate_pdf(job_id):
         # Get template if specified
         template = None
         if template_id:
-            template = MasterTemplate.query.get(template_id)
+            template = db.session.get(MasterTemplate, template_id)
         
         # Prepare replacements
         replacements = {
@@ -279,7 +318,9 @@ def generate_pdf(job_id):
 @jobs_bp.route('/<int:job_id>/download/<int:document_id>')
 def download_document(job_id, document_id):
     """Download generated PDF"""
-    document = Document.query.get_or_404(document_id)
+    document = db.session.get(Document, document_id)
+    if not document:
+        abort(404)
     
     if document.job_id != job_id:
         flash('Document not found!', 'error')
@@ -294,7 +335,9 @@ def download_document(job_id, document_id):
 @jobs_bp.route('/<int:job_id>/update-status', methods=['POST'])
 def update_status(job_id):
     """Update job application status"""
-    job = JobApplication.query.get_or_404(job_id)
+    job = db.session.get(JobApplication, job_id)
+    if not job:
+        abort(404)
     old_status = job.status
     status = request.form['status']
 
@@ -319,6 +362,60 @@ def update_status(job_id):
         flash(f'Invalid status: {status}', 'error')
 
     return redirect(url_for('jobs.job_detail', job_id=job_id))
+
+@jobs_bp.route('/<int:job_id>/extract-skills', methods=['POST'])
+def extract_skills(job_id):
+    """Extract skills from job description"""
+    try:
+        job = db.session.get(JobApplication, job_id)
+        if not job:
+            abort(404)
+
+        # Get description from request
+        data = request.get_json()
+        if not data or 'description' not in data:
+            return error_response('Description is required')
+
+        description = data['description'].strip()
+        if not description:
+            return error_response('Description cannot be empty')
+
+        # Initialize job service for skill extraction
+        job_service = JobService()
+
+        # Check if skill extraction is available
+        if not job_service.skill_extractor.is_available():
+            return error_response('Skill extraction service is not available')
+
+        # Extract skills
+        try:
+            extracted_skills = job_service.skill_extractor.extract_skills_simple(description)
+            current_app.logger.info(f"Extracted {len(extracted_skills)} skills for job {job_id}")
+
+            # Save the extracted skills to the job
+            job.set_extracted_skills(extracted_skills)
+            db.session.commit()
+
+            # Create a log entry for the skill extraction
+            log_entry = JobLog(
+                job_id=job_id,
+                note=f'Skills extracted from job description: {len(extracted_skills)} skills found'
+            )
+            db.session.add(log_entry)
+            db.session.commit()
+
+            return success_response(f'Successfully extracted {len(extracted_skills)} skills', {
+                'skills': extracted_skills,
+                'total_skills': len(extracted_skills)
+            })
+
+        except Exception as e:
+            current_app.logger.error(f'Error extracting skills for job {job_id}: {str(e)}')
+            return error_response(f'Skill extraction failed: {str(e)}')
+
+    except Exception as e:
+        current_app.logger.error(f'Error in extract_skills route for job {job_id}: {str(e)}')
+        return error_response('An error occurred while extracting skills')
 
 @jobs_bp.route('/<int:job_id>/quick-log', methods=['POST'])
 def quick_log(job_id):
@@ -410,7 +507,9 @@ def add_log(job_id):
 def edit_job(job_id):
     """Edit an existing job application"""
     try:
-        job = JobApplication.query.get_or_404(job_id)
+        job = db.session.get(JobApplication, job_id)
+        if not job:
+            abort(404)
         form = JobForm()
 
         if request.method == 'GET':
@@ -473,7 +572,26 @@ def edit_job(job_id):
             if form.errors:
                 flash('Please correct the errors in the form.', 'error')
 
-        return render_template('jobs/edit_job.html', job=job, form=form)
+        # Get skill matching analysis for highlighting
+        user_service = UserService()
+        job_service = JobService()
+        match_analysis = job_service.analyze_job_match(job_id, user_service.get_user_skills())
+        matched_keywords = match_analysis.get('matched_keywords', [])
+        match_score = match_analysis.get('match_score', 0)
+
+        # Categorize extracted skills
+        extracted_skills = job.get_extracted_skills()
+        try:
+            categorized_skills = job_service.skill_categorizer.categorize_skills_with_matching(
+                extracted_skills, matched_keywords
+            )
+        except Exception as e:
+            current_app.logger.error(f"Error categorizing skills for job {job_id}: {str(e)}")
+            categorized_skills = None
+
+        return render_template('jobs/edit_job.html', job=job, form=form,
+                             matched_keywords=matched_keywords, match_score=match_score,
+                             extracted_skills=extracted_skills, categorized_skills=categorized_skills)
 
     except Exception as e:
         current_app.logger.error(f'Error loading edit job page for job {job_id}: {str(e)}')
@@ -484,7 +602,9 @@ def edit_job(job_id):
 def delete_job(job_id):
     """Delete a job application"""
     try:
-        job = JobApplication.query.get_or_404(job_id)
+        job = db.session.get(JobApplication, job_id)
+        if not job:
+            abort(404)
 
         # Store job info for logging before deletion
         job_title = job.title
@@ -512,3 +632,91 @@ def delete_job(job_id):
         flash('An error occurred while deleting the job application. Please try again.', 'error')
 
     return redirect(url_for('main.dashboard'))
+
+
+@jobs_bp.route('/<int:job_id>/logs/<int:log_id>/edit', methods=['GET', 'POST'])
+def edit_log(job_id, log_id):
+    """Edit an existing log entry"""
+    try:
+        job_service = JobService()
+        log_service = LogService()
+
+        job = job_service.get_job_by_id(job_id)
+        if not job:
+            from werkzeug.exceptions import NotFound
+            raise NotFound()
+
+        log_entry = log_service.get_log_by_id(log_id)
+        if not log_entry or log_entry.job_id != job_id:
+            from werkzeug.exceptions import NotFound
+            raise NotFound()
+
+        form = LogForm()
+        populate_log_form_choices(form)
+
+        if request.method == 'GET':
+            # Pre-populate form with existing log data
+            form.note.data = log_entry.note
+
+        if form.validate_on_submit():
+            try:
+                # Sanitize input
+                note = escape(form.note.data.strip())
+
+                if not note:
+                    flash_error('Log note cannot be empty.')
+                    return render_template('jobs/edit_log.html', job=job, log=log_entry, form=form)
+
+                # Update the log entry
+                success, updated_log, error = log_service.update_log(log_id, note)
+
+                if success:
+                    current_app.logger.info(f'Log entry {log_id} updated for job {job_id}')
+                    flash_success('Log entry updated successfully!')
+                    return redirect(url_for('jobs.job_detail', job_id=job_id))
+                else:
+                    flash_error(f'Error updating log entry: {error}')
+
+            except Exception as e:
+                current_app.logger.error(f'Error updating log entry {log_id} for job {job_id}: {str(e)}')
+                flash_error('An error occurred while updating the log entry. Please try again.')
+        else:
+            if form.errors:
+                flash_error('Please correct the errors in the form.')
+
+        return render_template('jobs/edit_log.html', job=job, log=log_entry, form=form)
+
+    except Exception as e:
+        current_app.logger.error(f'Error loading edit log page for log {log_id}: {str(e)}')
+        flash('An error occurred while loading the page.', 'error')
+        return redirect(url_for('jobs.job_detail', job_id=job_id))
+
+
+@jobs_bp.route('/<int:job_id>/logs/<int:log_id>/delete', methods=['POST'])
+def delete_log(job_id, log_id):
+    """Delete a log entry"""
+    try:
+        log_service = LogService()
+
+        log_entry = log_service.get_log_by_id(log_id)
+        if not log_entry or log_entry.job_id != job_id:
+            flash_error('Log entry not found.')
+            return redirect(url_for('jobs.job_detail', job_id=job_id))
+
+        # Store log info for logging before deletion
+        log_note = log_entry.note[:50] + '...' if len(log_entry.note) > 50 else log_entry.note
+
+        # Delete the log entry
+        success, _, error = log_service.delete_log(log_id)
+
+        if success:
+            current_app.logger.info(f'Log entry deleted for job {job_id}: {log_note}')
+            flash_success('Log entry deleted successfully!')
+        else:
+            flash_error(f'Error deleting log entry: {error}')
+
+    except Exception as e:
+        current_app.logger.error(f'Error deleting log entry {log_id} for job {job_id}: {str(e)}')
+        flash_error('An error occurred while deleting the log entry. Please try again.')
+
+    return redirect(url_for('jobs.job_detail', job_id=job_id))
