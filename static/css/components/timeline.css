@@ -1,0 +1,124 @@
+/* ==========================================================================
+   Timeline component (BEM naming convention)
+   ========================================================================== */
+
+.timeline-container {
+    position: relative;
+    padding: var(--spacing-md) 0;
+}
+
+.timeline-item {
+    position: relative;
+    display: flex;
+    margin-bottom: 0;
+    padding: var(--spacing-md) 0;
+    border-left: 3px solid #e9ecef;
+    margin-left: 1.5rem;
+}
+
+.timeline-item:not(.timeline-item-last)::after {
+    content: '';
+    position: absolute;
+    left: -3px;
+    bottom: 0;
+    width: 3px;
+    height: var(--spacing-md);
+    background: #e9ecef;
+}
+
+.timeline-item-first {
+    border-top-left-radius: var(--border-radius-md);
+}
+
+.timeline-item-last {
+    border-bottom-left-radius: var(--border-radius-md);
+}
+
+.timeline-marker-container {
+    position: absolute;
+    left: -12px;
+    top: 1.25rem;
+    z-index: 2;
+}
+
+.timeline-marker {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    border: 2px solid var(--bs-body-color);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.timeline-marker-status {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+}
+
+.timeline-marker-note {
+    background: linear-gradient(135deg, #6c757d, #495057);
+    color: white;
+}
+
+.timeline-content {
+    flex: 1;
+    padding-left: 1.5rem;
+    padding-right: var(--spacing-md);
+}
+
+.timeline-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+}
+
+.timeline-date {
+    flex: 1;
+    min-width: 200px;
+}
+
+.timeline-note {
+    border-radius: var(--border-radius-md);
+    padding: 0.75rem;
+    border-left: 3px solid #007bff;
+    margin-top: var(--spacing-sm);
+}
+
+.timeline-note p {
+    margin-bottom: var(--spacing-sm);
+    line-height: 1.5;
+}
+
+.timeline-note p:last-child {
+    margin-bottom: 0;
+}
+
+/* Status change badges in timeline */
+.status-change-badges {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+/* Responsive timeline */
+@media (max-width: 768px) {
+    .timeline-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .status-change-badges {
+        margin-top: 0.25rem;
+    }
+
+    .timeline-content {
+        padding-left: var(--spacing-md);
+        padding-right: var(--spacing-sm);
+    }
+}
