@@ -36,8 +36,7 @@ class TestMainRoutes:
                 'email': 'test@example.com',
                 'phone': '123-456-7890',
                 'linkedin': 'https://linkedin.com/in/test',
-                'github': 'https://github.com/test',
-                'skills': 'Python, Flask'
+                'github': 'https://github.com/test'
             }, follow_redirects=True)
             assert response.status_code == 200
             assert b'updated successfully' in response.data
