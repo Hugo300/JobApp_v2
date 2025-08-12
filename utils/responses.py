@@ -149,30 +149,7 @@ def handle_scraping_response(scraping_result):
     }
 
 
-def handle_job_match_response(match_result):
-    """
-    Handle job matching analysis results
-    
-    Args:
-        match_result: Result from job matching analysis
-        
-    Returns:
-        dict: Formatted match data
-    """
-    if match_result and len(match_result) == 3:
-        match_score, matched_keywords, unmatched_keywords = match_result
-        
-        return {
-            'match_score': match_score,
-            'matched_keywords': matched_keywords,
-            'unmatched_keywords': unmatched_keywords
-        }
-    
-    return {
-        'match_score': 0,
-        'matched_keywords': [],
-        'unmatched_keywords': []
-    }
+
 
 
 def log_and_flash_error(error_message, flash_message=None, log_level=logging.ERROR):

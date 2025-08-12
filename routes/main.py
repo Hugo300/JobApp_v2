@@ -63,7 +63,7 @@ def user_data():
     if request.method == 'POST':
         try:
             # Extract form data
-            form_fields = ['name', 'email', 'phone', 'linkedin', 'github', 'skills']
+            form_fields = ['name', 'email', 'phone', 'linkedin', 'github']
             data = extract_form_data(form_fields)
 
             # Create or update user using service
@@ -72,8 +72,7 @@ def user_data():
                 email=data['email'],
                 phone=data['phone'],
                 linkedin=data['linkedin'],
-                github=data['github'],
-                skills=data['skills']
+                github=data['github']
             )
 
             if success:
