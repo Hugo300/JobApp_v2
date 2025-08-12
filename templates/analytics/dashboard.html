@@ -2,63 +2,6 @@
 
 {% block title %}Job Analytics Dashboard{% endblock %}
 
-{% block extra_css %}
-<style>
-.analytics-card {
-    transition: transform 0.2s ease;
-    border: none;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.analytics-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-}
-
-.metric-value {
-    font-size: 2.5rem;
-    font-weight: bold;
-    line-height: 1;
-}
-
-.metric-label {
-    font-size: 0.875rem;
-    color: #6c757d;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.trend-positive {
-    color: #28a745;
-}
-
-.trend-negative {
-    color: #dc3545;
-}
-
-.chart-container {
-    position: relative;
-    height: 300px;
-}
-
-.company-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 0;
-    border-bottom: 1px solid #eee;
-}
-
-.company-item:last-child {
-    border-bottom: none;
-}
-
-.progress-thin {
-    height: 8px;
-}
-</style>
-{% endblock %}
-
 {% block content %}
 <div class="container-fluid">
     <!-- Header -->

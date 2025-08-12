@@ -72,7 +72,7 @@
 /* Dark theme colors */
 [data-bs-theme="dark"] {
     --bs-body-bg: #212529;
-    --bs-body-color: #dee2e6;
+    --bs-body-color: #f8f9fa;
     --card-bg: #343a40;
     --card-border: rgba(255, 255, 255, 0.125);
     --navbar-bg: #0d6efd;
