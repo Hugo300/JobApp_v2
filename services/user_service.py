@@ -17,19 +17,18 @@ class UserService(BaseService):
             self.logger.error(f"Error getting user data: {str(e)}")
             return None
     
-    def create_or_update_user(self, name, email, phone=None, linkedin=None, 
-                             github=None, skills=None):
+    def create_or_update_user(self, name, email, phone=None, linkedin=None,
+                             github=None):
         """
         Create or update user data
-        
+
         Args:
             name: User name
             email: User email
             phone: User phone (optional)
             linkedin: LinkedIn URL (optional)
             github: GitHub URL (optional)
-            skills: Skills string (optional)
-            
+
         Returns:
             tuple: (success: bool, user: UserData, error: str)
         """
@@ -39,8 +38,7 @@ class UserService(BaseService):
             'email': email,
             'phone': phone or '',
             'linkedin': linkedin or '',
-            'github': github or '',
-            'skills': skills or ''
+            'github': github or ''
         }
         
         is_valid, errors = validate_user_data_form(data)
@@ -58,31 +56,7 @@ class UserService(BaseService):
             # Create new user
             return self.create(UserData, **data)
     
-    def update_user_skills(self, skills):
-        """
-        Update user skills
-        
-        Args:
-            skills: Skills string
-            
-        Returns:
-            tuple: (success: bool, user: UserData, error: str)
-        """
-        user = self.get_user_data()
-        if not user:
-            return False, None, "User not found"
-        
-        return self.update(user, skills=skills)
-    
-    def get_user_skills(self):
-        """
-        Get user skills as a string
-        
-        Returns:
-            str: User skills or empty string
-        """
-        user = self.get_user_data()
-        return user.skills if user and user.skills else ""
+
     
     def validate_user_data(self, data):
         """
@@ -111,13 +85,9 @@ class UserService(BaseService):
                 'phone': 'Not Set',
                 'linkedin': None,
                 'github': None,
-                'skills_count': 0,
+
                 'has_profile': False
             }
-        
-        skills_count = 0
-        if user.skills:
-            skills_count = len([skill.strip() for skill in user.skills.split(',') if skill.strip()])
         
         return {
             'name': user.name or 'Not Set',
@@ -125,7 +95,6 @@ class UserService(BaseService):
             'phone': user.phone or 'Not Set',
             'linkedin': user.linkedin if user.linkedin else None,
             'github': user.github if user.github else None,
-            'skills_count': skills_count,
             'has_profile': bool(user.name and user.email)
         }
     
@@ -146,7 +115,7 @@ class UserService(BaseService):
             'phone': user.phone,
             'linkedin': user.linkedin,
             'github': user.github,
-            'skills': user.skills
+
         }
     
     def import_user_data(self, data):
@@ -170,5 +139,5 @@ class UserService(BaseService):
             phone=data.get('phone'),
             linkedin=data.get('linkedin'),
             github=data.get('github'),
-            skills=data.get('skills')
+
         )

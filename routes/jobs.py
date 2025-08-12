@@ -100,11 +100,7 @@ def job_detail(job_id):
         user_data = user_service.get_user_data()
         templates = template_service.get_all_templates()
 
-        # Analyze job match if user data exists
-        match_analysis = job_service.analyze_job_match(job_id, user_service.get_user_skills())
-        match_score = match_analysis.get('match_score', 0)
-        matched_keywords = match_analysis.get('matched_keywords', [])
-        unmatched_keywords = match_analysis.get('unmatched_keywords', [])
+
 
         # Get logs using service
         all_logs = log_service.get_logs_for_job(job_id)
@@ -114,32 +110,12 @@ def job_detail(job_id):
         else:
             recent_logs = all_logs[:10]  # Limit to 10
 
-        # Get extracted skills
-        extracted_skills = job.get_extracted_skills()
 
-        # Debug logging for skill matching
-        current_app.logger.info(f"Job {job_id} - Match score: {match_score}%")
-        current_app.logger.info(f"Job {job_id} - Matched keywords: {matched_keywords}")
-        current_app.logger.info(f"Job {job_id} - Extracted skills: {extracted_skills}")
-
-        # Categorize extracted skills
-        try:
-            categorized_skills = job_service.skill_categorizer.categorize_skills_with_matching(
-                extracted_skills, matched_keywords
-            )
-        except Exception as e:
-            current_app.logger.error(f"Error categorizing skills for job {job_id}: {str(e)}")
-            categorized_skills = None
 
         return render_template('jobs/job_detail.html',
                              job=job,
                              user_data=user_data,
                              templates=templates,
-                             match_score=match_score,
-                             matched_keywords=matched_keywords,
-                             unmatched_keywords=unmatched_keywords,
-                             extracted_skills=extracted_skills,
-                             categorized_skills=categorized_skills,
                              status_options=ApplicationStatus,
                              recent_logs=recent_logs,
                              total_logs=len(all_logs))
@@ -363,59 +339,7 @@ def update_status(job_id):
 
     return redirect(url_for('jobs.job_detail', job_id=job_id))
 
-@jobs_bp.route('/<int:job_id>/extract-skills', methods=['POST'])
-def extract_skills(job_id):
-    """Extract skills from job description"""
-    try:
-        job = db.session.get(JobApplication, job_id)
-        if not job:
-            abort(404)
 
-        # Get description from request
-        data = request.get_json()
-        if not data or 'description' not in data:
-            return error_response('Description is required')
-
-        description = data['description'].strip()
-        if not description:
-            return error_response('Description cannot be empty')
-
-        # Initialize job service for skill extraction
-        job_service = JobService()
-
-        # Check if skill extraction is available
-        if not job_service.skill_extractor.is_available():
-            return error_response('Skill extraction service is not available')
-
-        # Extract skills
-        try:
-            extracted_skills = job_service.skill_extractor.extract_skills_simple(description)
-            current_app.logger.info(f"Extracted {len(extracted_skills)} skills for job {job_id}")
-
-            # Save the extracted skills to the job
-            job.set_extracted_skills(extracted_skills)
-            db.session.commit()
-
-            # Create a log entry for the skill extraction
-            log_entry = JobLog(
-                job_id=job_id,
-                note=f'Skills extracted from job description: {len(extracted_skills)} skills found'
-            )
-            db.session.add(log_entry)
-            db.session.commit()
-
-            return success_response(f'Successfully extracted {len(extracted_skills)} skills', {
-                'skills': extracted_skills,
-                'total_skills': len(extracted_skills)
-            })
-
-        except Exception as e:
-            current_app.logger.error(f'Error extracting skills for job {job_id}: {str(e)}')
-            return error_response(f'Skill extraction failed: {str(e)}')
-
-    except Exception as e:
-        current_app.logger.error(f'Error in extract_skills route for job {job_id}: {str(e)}')
-        return error_response('An error occurred while extracting skills')
 
 @jobs_bp.route('/<int:job_id>/quick-log', methods=['POST'])
 def quick_log(job_id):
@@ -572,26 +496,7 @@ def edit_job(job_id):
             if form.errors:
                 flash('Please correct the errors in the form.', 'error')
 
-        # Get skill matching analysis for highlighting
-        user_service = UserService()
-        job_service = JobService()
-        match_analysis = job_service.analyze_job_match(job_id, user_service.get_user_skills())
-        matched_keywords = match_analysis.get('matched_keywords', [])
-        match_score = match_analysis.get('match_score', 0)
-
-        # Categorize extracted skills
-        extracted_skills = job.get_extracted_skills()
-        try:
-            categorized_skills = job_service.skill_categorizer.categorize_skills_with_matching(
-                extracted_skills, matched_keywords
-            )
-        except Exception as e:
-            current_app.logger.error(f"Error categorizing skills for job {job_id}: {str(e)}")
-            categorized_skills = None
-
-        return render_template('jobs/edit_job.html', job=job, form=form,
-                             matched_keywords=matched_keywords, match_score=match_score,
-                             extracted_skills=extracted_skills, categorized_skills=categorized_skills)
+        return render_template('jobs/edit_job.html', job=job, form=form)
 
     except Exception as e:
         current_app.logger.error(f'Error loading edit job page for job {job_id}: {str(e)}')
