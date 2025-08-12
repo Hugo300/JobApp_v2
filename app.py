@@ -6,7 +6,7 @@ from flask_bootstrap import Bootstrap
 from flask_wtf.csrf import CSRFProtect
 
 from config import config, Config
-from models import db, UserData, MasterTemplate, JobApplication, Document, JobLog, ApplicationStatus, TemplateType, JobMode, SkillBlacklist
+from models import db, UserData, MasterTemplate, JobApplication, Document, JobLog, ApplicationStatus, TemplateType, JobMode
 
 def create_app(config_name=None):
     """Application factory pattern"""
@@ -62,12 +62,10 @@ def create_app(config_name=None):
     from routes.main import main_bp
     from routes.jobs import jobs_bp
     from routes.templates import templates_bp
-    from routes.skills import skills_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(jobs_bp, url_prefix='/job')
     app.register_blueprint(templates_bp, url_prefix='/templates')
-    app.register_blueprint(skills_bp, url_prefix='/skills')
 
     # Add error handlers
     @app.errorhandler(404)
@@ -105,13 +103,7 @@ def create_app(config_name=None):
     with app.app_context():
         db.create_all()
 
-        # Initialize skill extraction services for better performance
-        from services import initialize_skill_services
-        app.logger.info('Initializing skill extraction services...')
-        if initialize_skill_services():
-            app.logger.info('Skill extraction services initialized successfully')
-        else:
-            app.logger.warning('Skill extraction services initialization failed - will initialize on first use')
+
 
     return app
 
