@@ -1,12 +1,12 @@
 import os
 import logging
+import time
 from logging.handlers import RotatingFileHandler
 from flask import Flask, request, g, render_template
-from flask_bootstrap import Bootstrap
 from flask_wtf.csrf import CSRFProtect
 
-from config import config, Config
-from models import db, UserData, MasterTemplate, JobApplication, Document, JobLog, ApplicationStatus, TemplateType, JobMode
+from config import config
+from models import db
 
 def create_app(config_name=None):
     """Application factory pattern"""
@@ -22,7 +22,6 @@ def create_app(config_name=None):
     except (ValueError, AttributeError) as e:
         app.logger.warning(f"Configuration validation warning: {e}")
 
-    bootstrap = Bootstrap(app)
     csrf = CSRFProtect(app)
 
     db.init_app(app)
@@ -56,7 +55,7 @@ def create_app(config_name=None):
         if not app.debug:
             app.logger.info(f"Request: {request.method} {request.url} from {request.remote_addr}")
             # Store request start time for performance monitoring
-            g.start_time = logging.time.time() if hasattr(logging, 'time') else None
+            g.start_time = time.time()
 
     # Register blueprints
     from routes.main import main_bp
