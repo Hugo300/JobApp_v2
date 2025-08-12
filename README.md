@@ -196,11 +196,10 @@ JobApp_v2/
 │   ├── user_service.py  # User data management
 │   ├── log_service.py   # Activity logging operations
 │   ├── template_service.py # Template management
-│   ├── skill_extraction_service.py # AI-powered skill extraction
-│   └── skill_matching_service.py   # Advanced skill matching algorithms
+
 ├── utils/               # Python utility modules
 │   ├── __init__.py
-│   ├── analysis.py     # Skills matching algorithm
+
 │   ├── latex.py        # LaTeX compilation utilities
 │   ├── scraper.py      # Web scraping utilities
 │   ├── forms.py        # Form validation utilities
