@@ -18,7 +18,8 @@ from .enums import ApplicationStatus, TemplateType, JobMode
 # Import models
 from .user import UserData
 from .template import MasterTemplate
-from .job import JobApplication, Document, JobLog
+from .job import JobApplication, Document, JobLog, JobSkill
+from .skill import Skill, SkillCategory
 
 # Make everything available at package level
 __all__ = [
@@ -30,7 +31,10 @@ __all__ = [
     'MasterTemplate',
     'JobApplication',
     'Document',
-    'JobLog'
+    'JobLog',
+    'JobSkill',
+    'Skill',
+    'SkillCategory'
 ]
 
 

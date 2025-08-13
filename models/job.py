@@ -2,9 +2,10 @@
 Job application related models
 """
 from datetime import datetime, timezone
+from sqlalchemy.ext.associationproxy import association_proxy
+
 from .base import db
 from .enums import ApplicationStatus, JobMode
-
 
 class JobApplication(db.Model):
     """Model for job applications"""
@@ -24,6 +25,10 @@ class JobApplication(db.Model):
     # Relationships
     documents = db.relationship('Document', backref='job_application', lazy=True, cascade='all, delete-orphan')
     logs = db.relationship('JobLog', backref='job_application', lazy=True, cascade='all, delete-orphan', order_by='JobLog.created_at.desc()')
+    job_skills = db.relationship('JobSkill', backref='job_application', lazy=True, cascade='all, delete-orphan')
+
+    # Association proxy for direct access to skills
+    skills = association_proxy('job_skills', 'skills')
     
     @property
     def status_enum(self):
@@ -81,3 +86,13 @@ class JobLog(db.Model):
 
     def __repr__(self):
         return f'<JobLog {self.id}: {self.note[:50]}...>'
+
+
+class JobSkill(db.Model):
+    """Model for job application skills"""
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    job_id = db.Column(db.Integer, db.ForeignKey('job_application.id'), nullable=False)  # Corrected foreign key
+    skill_id = db.Column(db.Integer, db.ForeignKey('skills.id'), nullable=False)
+
+    def __repr__(self):
+        return f"<JobSkill(job_id={self.job_id}, skill_id={self.skill_id})>"

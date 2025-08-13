@@ -61,10 +61,12 @@ def create_app(config_name=None):
     from routes.main import main_bp
     from routes.jobs import jobs_bp
     from routes.templates import templates_bp
+    from routes.skills import skills_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(jobs_bp, url_prefix='/job')
     app.register_blueprint(templates_bp, url_prefix='/templates')
+    app.register_blueprint(skills_bp, url_prefix='/skills')
 
     # Add error handlers
     @app.errorhandler(404)

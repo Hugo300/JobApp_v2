@@ -100,8 +100,6 @@ def job_detail(job_id):
         user_data = user_service.get_user_data()
         templates = template_service.get_all_templates()
 
-
-
         # Get logs using service
         all_logs = log_service.get_logs_for_job(job_id)
         show_all = request.args.get('show_all', 'false').lower() == 'true'
@@ -110,10 +108,12 @@ def job_detail(job_id):
         else:
             recent_logs = all_logs[:10]  # Limit to 10
 
-
+        # Get Skills using service
+        job_skills = job_service.get_job_skills_by_category(job_id)
 
         return render_template('jobs/job_detail.html',
                              job=job,
+                             job_skills=job_skills,
                              user_data=user_data,
                              templates=templates,
                              status_options=ApplicationStatus,
@@ -625,3 +625,32 @@ def delete_log(job_id, log_id):
         flash_error('An error occurred while deleting the log entry. Please try again.')
 
     return redirect(url_for('jobs.job_detail', job_id=job_id))
+
+@jobs_bp.route('/<int:job_id>/extract-skills', methods=['POST'])
+def extract_skills_for_job(job_id):
+    """
+    Extract skills from the job description and store them in the JobSkill table.
+
+    :param job_id: ID of the job
+    """
+    job_service = JobService()
+
+    # Fetch the job from the database
+    job = db.session.get(JobApplication, job_id)
+    if not job:
+        return jsonify({"error": "Job not found."}), 404
+
+    try:
+        # Process the job and store skills
+        extracted_skills = job_service.process_job_and_store_skills(job_id, job.description)
+
+        return success_response(
+            message=f'Successfully extracted {len(extracted_skills)} skills',
+            data={
+                'skills': extracted_skills,
+                'total_skills': len(extracted_skills)
+            }
+        )
+    except Exception as e:
+        current_app.logger.error(f"Error extracting skills for job {job_id}: {str(e)}")
+        return error_response("An error occurred while extracting skills.")

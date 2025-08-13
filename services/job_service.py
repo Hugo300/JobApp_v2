@@ -3,9 +3,14 @@ Job service for handling job application business logic
 """
 from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any, Tuple
-from models import JobApplication, ApplicationStatus, JobMode, db
+from collections import defaultdict
+from sqlalchemy.orm import joinedload
+
+from models import JobApplication, JobSkill, ApplicationStatus, JobMode, db, Skill
+
 from .base_service import BaseService
-from .database_service import db_service, DatabaseError
+from .skill_service import SkillService
+
 from utils.scraper import scrape_job_details
 from utils.responses import handle_scraping_response
 from utils.forms import sanitize_input
@@ -16,6 +21,7 @@ class JobService(BaseService):
 
     def __init__(self):
         super().__init__()
+        self.skill_service = SkillService()
 
     def get_job_by_id(self, job_id):
         """Get job application by ID"""
@@ -167,6 +173,10 @@ class JobService(BaseService):
 
         # Create the job
         success, job, error = self.create(JobApplication, **job_data)
+
+        if success:
+            # extract the skills from the text
+            success, _ = self.process_job_and_store_skills(job.id, job_data['description'])
 
         return success, job, error
     
@@ -346,7 +356,6 @@ class JobService(BaseService):
                 'success': False,
                 'error': 'Failed to scrape job details'
             }
-    
 
     
     def update_job_status(self, job_id, new_status):
@@ -366,3 +375,60 @@ class JobService(BaseService):
             return False, None, "Invalid status"
         
         return self.update_job(job_id, status=new_status)
+    
+    def process_job_and_store_skills(self, job_id, job_description):
+        """
+        Extract skills from the job description and store them in the JobSkill table.
+
+        :param job_id: ID of the job
+        :param job_description: Description of the job
+        """
+        # Extract skills
+        extracted_skills = self.skill_service.extract_skills(job_description)
+
+        # Fetch or create skills in the database
+        skill_ids = []
+        for skill_name in extracted_skills['skills']:
+            skill = db.session.query(Skill).filter_by(name=skill_name).first()
+
+            # if skill does not exist then add it to the db
+            if not skill:
+                _, skill, _ = self.skill_service.create_skill(name=skill_name)
+
+            skill_ids.append(skill.id)
+
+        # Link skills to the job
+        for skill_id in skill_ids:
+            self.create(JobSkill, **{
+                'job_id': job_id,
+                'skill_id': skill_id
+            })
+
+        return True, extracted_skills
+
+    def get_job_skills(self, job_id):
+        query = JobApplication.query
+
+        job = query.filter(JobApplication.id == job_id).first()
+
+        skills = list(job.skills)
+
+        return skills
+    
+    def get_job_skills_by_category(self, job_id):
+    
+        job = JobApplication.query.filter(JobApplication.id == job_id).first()
+        
+        if not job:
+            return {}
+        
+        skills_by_category = defaultdict(list)
+        
+        # Use your association proxy to get skills directly
+        for skill in job.skills:  # Using your Job -> Skill association proxy
+            category = skill.skill_category
+
+            category_name = "Uncategorized" if not category else category.name
+            skills_by_category[category_name].append(skill.name)
+        
+        return dict(skills_by_category)
