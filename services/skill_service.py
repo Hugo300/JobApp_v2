@@ -6,21 +6,36 @@ from spacy.matcher import PhraseMatcher
 from skillNer.skill_extractor_class import SkillExtractor
 from skillNer.general_params import SKILL_DB
 
-from models import SkillCategory, Skill
+from models import SkillCategory, Skill, db
 from utils.forms import sanitize_input
 from .base_service import BaseService
+
+
+# --- Singleton SpaCy Model Loading ---
+# Load the spaCy model once when the module is first imported.
+# This ensures it's shared across all instances of SkillService.
+try:
+    NLP_MODEL = spacy.load("en_core_web_lg")
+    # Initialize SkillNER extractor with the pre-loaded model
+    SKILL_EXTRACTOR = SkillExtractor(
+        nlp=NLP_MODEL,
+        skills_db=SKILL_DB,
+        phraseMatcher=PhraseMatcher
+    )
+except OSError:
+    print("SpaCy model 'en_core_web_lg' not found. Please download it using: python -m spacy download en_core_web_lg")
+    NLP_MODEL = None
+    SKILL_EXTRACTOR = None
+# -----------------------------------
 
 
 class SkillService(BaseService):
     def __init__(self):
         # Load spaCy model
-        self.nlp = spacy.load("en_core_web_lg")
-        # Initialize SkillNER extractor with required arguments
-        self.skill_extractor = SkillExtractor(
-            nlp=self.nlp,
-            skills_db=SKILL_DB,  # Use default skills database
-            phraseMatcher=PhraseMatcher  # Use spaCy's PhraseMatcher
-        )
+        self.nlp = NLP_MODEL
+        self.skill_extractor = SKILL_EXTRACTOR
+        if not self.nlp or not self.skill_extractor:
+            raise RuntimeError("SpaCy model or SkillNER extractor failed to load.")
 
     def extract_skills(self, job_description):
         """
@@ -237,8 +252,7 @@ class SkillService(BaseService):
             if include_relationships:
                 from sqlalchemy.orm import joinedload
                 query = query.options(
-                    joinedload(Skill.skill_categories),
-                    joinedload(Skill.skill_jobs)
+                    joinedload(Skill.skill_category)
                 )
 
             if order_by is None:
@@ -248,10 +262,32 @@ class SkillService(BaseService):
 
             return query.all()
         except Exception as e:
-            self.logger.error(f"Error getting all skills: {str(e)}")
             return []
         
-    def create_skill(self, name, description=None):
+    def get_all_skills_and_category(self):
+        try:
+            results = db.session.query(Skill, SkillCategory).join(SkillCategory, isouter=True).filter(Skill.is_blacklisted==False).all()
+
+            list_skills = []
+            # Iterate through each tuple in the results
+            for skill, category in results:
+                category_name = category.name if category else ''
+                category_id = category.id if category else None
+
+                # Create a dictionary for each skill, including the category name
+                skill_data = {
+                    'id': skill.id,
+                    'name': skill.name,
+                    'category_id': category_id,
+                    'category_name': category_name
+                }
+                list_skills.append(skill_data)
+            
+            return list_skills
+        except Exception as e:
+            return []
+        
+    def create_skill(self, name, category=None, is_blacklisted=False):
         """
         Create a new skill
 
@@ -265,19 +301,19 @@ class SkillService(BaseService):
         # Validate and sanitize inputs
         try:
             if not name or not name.strip():
-                return False, None, "Company name is required"
+                return False, None, "Nname is required"
 
             # Sanitize all string inputs
             name = sanitize_input(name)
-            description = sanitize_input(description)
+            category = sanitize_input(category)
 
         except Exception as e:
-            self.logger.error(f"Error validating skill data: {str(e)}")
             return False, None, f"Validation error: {str(e)}"
 
         data = {
             'name': name,
-            'description': description,
+            'category_id': category,
+            'is_blacklisted': is_blacklisted
         }
 
         # Create the skill
@@ -321,3 +357,20 @@ class SkillService(BaseService):
         
         return self.delete(skill)
 
+    def set_blacklist(self, skill_id, value):       
+        return self.update_skill(skill_id, **{'is_blacklisted': value})
+    
+    def get_blacklist_skills(self, order_by=None):
+        try:
+            query = Skill.query
+
+            # Eagerly load relationships to prevent N+1 queries
+            if order_by is None:
+                query = query.order_by(Skill.name.desc())
+            else:
+                query = query.order_by(order_by)
+
+            return query.filter(Skill.is_blacklisted==True).all()
+        except Exception as e:
+            self.logger.error(f"Error getting all skills: {str(e)}")
+            return []
