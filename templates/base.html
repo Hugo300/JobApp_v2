@@ -46,42 +46,37 @@
             <a class="navbar-brand fw-bold" href="{{ url_for('main.dashboard') }}">
                 <i class="fas fa-briefcase me-2"></i>Job App Manager
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.dashboard') }}">
-                            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('jobs.new_job') }}">
-                            <i class="fas fa-plus me-1"></i>New Job
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.user_data') }}">
-                            <i class="fas fa-user me-1"></i>Profile
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('templates.landing') }}">
-                            <i class="fas fa-file-alt me-1"></i>Templates
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.analytics_dashboard') }}">
-                            <i class="fas fa-chart-line me-1"></i>Analytics
-                        </a>
-                    </li>
-                </ul>
-                <div class="navbar-nav">
-                    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">
-                        <i class="fas fa-moon" id="themeIcon"></i>
-                    </button>
-                </div>
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('main.dashboard') }}">
+                        <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('jobs.new_job') }}">
+                        <i class="fas fa-plus me-1"></i>New Job
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('main.user_data') }}">
+                        <i class="fas fa-user me-1"></i>Profile
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('templates.landing') }}">
+                        <i class="fas fa-file-alt me-1"></i>Templates
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('main.analytics_dashboard') }}">
+                        <i class="fas fa-chart-line me-1"></i>Analytics
+                    </a>
+                </li>
+            </ul>
+            <div class="navbar-nav">
+                <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">
+                    <i class="fas fa-moon" id="themeIcon"></i>
+                </button>
             </div>
         </div>
     </nav>
