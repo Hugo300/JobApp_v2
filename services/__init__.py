@@ -6,6 +6,7 @@ from .template_service import TemplateService
 from .log_service import LogService
 from .job_service import JobService
 from .skill_service import SkillService
+from .category_service import CategoryService
 
 __all__ = [
     'JobService',
@@ -13,4 +14,5 @@ __all__ = [
     'TemplateService',
     'LogService',
     'SkillService',
+    'CategoryService'
 ]
