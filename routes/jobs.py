@@ -1,17 +1,17 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, send_file, current_app, abort
 import os
-import logging
+
 from typing import Tuple, Optional, Dict, Any
-from models import JobApplication, ApplicationStatus, UserData, MasterTemplate, Document, TemplateType, JobMode, JobLog, db
+from models import JobApplication, ApplicationStatus, UserData, MasterTemplate, Document, TemplateType, JobLog, db
 from datetime import datetime
 from services import JobService, UserService, LogService, TemplateService
-from services.database_service import db_service, DatabaseError
+from services.database_service import DatabaseError
 from utils.latex import compile_latex, compile_latex_template
 from utils.scraper import scrape_job_details
 from utils.responses import success_response, error_response, flash_success, flash_error
-from utils.forms import populate_job_form_choices, populate_log_form_choices, validate_job_form_data, extract_form_data, sanitize_form_data
+from utils.forms import populate_job_form_choices, populate_log_form_choices, extract_form_data, sanitize_form_data
 from utils.validation import validate_job_data, ValidationError
-from routes.forms import JobForm, LogForm, QuickLogForm
+from routes.forms import JobForm, LogForm
 from markupsafe import escape
 
 jobs_bp = Blueprint('jobs', __name__)
@@ -431,7 +431,9 @@ def add_log(job_id):
 def edit_job(job_id):
     """Edit an existing job application"""
     try:
-        job = db.session.get(JobApplication, job_id)
+        service = JobService()
+        job = service.get_job_by_id(job_id)
+
         if not job:
             abort(404)
         form = JobForm()
@@ -466,23 +468,21 @@ def edit_job(job_id):
                 old_company = job.company
                 old_title = job.title
 
-                job.company = company
-                job.title = title
-                job.description = description
-                job.url = url
-                job.office_location = office_location
-                job.country = country
-                job.job_mode = job_mode
-
-                db.session.commit()
+                service.update_job(job_id=job_id, **{
+                    'company': company,
+                    'title': title,
+                    'description': description,
+                    'url': url,
+                    'office_location': office_location,
+                    'country': country,
+                    'job_mode': job_mode
+                })
 
                 # Create a log entry for the edit
-                log_entry = JobLog(
-                    job_id=job_id,
-                    note=f'Job details updated: {old_company} - {old_title} → {company} - {title}'
-                )
-                db.session.add(log_entry)
-                db.session.commit()
+                JobLog(job_id=job_id, note=f'Job details updated: {old_company} - {old_title} → {company} - {title}')
+
+                # Update the skills
+                result = service.extract_job_skills(job.id, job.description)
 
                 current_app.logger.info(f'Job application updated: {title} at {company}')
                 flash(f'Job application for {title} at {company} updated successfully!', 'success')
@@ -642,7 +642,7 @@ def extract_skills_for_job(job_id):
 
     try:
         # Process the job and store skills
-        extracted_skills = job_service.process_job_and_store_skills(job_id, job.description)
+        extracted_skills = job_service.extract_job_skills(job_id, job.description)
 
         return success_response(
             message=f'Successfully extracted {len(extracted_skills)} skills',
