@@ -31,6 +31,7 @@ except OSError:
 
 class SkillService(BaseService):
     def __init__(self):
+        super().__init__()
         # Load spaCy model
         self.nlp = NLP_MODEL
         self.skill_extractor = SKILL_EXTRACTOR
@@ -372,5 +373,29 @@ class SkillService(BaseService):
 
             return query.filter(Skill.is_blacklisted==True).all()
         except Exception as e:
-            self.logger.error(f"Error getting all skills: {str(e)}")
+            return []
+        
+    def get_uncategorized_skills(self):
+        """
+        Fetch skills that have no category and are not blacklisted.
+
+        Returns:
+            List[dict]: List of uncategorized skills.
+        """
+        try:
+            results = db.session.query(Skill).filter(
+                Skill.category_id.is_(None),
+                Skill.is_blacklisted == False
+            ).all()
+
+            uncategorized_skills = []
+            for skill in results:
+                uncategorized_skills.append({
+                    'id': skill.id,
+                    'name': skill.name
+                })
+
+            return uncategorized_skills
+        except Exception as e:
+            print(f"Error fetching uncategorized skills: {e}")
             return []
