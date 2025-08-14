@@ -176,7 +176,7 @@ class JobService(BaseService):
 
         if success:
             # extract the skills from the text
-            success, _ = self.process_job_and_store_skills(job.id, job_data['description'])
+            success, _ = self.extract_job_skills(job.id, job_data['description'])
 
         return success, job, error
     
@@ -376,7 +376,7 @@ class JobService(BaseService):
         
         return self.update_job(job_id, status=new_status)
     
-    def process_job_and_store_skills(self, job_id, job_description):
+    def extract_job_skills(self, job_id, job_description):
         """
         Extract skills from the job description and store them in the JobSkill table.
 
@@ -415,20 +415,23 @@ class JobService(BaseService):
 
         return skills
     
-    def get_job_skills_by_category(self, job_id):
-    
+    def get_job_skills_by_category(self, job_id, get_blacklisted=False):
         job = JobApplication.query.filter(JobApplication.id == job_id).first()
-        
+
         if not job:
             return {}
-        
+
         skills_by_category = defaultdict(list)
-        
+
         # Use your association proxy to get skills directly
         for skill in job.skills:  # Using your Job -> Skill association proxy
             category = skill.skill_category
 
             category_name = "Uncategorized" if not category else category.name
-            skills_by_category[category_name].append(skill.name)
-        
+
+            if get_blacklisted:
+                skills_by_category[category_name].append(skill.name)
+            elif not skill.is_blacklisted:  # Fixed condition
+                skills_by_category[category_name].append(skill.name)
+
         return dict(skills_by_category)
