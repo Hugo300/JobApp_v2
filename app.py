@@ -16,6 +16,9 @@ def create_app(config_name=None):
     app = Flask(__name__)
     app.config.from_object(config[config_name])
 
+    # Configure logging
+    config[config_name].configure_logging()
+
     # Validate configuration
     try:
         config[config_name].validate_config()
