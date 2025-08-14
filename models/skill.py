@@ -11,6 +11,8 @@ class Skill(db.Model):
 
     # Add relationships
     skill_jobs = relationship('JobSkill', backref='skills', lazy=True, cascade='all, delete-orphan')
+    skill_user = relationship('UserSkill', backref='skills', lazy=True, cascade='all, delete-orphan')
+
     skill_category = relationship('SkillCategory', backref='skills', lazy=True)
 
     def __repr__(self):
