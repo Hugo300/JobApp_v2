@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="text-center mb-4">Job App Management Dashboard</h1>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <!-- Tab Navigation -->
+            <ul class="nav nav-tabs" id="myTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="skills-tab" data-bs-toggle="tab" data-bs-target="#skills" type="button" role="tab" aria-controls="skills" aria-selected="true">Skills</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="categories-tab" data-bs-toggle="tab" data-bs-target="#categories" type="button" role="tab" aria-controls="categories" aria-selected="false">Categories</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="blacklist-tab" data-bs-toggle="tab" data-bs-target="#blacklist" type="button" role="tab" aria-controls="blacklist" aria-selected="false">Blacklist</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="uncategorized-tab" data-bs-toggle="tab" data-bs-target="#uncategorized" type="button" role="tab" aria-controls="uncategorized" aria-selected="false">Uncategorized Skills</button>
+                </li>
+            </ul>
+            <!-- Tab Content -->
+            <div class="tab-content" id="myTabContent">
+
+                <!-- Skills Tab Content -->
+                <div class="tab-pane fade show active p-3" id="skills" role="tabpanel" aria-labelledby="skills-tab">
+                    {% include 'admin/skills.html' %}
+                </div>
+
+                <!-- Categories Tab Content -->
+                <div class="tab-pane fade p-3" id="categories" role="tabpanel" aria-labelledby="categories-tab">
+                    {% include 'admin/categories.html' %}
+                </div>
+
+                <!-- Blacklist Tab Content -->
+                <div class="tab-pane fade p-3" id="blacklist" role="tabpanel" aria-labelledby="blacklist-tab">
+                    {% include 'admin/blacklist.html' %}
+                </div>
+
+                <!-- Uncategorized Skills Tab Content -->
+                <div class="tab-pane fade p-3" id="uncategorized" role="tabpanel" aria-labelledby="uncategorized-tab">
+                    {% include 'admin/uncategorized_skills.html' %}
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="category-options-template" class="d-none">
+    <select name='category_id' class='form-control'>
+        {% for category in categories %}
+        <option value='{{ category.id }}'>{{ category.name }}</option>
+        {% endfor %}
+    </select>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.edit-btn').forEach(function(button) {
+            button.addEventListener('click', function() {
+                const row = button.closest('tr');
+                row.querySelectorAll('.editable').forEach(function(cell) {
+                    const field = cell.dataset.field;
+                    const value = cell.textContent.trim();
+
+                    if (field === 'category_name') {
+                        // Use pre-rendered category options
+                        const selectTemplate = document.querySelector('#category-options-template select').cloneNode(true);
+                        selectTemplate.value = value;
+                        cell.innerHTML = '';
+                        cell.appendChild(selectTemplate);
+                    } else {
+                        cell.innerHTML = `<input type='text' name='${field}' value='${value}' class='form-control'>`;
+                    }
+                });
+
+                // Make the `is_blacklisted` column visible and editable
+                const blacklistedCell = row.querySelector('[data-field="is_blacklisted"]');
+                if (blacklistedCell) {
+                    blacklistedCell.classList.remove('d-none');
+                    const value = blacklistedCell.textContent.trim();
+                    blacklistedCell.innerHTML = `<select name='is_blacklisted' class='form-control'>
+                        <option value='False' ${value === 'False' ? 'selected' : ''}>False</option>
+                        <option value='True' ${value === 'True' ? 'selected' : ''}>True</option>
+                    </select>`;
+                }
+
+                row.querySelector('.edit-btn').classList.add('d-none');
+                row.querySelector('.save-btn').classList.remove('d-none');
+            });
+        });
+
+        document.querySelectorAll('.save-btn').forEach(function(button) {
+            button.addEventListener('click', function() {
+                const row = button.closest('tr');
+                const skillId = row.dataset.skillId;
+                const data = {};
+
+                row.querySelectorAll('input, select').forEach(function(input) {
+                    data[input.name] = input.value;
+                });
+
+                fetch(`/skills/${skillId}/edit`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify(data)
+                }).then(response => {
+                    if (response.ok) {
+                        row.querySelectorAll('.editable').forEach(function(cell) {
+                            const input = cell.querySelector('input, select');
+                            cell.textContent = input.value;
+                        });
+
+                        // Hide the `is_blacklisted` column again
+                        const blacklistedCell = row.querySelector('[data-field="is_blacklisted"]');
+                        if (blacklistedCell) {
+                            blacklistedCell.classList.add('d-none');
+                        }
+
+                        row.querySelector('.edit-btn').classList.remove('d-none');
+                        row.querySelector('.save-btn').classList.add('d-none');
+                    } else {
+                        alert('Failed to save changes.');
+                    }
+                });
+            });
+        });
+    });
+</script>
+{% endblock %}
