@@ -16,7 +16,7 @@ from .base import db
 from .enums import ApplicationStatus, TemplateType, JobMode
 
 # Import models
-from .user import UserData
+from .user import UserData, UserSkill
 from .template import MasterTemplate
 from .job import JobApplication, Document, JobLog, JobSkill
 from .skill import Skill, SkillCategory
@@ -28,6 +28,7 @@ __all__ = [
     'TemplateType',
     'JobMode',
     'UserData',
+    'UserSkill',
     'MasterTemplate',
     'JobApplication',
     'Document',

@@ -30,4 +30,4 @@ class UserSkill(db.Model):
     skill_id = db.Column(db.Integer, db.ForeignKey('skills.id'), nullable=False)
 
     def __repr__(self):
-        return f"<JobSkill(job_id={self.user_id}, skill_id={self.skill_id})>"
+        return f"<UserSkill(user_id={self.user_id}, skill_id={self.skill_id})>"
