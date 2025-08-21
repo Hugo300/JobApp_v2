@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
 from models import ApplicationStatus, JobMode
-from services import JobService, UserService
+from services import JobService
 from utils.responses import flash_success, flash_error, success_response, error_response
 from utils.forms import extract_form_data, validate_user_data_form
 from pathlib import Path
@@ -53,41 +53,6 @@ def dashboard():
                              status_filter='',
                              job_mode_filter='',
                              country_filter='')
-
-@main_bp.route('/user', methods=['GET', 'POST'])
-def user_data():
-    """User profile management"""
-    user_service = UserService()
-    user = user_service.get_user_data()
-
-    if request.method == 'POST':
-        try:
-            # Extract form data
-            form_fields = ['name', 'email', 'phone', 'linkedin', 'github']
-            data = extract_form_data(form_fields)
-
-            # Create or update user using service
-            success, result, error = user_service.create_or_update_user(
-                name=data['name'],
-                email=data['email'],
-                phone=data['phone'],
-                linkedin=data['linkedin'],
-                github=data['github']
-            )
-
-            if success:
-                flash_success('Profile updated successfully!')
-                current_app.logger.info(f'User data updated for: {data["name"]}')
-                return redirect(url_for('main.user_data'))
-            else:
-                flash_error(f'Error updating profile: {error}')
-                current_app.logger.error(f'Error updating user data: {error}')
-
-        except Exception as e:
-            current_app.logger.error(f'Unexpected error in user_data: {str(e)}')
-            flash_error('An unexpected error occurred.')
-
-    return render_template('user/user_data.html', user_data=user)
 
 
 @main_bp.route('/analytics')

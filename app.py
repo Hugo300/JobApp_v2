@@ -61,15 +61,13 @@ def create_app(config_name=None):
             g.start_time = time.time()
 
     # Register blueprints
-    from routes.main import main_bp
-    from routes.jobs import jobs_bp
-    from routes.templates import templates_bp
-    from routes.skills import skills_bp
+    from routes import main_bp, jobs_bp, templates_bp, skills_bp, user_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(jobs_bp, url_prefix='/job')
     app.register_blueprint(templates_bp, url_prefix='/templates')
     app.register_blueprint(skills_bp, url_prefix='/skills')
+    app.register_blueprint(user_bp, url_prefix='/user')
 
     # Add error handlers
     @app.errorhandler(404)
