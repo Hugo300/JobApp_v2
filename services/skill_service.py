@@ -232,10 +232,13 @@ class SkillService(BaseService):
         return False
 
 
-    def get_skill_by_id(self, skill_id):
+    def get_skill_by_id(self, skill_id: int) -> Skill | None:
         return self.get_by_id(Skill, skill_id)
     
-    def get_all_skills(self, order_by=None, include_relationships=False):
+    def get_skill_by_name(self, skill_name: str) -> Skill | None:
+        return Skill.query.filter_by(name=skill_name).first()
+    
+    def get_all_skills(self, order_by=None, include_relationships: bool=False):
         """
         Get all skills with optimized queries
 
