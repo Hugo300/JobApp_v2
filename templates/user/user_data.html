@@ -53,7 +53,12 @@
                                placeholder="https://github.com/yourusername">
                     </div>
                     
-
+                    <div class="mb-3">
+                        <label for="skills" class="form-label">Skills (comma-separated)</label>
+                        <textarea class="form-control" id="skills" name="skills" rows="4" 
+                                  placeholder="e.g., Python, JavaScript, React, SQL, Docker">{{ user_skills if user_skills else '' }}</textarea>
+                        <div class="form-text">Enter your skills separated by commas. These will be used to match against job descriptions.</div>
+                    </div>
                     
                     <div class="d-grid">
                         <button type="submit" class="btn btn-primary">
