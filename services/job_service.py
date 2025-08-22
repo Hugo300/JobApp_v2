@@ -11,7 +11,7 @@ from models import JobApplication, JobSkill, ApplicationStatus, JobMode, db, Ski
 from .base_service import BaseService
 from .skill_service import SkillService
 
-from utils.scraper import scrape_job_details
+from utils.scraper import scrape_job_data
 from utils.responses import handle_scraping_response
 from utils.forms import sanitize_input
 
@@ -337,7 +337,7 @@ class JobService(BaseService):
                 'top_countries': []
             }
     
-    def scrape_job_details(self, url):
+    def scrape_job_data(self, url):
         """
         Scrape job details from URL
         
@@ -348,13 +348,13 @@ class JobService(BaseService):
             dict: Scraped job details
         """
         try:
-            result = scrape_job_details(url)
+            result = scrape_job_data(url)
             return handle_scraping_response(result)
         except Exception as e:
-            self.logger.error(f"Error scraping job details: {str(e)}")
+            self.logger.error(str(e))
             return {
                 'success': False,
-                'error': 'Failed to scrape job details'
+                'error': f'Failed to scrape job data. More info: {str(e)}'
             }
 
     
@@ -425,7 +425,7 @@ class JobService(BaseService):
 
         # Use your association proxy to get skills directly
         for skill in job.skills:  # Using your Job -> Skill association proxy
-            category = skill.skill_category
+            category = skill.category
 
             category_name = "Uncategorized" if not category else category.name
 
