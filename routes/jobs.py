@@ -114,6 +114,7 @@ def job_detail(job_id):
         return render_template('jobs/job_detail.html',
                              job=job,
                              job_skills=job_skills,
+                             match_score=0,
                              user_data=user_data,
                              templates=templates,
                              status_options=ApplicationStatus,
