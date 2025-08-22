@@ -183,45 +183,7 @@ def validate_enum_value(value: Optional[str], enum_class: type, field_name: str,
     return ValidationResult(True, value)
 
 
-def validate_skills_string(skills: Optional[str]) -> ValidationResult:
-    """
-    Validate and clean skills string
-    
-    Args:
-        skills: Comma-separated skills string
-        
-    Returns:
-        ValidationResult: Validation result with cleaned skills string
-    """
-    if not skills or not skills.strip():
-        return ValidationResult(True, None)
-    
-    try:
-        # Split by comma and clean each skill
-        skill_list = [skill.strip() for skill in skills.split(',') if skill.strip()]
-        
-        # Remove duplicates while preserving order
-        seen = set()
-        unique_skills = []
-        for skill in skill_list:
-            skill_lower = skill.lower()
-            if skill_lower not in seen:
-                seen.add(skill_lower)
-                unique_skills.append(skill)
-        
-        # Validate individual skills
-        for skill in unique_skills:
-            if len(skill) > 100:  # Reasonable limit for individual skills
-                return ValidationResult(False, None, [f"Skill '{skill}' is too long (max 100 characters)"])
-        
-        if len(unique_skills) > 50:  # Reasonable limit for total skills
-            return ValidationResult(False, None, ["Too many skills (max 50 allowed)"])
-        
-        cleaned_skills = ', '.join(unique_skills)
-        return ValidationResult(True, cleaned_skills)
-        
-    except Exception as e:
-        return ValidationResult(False, None, [f"Error processing skills: {str(e)}"])
+
 
 
 def validate_job_data(data: Dict[str, Any]) -> Tuple[bool, Dict[str, Any], Dict[str, List[str]]]:
@@ -330,11 +292,7 @@ def validate_user_data(data: Dict[str, Any]) -> Tuple[bool, Dict[str, Any], Dict
     else:
         cleaned_data['github'] = github_result.value
     
-    skills_result = validate_skills_string(data.get('skills'))
-    if not skills_result:
-        errors['skills'] = skills_result.errors
-    else:
-        cleaned_data['skills'] = skills_result.value
+
     
     is_valid = len(errors) == 0
     return is_valid, cleaned_data, errors

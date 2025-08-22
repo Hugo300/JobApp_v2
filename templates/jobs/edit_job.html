@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/forms.html" import render_input_group %}
 
 {% block title %}Edit Job Application - {{ job.title }} at {{ job.company }} - Job Application Manager{% endblock %}
 
@@ -51,23 +52,15 @@
                         {% endif %}
                     </div>
                     
-                    <div class="mb-3">
-                        {{ form.url.label(class="form-label") }}
-                        <div class="input-group">
-                            {{ form.url(class="form-control", id="url", placeholder="https://example.com/job-posting") }}
-                            <button type="button" class="btn btn-outline-primary" id="scrapeBtn" onclick="scrapeJob()">
-                                <i class="fas fa-magic me-1"></i>Update with Python
-                            </button>
-                        </div>
-                        {% if form.url.errors %}
-                            <div class="text-danger">
-                                {% for error in form.url.errors %}
-                                    <small>{{ error }}</small>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                        <div class="form-text">Optional: Enter a job posting URL to automatically fill in details</div>
-                    </div>
+                    {{ render_input_group(
+                        form.url,
+                        "scrapeBtn",
+                        "fa-magic",
+                        "Parse data",
+                        "scrapeJob()",
+                        help_text="Optional: Enter a job posting URL to automatically fill in details",
+                        placeholder="https://example.com/job-posting"
+                    ) }}
                     
                     <div class="mb-3">
                         {{ form.description.label(class="form-label") }}
@@ -79,15 +72,6 @@
                                 {% endfor %}
                             </div>
                         {% endif %}
-                        <div class="mt-2">
-                            <button type="button" class="btn btn-outline-info btn-sm" id="extractSkillsBtn" onclick="extractSkills()">
-                                <i class="fas fa-cogs me-1"></i>Extract Skills from Description
-                            </button>
-                            <small class="text-muted ms-2">
-                                <i class="fas fa-info-circle me-1"></i>
-                                Automatically extract skills using AI
-                            </small>
-                        </div>
                     </div>
                     
                     <div class="row">
@@ -187,106 +171,6 @@
             </div>
         </div>
 
-        <!-- Extracted Skills Display -->
-        {% if extracted_skills %}
-        <div class="card mt-3">
-            <div class="card-header">
-                <div class="d-flex justify-content-between align-items-center flex-wrap">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-cogs me-2"></i>Current Skills
-                        <span class="badge bg-primary ms-2">{{ extracted_skills|length }}</span>
-                    </h5>
-                    {% if match_score is defined and match_score > 0 %}
-                        <div class="skill-match-score mt-1">
-                            <small class="badge bg-{% if match_score >= 80 %}success{% elif match_score >= 60 %}warning{% else %}secondary{% endif %}">
-                                <i class="fas fa-chart-line me-1"></i>{{ match_score }}% Match
-                            </small>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-            <div class="card-body">
-                <div class="skills-container-sidebar">
-                    {% if categorized_skills %}
-                        <!-- Technical Skills -->
-                        {% set hard_skills = categorized_skills.hard_skills %}
-                        {% if hard_skills.matched or hard_skills.unmatched %}
-                            <div class="mb-2">
-                                <small class="text-muted d-block mb-1">
-                                    <i class="fas fa-code me-1"></i>Technical ({{ (hard_skills.matched|length + hard_skills.unmatched|length) }})
-                                </small>
-                                {% for skill in hard_skills.matched %}
-                                    <span class="badge me-1 mb-1 skill-badge-sm bg-success text-white skill-matched">
-                                        <i class="fas fa-check-circle me-1"></i>{{ skill }}
-                                    </span>
-                                {% endfor %}
-                                {% for skill in hard_skills.unmatched %}
-                                    <span class="badge me-1 mb-1 skill-badge-sm bg-light text-dark border">
-                                        <i class="fas fa-code me-1"></i>{{ skill }}
-                                    </span>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-
-                        <!-- Soft Skills -->
-                        {% set soft_skills = categorized_skills.soft_skills %}
-                        {% if soft_skills.matched or soft_skills.unmatched %}
-                            <div class="mb-2">
-                                <small class="text-muted d-block mb-1">
-                                    <i class="fas fa-users me-1"></i>Soft ({{ (soft_skills.matched|length + soft_skills.unmatched|length) }})
-                                </small>
-                                {% for skill in soft_skills.matched %}
-                                    <span class="badge me-1 mb-1 skill-badge-sm bg-success text-white skill-matched">
-                                        <i class="fas fa-check-circle me-1"></i>{{ skill }}
-                                    </span>
-                                {% endfor %}
-                                {% for skill in soft_skills.unmatched %}
-                                    <span class="badge me-1 mb-1 skill-badge-sm bg-light text-dark border">
-                                        <i class="fas fa-users me-1"></i>{{ skill }}
-                                    </span>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-
-                        <!-- Other Skills -->
-                        {% set other_skills = categorized_skills.other_skills %}
-                        {% if other_skills.matched or other_skills.unmatched %}
-                            <div class="mb-2">
-                                <small class="text-muted d-block mb-1">
-                                    <i class="fas fa-tag me-1"></i>Other ({{ (other_skills.matched|length + other_skills.unmatched|length) }})
-                                </small>
-                                {% for skill in other_skills.matched %}
-                                    <span class="badge me-1 mb-1 skill-badge-sm bg-success text-white skill-matched">
-                                        <i class="fas fa-check-circle me-1"></i>{{ skill }}
-                                    </span>
-                                {% endfor %}
-                                {% for skill in other_skills.unmatched %}
-                                    <span class="badge me-1 mb-1 skill-badge-sm bg-light text-dark border">
-                                        <i class="fas fa-tag me-1"></i>{{ skill }}
-                                    </span>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    {% else %}
-                        <!-- Fallback display -->
-                        {% for skill in extracted_skills %}
-                            {% set is_matched = matched_keywords and skill.lower() in (matched_keywords | map('lower') | list) %}
-                            <span class="badge me-1 mb-2 skill-badge-sm {% if is_matched %}bg-success text-white skill-matched{% else %}bg-light text-dark border{% endif %}">
-                                <i class="fas fa-{% if is_matched %}check-circle{% else %}tag{% endif %} me-1"></i>{{ skill }}
-                            </span>
-                        {% endfor %}
-                    {% endif %}
-                </div>
-                <div class="mt-2">
-                    <small class="text-muted">
-                        <i class="fas fa-info-circle me-1"></i>
-                        Skills extracted from job description
-                    </small>
-                </div>
-            </div>
-        </div>
-        {% endif %}
-
         <div class="card mt-3">
             <div class="card-header">
                 <h5 class="card-title mb-0">Quick Actions</h5>
@@ -307,9 +191,13 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
+
+{% block scripts %}
 <script>
 function scrapeJob() {
+    const csrfToken = document.getElementById('csrf_token').value;
     const url = document.getElementById('url').value;
     if (!url) {
         showAlert('Please enter a job posting URL first', 'warning');
@@ -337,38 +225,33 @@ function scrapeJob() {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
         },
         body: JSON.stringify({url: url})
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Update form fields
-            document.getElementById('title').value = data.title || '';
-            document.getElementById('company').value = data.company || '';
-            document.getElementById('description').value = data.description || '';
+            console.log(data)
+            // Fill in the form fields
+            document.getElementById('company').value = data.data.company || '';
+            document.getElementById('title').value = data.data.title || '';
+            document.getElementById('description').value = data.data.description || '';
+            document.getElementById('office_location').value = data.data.office_location || '';
+            document.getElementById('country').value = data.data.country || '';
 
-            // Show success message
-            let message = '✅ ' + (data.message || 'Job details updated successfully!');
-            if (data.title || data.company) {
-                message += `\n\n📋 Updated: ${data.title || 'No title'} at ${data.company || 'Unknown company'}`;
+            // Show success message with details
+            let message = '✅ ' + (data.message || 'Job details scraped successfully!');
+            if (data.data.title || data.data.company) {
+                message += `\n\n📋 Found: ${data.data.title || 'No title'} at ${data.data.company || 'Unknown company'}`;
             }
-            message += '\n\n💡 A log entry has been created to track this update.';
             showAlert(message, 'success');
 
-            // Highlight updated fields
-            highlightUpdatedFields();
+            // Highlight filled fields
+            highlightFilledFields();
         } else {
             showAlert('❌ Scraping failed: ' + (data.error || 'Unknown error'), 'danger');
         }
-    })
-    .catch(error => {
-        console.error('Scraping error:', error);
-        showAlert('❌ Network error while scraping: ' + error.message, 'danger');
-    })
-    .finally(() => {
-        scrapeBtn.innerHTML = originalText;
-        scrapeBtn.disabled = false;
     });
 }
 
@@ -433,113 +316,6 @@ function confirmDeleteFromEdit() {
 
         document.body.appendChild(form);
         form.submit();
-    }
-}
-
-// Skill extraction functionality
-function extractSkills() {
-    const descriptionField = document.getElementById('description');
-    const extractBtn = document.getElementById('extractSkillsBtn');
-
-    if (!descriptionField.value.trim()) {
-        alert('Please enter a job description first.');
-        return;
-    }
-
-    // Show loading state
-    const originalText = extractBtn.innerHTML;
-    extractBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Extracting Skills...';
-    extractBtn.disabled = true;
-
-    // Make AJAX request to extract skills
-    fetch("{{ url_for('jobs.extract_skills', job_id=job.id) }}", {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
-        },
-        body: JSON.stringify({
-            description: descriptionField.value
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Show success message
-            showSkillsExtracted(data.skills);
-
-            // Show success notification
-            const notification = document.createElement('div');
-            notification.className = 'alert alert-success alert-dismissible fade show mt-2';
-            notification.innerHTML = `
-                <i class="fas fa-check-circle me-1"></i>
-                Successfully extracted ${data.skills.length} skills from the job description!
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
-            extractBtn.parentNode.appendChild(notification);
-
-            // Auto-dismiss after 5 seconds
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.remove();
-                }
-            }, 5000);
-        } else {
-            alert('Error extracting skills: ' + (data.error || 'Unknown error'));
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Failed to extract skills. Please try again.');
-    })
-    .finally(() => {
-        // Restore button state
-        extractBtn.innerHTML = originalText;
-        extractBtn.disabled = false;
-    });
-}
-
-function showSkillsExtracted(skills) {
-    // Remove existing skills display if any
-    const existingSkillsDiv = document.getElementById('extractedSkillsDisplay');
-    if (existingSkillsDiv) {
-        existingSkillsDiv.remove();
-    }
-
-    if (skills && skills.length > 0) {
-        // Create skills display
-        const skillsDiv = document.createElement('div');
-        skillsDiv.id = 'extractedSkillsDisplay';
-        skillsDiv.className = 'mt-3 p-3 bg-light border rounded';
-
-        let skillsHtml = `
-            <h6 class="mb-2">
-                <i class="fas fa-cogs me-1"></i>Extracted Skills (${skills.length})
-            </h6>
-            <div class="skills-container">
-        `;
-
-        skills.forEach(skill => {
-            skillsHtml += `
-                <span class="badge bg-light text-dark border me-2 mb-2 skill-badge">
-                    <i class="fas fa-tag me-1"></i>${skill}
-                </span>
-            `;
-        });
-
-        skillsHtml += `
-            </div>
-            <small class="text-muted">
-                <i class="fas fa-info-circle me-1"></i>
-                These skills have been automatically extracted and saved. They will appear on the job detail page.
-            </small>
-        `;
-
-        skillsDiv.innerHTML = skillsHtml;
-
-        // Insert after the extract skills button
-        const extractBtn = document.getElementById('extractSkillsBtn');
-        extractBtn.parentNode.parentNode.appendChild(skillsDiv);
     }
 }
 </script>

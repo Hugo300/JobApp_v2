@@ -129,11 +129,13 @@ function deleteTemplate(templateId, templateName) {
 }
 
 document.getElementById('confirmDelete').addEventListener('click', function() {
+    const csrfToken = document.getElementById('csrf_token').value;
     if (templateToDelete) {
         fetch(`/templates/${templateToDelete}/delete`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
             }
         })
         .then(response => response.json())

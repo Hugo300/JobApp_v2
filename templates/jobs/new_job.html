@@ -27,6 +27,8 @@
 
                     {{ render_input_group(
                         form.url,
+                        "scrapeBtn",
+                        "fa-magic",
                         "Auto-Fill",
                         "scrapeJob()",
                         help_text="Optional: Enter a job posting URL to automatically fill in details",
@@ -128,6 +130,7 @@
 {% block scripts %}
 <script>
 function scrapeJob() {
+    const csrfToken = document.getElementById('csrf_token').value;
     const url = document.getElementById('url').value;
     if (!url) {
         showAlert('Please enter a job posting URL first', 'warning');
@@ -150,11 +153,13 @@ function scrapeJob() {
 
     // Show progress message
     showAlert('🐍 Using Python scraper to extract job details...', 'info');
+    console.log(url)
 
     fetch(`/job/scrape`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
         },
         body: JSON.stringify({url: url})
     })
@@ -162,14 +167,16 @@ function scrapeJob() {
     .then(data => {
         if (data.success) {
             // Fill in the form fields
-            document.getElementById('company').value = data.company || '';
-            document.getElementById('title').value = data.title || '';
-            document.getElementById('description').value = data.description || '';
+            document.getElementById('company').value = data.data.company || '';
+            document.getElementById('title').value = data.data.title || '';
+            document.getElementById('description').value = data.data.description || '';
+            document.getElementById('office_location').value = data.data.office_location || '';
+            document.getElementById('country').value = data.data.country || '';
 
             // Show success message with details
             let message = '✅ ' + (data.message || 'Job details scraped successfully!');
-            if (data.title || data.company) {
-                message += `\n\n📋 Found: ${data.title || 'No title'} at ${data.company || 'Unknown company'}`;
+            if (data.data.title || data.data.company) {
+                message += `\n\n📋 Found: ${data.data.title || 'No title'} at ${data.data.company || 'Unknown company'}`;
             }
             showAlert(message, 'success');
 
@@ -228,5 +235,6 @@ function highlightFilledFields() {
         }
     });
 }
+
 </script>
 {% endblock %}

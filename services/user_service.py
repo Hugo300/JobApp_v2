@@ -1,13 +1,22 @@
 """
 User service for handling user data business logic
 """
-from models import UserData
+from collections import defaultdict
+from typing import List
+from models import UserData, UserSkill, Skill, db
+
+from .skill_service import SkillService
 from .base_service import BaseService
+
 from utils.forms import validate_user_data_form
 
 
 class UserService(BaseService):
     """Service for user data operations"""
+
+    def __init__(self):
+        super().__init__()
+        self.skill_service = SkillService()
     
     def get_user_data(self):
         """Get the first (and typically only) user data record"""
@@ -17,19 +26,18 @@ class UserService(BaseService):
             self.logger.error(f"Error getting user data: {str(e)}")
             return None
     
-    def create_or_update_user(self, name, email, phone=None, linkedin=None, 
-                             github=None, skills=None):
+    def create_or_update_user(self, name, email, phone=None, linkedin=None,
+                             github=None, skills=[]):
         """
         Create or update user data
-        
+
         Args:
             name: User name
             email: User email
             phone: User phone (optional)
             linkedin: LinkedIn URL (optional)
             github: GitHub URL (optional)
-            skills: Skills string (optional)
-            
+
         Returns:
             tuple: (success: bool, user: UserData, error: str)
         """
@@ -40,7 +48,7 @@ class UserService(BaseService):
             'phone': phone or '',
             'linkedin': linkedin or '',
             'github': github or '',
-            'skills': skills or ''
+            'skills': skills or '',
         }
         
         is_valid, errors = validate_user_data_form(data)
@@ -53,36 +61,15 @@ class UserService(BaseService):
         
         if user:
             # Update existing user
+            skills = list((" ".join(skills.split())).split(','))
+            self.update_user_skills(user_id=user.id, skills=skills)
+
             return self.update(user, **data)
         else:
             # Create new user
             return self.create(UserData, **data)
     
-    def update_user_skills(self, skills):
-        """
-        Update user skills
-        
-        Args:
-            skills: Skills string
-            
-        Returns:
-            tuple: (success: bool, user: UserData, error: str)
-        """
-        user = self.get_user_data()
-        if not user:
-            return False, None, "User not found"
-        
-        return self.update(user, skills=skills)
-    
-    def get_user_skills(self):
-        """
-        Get user skills as a string
-        
-        Returns:
-            str: User skills or empty string
-        """
-        user = self.get_user_data()
-        return user.skills if user and user.skills else ""
+
     
     def validate_user_data(self, data):
         """
@@ -111,13 +98,8 @@ class UserService(BaseService):
                 'phone': 'Not Set',
                 'linkedin': None,
                 'github': None,
-                'skills_count': 0,
                 'has_profile': False
             }
-        
-        skills_count = 0
-        if user.skills:
-            skills_count = len([skill.strip() for skill in user.skills.split(',') if skill.strip()])
         
         return {
             'name': user.name or 'Not Set',
@@ -125,7 +107,6 @@ class UserService(BaseService):
             'phone': user.phone or 'Not Set',
             'linkedin': user.linkedin if user.linkedin else None,
             'github': user.github if user.github else None,
-            'skills_count': skills_count,
             'has_profile': bool(user.name and user.email)
         }
     
@@ -146,7 +127,6 @@ class UserService(BaseService):
             'phone': user.phone,
             'linkedin': user.linkedin,
             'github': user.github,
-            'skills': user.skills
         }
     
     def import_user_data(self, data):
@@ -170,5 +150,78 @@ class UserService(BaseService):
             phone=data.get('phone'),
             linkedin=data.get('linkedin'),
             github=data.get('github'),
-            skills=data.get('skills')
+
         )
+
+
+    def update_user_skills(self, user_id: int, skills: List[str]):
+        """
+        Extract skills from the job description and store them in the JobSkill table.
+
+        :param job_id: ID of the job
+        :param job_description: Description of the job
+        """
+
+        # determine If all user skills exist in the database
+        user_skills = []
+        for skill_name in skills:
+            name = " ".join([word[0].upper() + word[1:] for word in skill_name.split(" ")])
+            skill = self.skill_service.get_skill_by_name(name)
+
+            # if skill does not exist then add it to the db
+            if not skill:
+                _, skill, _ = self.skill_service.create_skill(name=skill_name)
+
+            user_skills.append(skill)
+
+        # Fetch skills from the db
+        #db_user_skills = db.session.execute(db.select(UserSkill).where(UserSkill.user_id == user_id)).all()
+        db_user_skills = UserSkill.query.filter_by(user_id=user_id).all()
+
+        list_ids = [skill.id for skill in user_skills]
+        # remove skills not longer in user list
+        for db_user_skill in db_user_skills:
+            if db_user_skill.skill_id not in [skill.id for skill in user_skills]:
+                self.delete(db_user_skill)
+        
+        # add new skills
+        for user_skill in user_skills:
+            print(user_skill)
+            print(type(user_skill))
+            if user_skill not in db_user_skills:
+                self.create(UserSkill, **{
+                    'user_id': user_id,
+                    'skill_id': user_skill.id
+                })
+
+        return True, user_skills
+
+    def get_user_skills(self, user_id):
+        query = UserData.query
+
+        user = query.filter(UserData.id == user_id).first()
+
+        skills = list(user.skills)
+
+        return skills
+    
+    def get_user_skills_by_category(self, user_id, get_blacklisted=False):
+        user = UserData.query.filter(UserData.id == user_id).first()
+
+        if not user:
+            return {}
+
+        skills_by_category = defaultdict(list)
+
+        # Use your association proxy to get skills directly
+        for skill in user.skills:  # Using your Job -> Skill association proxy
+            category = skill.skill_category
+
+            category_name = "Uncategorized" if not category else category.name
+
+            if get_blacklisted:
+                skills_by_category[category_name].append(skill.name)
+            elif not skill.is_blacklisted:  # Fixed condition
+                skills_by_category[category_name].append(skill.name)
+
+        return dict(skills_by_category)

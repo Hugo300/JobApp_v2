@@ -36,8 +36,7 @@ class TestMainRoutes:
                 'email': 'test@example.com',
                 'phone': '123-456-7890',
                 'linkedin': 'https://linkedin.com/in/test',
-                'github': 'https://github.com/test',
-                'skills': 'Python, Flask'
+                'github': 'https://github.com/test'
             }, follow_redirects=True)
             assert response.status_code == 200
             assert b'updated successfully' in response.data
@@ -131,3 +130,16 @@ class TestJobRoutes:
             # Check status was updated
             updated_job = db.session.get(JobApplication, sample_job.id)
             assert updated_job.status == ApplicationStatus.APPLIED.value
+
+
+class TestCategoryRoutes:
+    """Test category routes"""
+    
+    def test_category_delete(self, client):
+        """Test category delete route"""
+        # Assuming category with ID 1 exists for testing
+        category_id = 1
+        response = client.post(url_for('skills.category_delete', category_id=category_id))
+
+        assert response.status_code == 302  # Redirect status
+        # Additional assertions can be added to verify deletion

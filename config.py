@@ -1,6 +1,8 @@
 import os
 import secrets
 from datetime import timedelta
+import logging
+from logging.handlers import RotatingFileHandler
 
 class Config:
     """Base configuration class"""
@@ -32,6 +34,25 @@ class Config:
 
     # Security settings
     SEND_FILE_MAX_AGE_DEFAULT = timedelta(hours=1)
+
+    # Logging configuration
+    LOG_FOLDER = os.path.join(os.getcwd(), 'logs')
+    if not os.path.exists(LOG_FOLDER):
+        os.makedirs(LOG_FOLDER)
+
+    LOG_FILE = os.path.join(LOG_FOLDER, 'app.log')
+    LOG_LEVEL = logging.INFO
+
+    @staticmethod
+    def configure_logging():
+        handler = RotatingFileHandler(Config.LOG_FILE, maxBytes=10240, backupCount=5, delay=True)
+        handler.setLevel(Config.LOG_LEVEL)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+
+        app_logger = logging.getLogger()
+        app_logger.setLevel(Config.LOG_LEVEL)
+        app_logger.addHandler(handler)
 
     @staticmethod
     def validate_config():

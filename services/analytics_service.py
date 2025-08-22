@@ -23,7 +23,6 @@ class AnalyticsService(BaseService):
                 'overview_stats': self.get_overview_statistics(),
                 'status_analytics': self.get_status_analytics(),
                 'timeline_data': self.get_timeline_analytics(),
-                'skill_analytics': self.get_skill_analytics(),
                 'company_analytics': self.get_company_analytics(),
                 'location_analytics': self.get_location_analytics(),
                 'performance_metrics': self.get_performance_metrics(),
@@ -142,37 +141,7 @@ class AnalyticsService(BaseService):
             self.logger.error(f'Error getting timeline analytics: {str(e)}')
             return {'weekly_applications': [], 'monthly_applications': [], 'peak_application_days': []}
     
-    def get_skill_analytics(self) -> Dict[str, Any]:
-        """Get skill-related analytics"""
-        try:
-            # Most common skills across all jobs
-            skill_frequency = {}
-            jobs_with_skills = JobApplication.query.filter(
-                JobApplication.extracted_skills.isnot(None),
-                JobApplication.extracted_skills != '[]'
-            ).all()
-            
-            for job in jobs_with_skills:
-                skills = job.get_extracted_skills()
-                for skill in skills:
-                    skill_frequency[skill] = skill_frequency.get(skill, 0) + 1
-            
-            # Top skills
-            top_skills = sorted(skill_frequency.items(), key=lambda x: x[1], reverse=True)[:20]
-            
-            # Skills by job status
-            skills_by_status = self._get_skills_by_status()
-            
-            return {
-                'total_unique_skills': len(skill_frequency),
-                'top_skills': [{'skill': skill, 'count': count} for skill, count in top_skills],
-                'skills_by_status': skills_by_status,
-                'skill_coverage': len(jobs_with_skills) / JobApplication.query.count() * 100 if JobApplication.query.count() > 0 else 0
-            }
-            
-        except Exception as e:
-            self.logger.error(f'Error getting skill analytics: {str(e)}')
-            return {'total_unique_skills': 0, 'top_skills': [], 'skills_by_status': {}, 'skill_coverage': 0}
+
     
     def get_company_analytics(self) -> Dict[str, Any]:
         """Get company-related analytics"""
@@ -302,7 +271,6 @@ class AnalyticsService(BaseService):
                 'month_over_month_change': round(month_over_month, 1),
                 'current_month_applications': current_month_jobs,
                 'previous_month_applications': previous_month_jobs,
-                'trending_skills': self._get_trending_skills(),
                 'trending_companies': self._get_trending_companies()
             }
             
@@ -312,7 +280,7 @@ class AnalyticsService(BaseService):
                 'month_over_month_change': 0,
                 'current_month_applications': 0,
                 'previous_month_applications': 0,
-                'trending_skills': [],
+
                 'trending_companies': []
             }
     
@@ -391,14 +359,7 @@ class AnalyticsService(BaseService):
             self.logger.error(f'Error getting peak application days: {str(e)}')
             return []
     
-    def _get_skills_by_status(self) -> Dict[str, List[str]]:
-        """Get top skills by job status"""
-        # Simplified implementation
-        return {
-            'offer': ['Python', 'React', 'AWS', 'Docker', 'Kubernetes'],
-            'interview': ['JavaScript', 'Node.js', 'PostgreSQL', 'Git', 'Agile'],
-            'applied': ['Java', 'Spring', 'MySQL', 'REST API', 'Microservices']
-        }
+
     
     def _calculate_company_success_rates(self) -> List[Dict[str, Any]]:
         """Calculate success rates by company"""
@@ -414,13 +375,7 @@ class AnalyticsService(BaseService):
         # Simplified implementation - would need status change tracking
         return 3.2
     
-    def _get_trending_skills(self) -> List[Dict[str, Any]]:
-        """Get trending skills (increasing in frequency)"""
-        return [
-            {'skill': 'React', 'trend': 15.2},
-            {'skill': 'Docker', 'trend': 12.8},
-            {'skill': 'Kubernetes', 'trend': 8.5}
-        ]
+
     
     def _get_trending_companies(self) -> List[Dict[str, Any]]:
         """Get trending companies (increasing applications)"""
@@ -436,9 +391,9 @@ class AnalyticsService(BaseService):
             'overview_stats': {'total_jobs': 0, 'recent_jobs': 0, 'success_rate': 0, 'status_distribution': {}, 'active_applications': 0},
             'status_analytics': {'status_timeline': [], 'status_durations': {}, 'conversion_rates': {}},
             'timeline_data': {'weekly_applications': [], 'monthly_applications': [], 'peak_application_days': []},
-            'skill_analytics': {'total_unique_skills': 0, 'top_skills': [], 'skills_by_status': {}, 'skill_coverage': 0},
+
             'company_analytics': {'top_companies': [], 'company_success_rates': [], 'total_companies': 0},
             'location_analytics': {'country_distribution': [], 'job_mode_distribution': {}, 'remote_percentage': 0},
             'performance_metrics': {'interview_rate': 0, 'offer_rate': 0, 'response_rate': 0, 'average_application_time': 0},
-            'trends': {'month_over_month_change': 0, 'current_month_applications': 0, 'previous_month_applications': 0, 'trending_skills': [], 'trending_companies': []}
+            'trends': {'month_over_month_change': 0, 'current_month_applications': 0, 'previous_month_applications': 0, 'trending_companies': []}
         }

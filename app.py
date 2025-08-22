@@ -1,12 +1,12 @@
 import os
 import logging
+import time
 from logging.handlers import RotatingFileHandler
 from flask import Flask, request, g, render_template
-from flask_bootstrap import Bootstrap
 from flask_wtf.csrf import CSRFProtect
 
-from config import config, Config
-from models import db, UserData, MasterTemplate, JobApplication, Document, JobLog, ApplicationStatus, TemplateType, JobMode, SkillBlacklist
+from config import config
+from models import db
 
 def create_app(config_name=None):
     """Application factory pattern"""
@@ -16,13 +16,15 @@ def create_app(config_name=None):
     app = Flask(__name__)
     app.config.from_object(config[config_name])
 
+    # Configure logging
+    config[config_name].configure_logging()
+
     # Validate configuration
     try:
         config[config_name].validate_config()
     except (ValueError, AttributeError) as e:
         app.logger.warning(f"Configuration validation warning: {e}")
 
-    bootstrap = Bootstrap(app)
     csrf = CSRFProtect(app)
 
     db.init_app(app)
@@ -56,18 +58,17 @@ def create_app(config_name=None):
         if not app.debug:
             app.logger.info(f"Request: {request.method} {request.url} from {request.remote_addr}")
             # Store request start time for performance monitoring
-            g.start_time = logging.time.time() if hasattr(logging, 'time') else None
+            g.start_time = time.time()
 
     # Register blueprints
-    from routes.main import main_bp
-    from routes.jobs import jobs_bp
-    from routes.templates import templates_bp
-    from routes.skills import skills_bp
+    from routes import main_bp, jobs_bp, templates_bp, skills_bp, skill_new_bp, user_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(jobs_bp, url_prefix='/job')
     app.register_blueprint(templates_bp, url_prefix='/templates')
     app.register_blueprint(skills_bp, url_prefix='/skills')
+    app.register_blueprint(skill_new_bp, url_prefix='/admin/skills')
+    app.register_blueprint(user_bp, url_prefix='/user')
 
     # Add error handlers
     @app.errorhandler(404)
@@ -105,13 +106,7 @@ def create_app(config_name=None):
     with app.app_context():
         db.create_all()
 
-        # Initialize skill extraction services for better performance
-        from services import initialize_skill_services
-        app.logger.info('Initializing skill extraction services...')
-        if initialize_skill_services():
-            app.logger.info('Skill extraction services initialized successfully')
-        else:
-            app.logger.warning('Skill extraction services initialization failed - will initialize on first use')
+
 
     return app
 

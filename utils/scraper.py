@@ -1,267 +1,102 @@
+import os
 import requests
 from bs4 import BeautifulSoup
 import re
+import html2text 
 from urllib.parse import urlparse
 import time
-import json
+
+from flask import current_app
 
 # Optional selenium imports for advanced scraping
 try:
     from selenium import webdriver
+    from selenium.webdriver.chrome.service import Service
     from selenium.webdriver.chrome.options import Options
     from selenium.webdriver.common.by import By
     from selenium.webdriver.support.ui import WebDriverWait
     from selenium.webdriver.support import expected_conditions as EC
-    from selenium.common.exceptions import TimeoutException, WebDriverException
+
+    from webdriver_manager.chrome import ChromeDriverManager
+    from webdriver_manager.core.os_manager import ChromeType
     SELENIUM_AVAILABLE = True
 except ImportError:
     SELENIUM_AVAILABLE = False
 
-def get_site_specific_headers(url):
-    """Get headers optimized for specific job sites"""
-    domain = urlparse(url).netloc.lower()
 
-    base_headers = {
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.5',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'DNT': '1',
-        'Connection': 'keep-alive',
-        'Upgrade-Insecure-Requests': '1',
-    }
+def brave_options():
+    brave_options = Options()
+    brave_options.add_argument("--headless")  # Run in headless mode
+    brave_options.add_argument("--disable-gpu")
+    brave_options.add_argument("--no-sandbox")  # Required for running in certain environments
+    brave_options.add_argument("--disable-dev-shm-usage")
+    # We use a user-agent to mimic a real browser and avoid easy detection.
+    brave_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+    brave_options.binary_location = os.environ.get('BRAVE_BIN') or "C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe"
 
-    if 'linkedin.com' in domain:
-        base_headers.update({
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Sec-Fetch-Dest': 'document',
-            'Sec-Fetch-Mode': 'navigate',
-            'Sec-Fetch-Site': 'none',
-            'Cache-Control': 'max-age=0',
-        })
-    elif 'indeed.com' in domain:
-        base_headers.update({
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        })
-    elif 'glassdoor.com' in domain:
-        base_headers.update({
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        })
-    else:
-        base_headers.update({
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        })
+    return brave_options
 
-    return base_headers
-
-def scrape_linkedin_job(soup, url):
+def scrape_linkedin_job(page_html):
     """Specific scraper for LinkedIn job posts"""
-    title = None
-    company = None
-    description = None
 
-    # LinkedIn title selectors
-    title_selectors = [
-        'h1.top-card-layout__title',
-        'h1[data-test-id="job-title"]',
-        '.job-details-jobs-unified-top-card__job-title h1',
-        '.jobs-unified-top-card__job-title h1',
-        'h1.t-24'
-    ]
+    # Parse the content with BeautifulSoup
+    soup = BeautifulSoup(page_html, 'html.parser')
 
-    for selector in title_selectors:
-        elem = soup.select_one(selector)
-        if elem:
-            title = elem.get_text().strip()
-            break
+    parsed_data = {}
 
-    # LinkedIn company selectors
-    company_selectors = [
-        '.job-details-jobs-unified-top-card__company-name a',
-        '.jobs-unified-top-card__company-name a',
-        '.job-details-jobs-unified-top-card__company-name',
-        '.jobs-unified-top-card__company-name',
-        'a[data-test-id="job-poster-name"]'
-    ]
+    # Extract the job title using its CSS selector.
+    title_elem = soup.select_one(".top-card-layout__title")
+    parsed_data['title'] = title_elem.get_text(strip=True) if title_elem else "Title Not Found"
 
-    for selector in company_selectors:
-        elem = soup.select_one(selector)
-        if elem:
-            company = elem.get_text().strip()
-            break
+    # Extract the company name.
+    topcard_elems = soup.select(".topcard__flavor")
+    parsed_data['company'] = topcard_elems[0].get_text(strip=True) if topcard_elems else "Company Not Found"
 
-    # LinkedIn description selectors
-    description_selectors = [
-        '.job-details-jobs-unified-top-card__job-description',
-        '.jobs-description__content',
-        '.jobs-box__html-content',
-        '.job-details-module',
-        '[data-test-id="job-description"]'
-    ]
+    # Extract the job location.
+    # Using soup.select to find all elements with the class "topcard__flavor"
+    # The location is typically the second element in the list.
+    location = topcard_elems[1].get_text(strip=True) if len(topcard_elems) > 1 else "Location Not Found"
+    location_list = location.split(', ')
 
-    for selector in description_selectors:
-        elem = soup.select_one(selector)
-        if elem:
-            description = elem.get_text().strip()
-            break
+    parsed_data['office_location'] = location_list[0]
+    parsed_data['country'] = location_list[1] if len(location_list) > 1 else ''
 
-    return title, company, description
+    # Description criteria, extracting info like seniority, contract type, etc.
+    description_criteria_elems = soup.select(".description__job-criteria-item")
 
-def scrape_indeed_job(soup, url):
-    """Specific scraper for Indeed job posts"""
-    title = None
-    company = None
-    description = None
+    for elem in description_criteria_elems:
+        key = elem.select_one(".description__job-criteria-subheader").get_text(strip=True).lower().strip().replace(' ', '_')
+        value= elem.select_one(".description__job-criteria-text").get_text(strip=True)
+        parsed_data[key] = value
 
-    # Indeed title selectors
-    title_selectors = [
-        'h1[data-testid="jobsearch-JobInfoHeader-title"]',
-        'h1.jobsearch-JobInfoHeader-title',
-        '.jobsearch-JobInfoHeader-title span',
-        'h1.it-jd-title'
-    ]
 
-    for selector in title_selectors:
-        elem = soup.select_one(selector)
-        if elem:
-            title = elem.get_text().strip()
-            break
+    # Your selected code for the job description goes here
+    description_elem = soup.select_one(".description__text.description__text--rich")
+    if description_elem:
+        description_markdown = convert_html_to_markdown(str(description_elem))
 
-    # Indeed company selectors
-    company_selectors = [
-        '[data-testid="inlineHeader-companyName"] a',
-        '[data-testid="inlineHeader-companyName"]',
-        '.jobsearch-InlineCompanyRating a',
-        '.jobsearch-CompanyInfoContainer a'
-    ]
+        # Clean up excessive newlines
+        parsed_data['description'] = cleanup_markdown_newlines(description_markdown)
 
-    for selector in company_selectors:
-        elem = soup.select_one(selector)
-        if elem:
-            company = elem.get_text().strip()
-            break
+        print("Extracted Job Description:")
+    else:
+        parsed_data['description'] = ''
+        print("Job description element not found.")
 
-    # Indeed description selectors
-    description_selectors = [
-        '#jobDescriptionText',
-        '.jobsearch-jobDescriptionText',
-        '[data-testid="job-description"]',
-        '.jobsearch-JobComponent-description'
-    ]
+    return parsed_data
 
-    for selector in description_selectors:
-        elem = soup.select_one(selector)
-        if elem:
-            description = elem.get_text().strip()
-            break
 
-    return title, company, description
-
-def scrape_generic_job(soup, url):
-    """Generic scraper for job sites not specifically supported"""
-    title = None
-    company = None
-    description = None
-
-    # Generic title selectors
-    title_selectors = [
-        'h1',
-        '.job-title',
-        '.title',
-        '[data-testid="job-title"]',
-        '.job-header h1',
-        '.job-details h1',
-        '.position-title',
-        '.job-name'
-    ]
-
-    for selector in title_selectors:
-        elem = soup.select_one(selector)
-        if elem:
-            title = elem.get_text().strip()
-            break
-
-    # Generic company selectors
-    company_selectors = [
-        '.company-name',
-        '.employer',
-        '.organization',
-        '[data-testid="company-name"]',
-        '.job-header .company',
-        '.job-details .company',
-        '.employer-name',
-        '.company'
-    ]
-
-    for selector in company_selectors:
-        elem = soup.select_one(selector)
-        if elem:
-            company = elem.get_text().strip()
-            break
-
-    # If company not found, try to extract from URL
-    if not company:
-        parsed_url = urlparse(url)
-        domain = parsed_url.netloc
-        if domain:
-            company = domain.replace('www.', '').split('.')[0].title()
-
-    # Generic description selectors
-    description_selectors = [
-        '.job-description',
-        '.description',
-        '.job-details',
-        '[data-testid="job-description"]',
-        '.job-content',
-        '.job-body',
-        '.job-summary',
-        '.position-description'
-    ]
-
-    for selector in description_selectors:
-        elem = soup.select_one(selector)
-        if elem:
-            description = elem.get_text().strip()
-            break
-
-    # If no specific description found, try to get all text content
-    if not description:
-        # Remove script and style elements
-        for script in soup(["script", "style", "nav", "header", "footer"]):
-            script.decompose()
-
-        # Get text content
-        text = soup.get_text()
-        # Clean up whitespace
-        lines = (line.strip() for line in text.splitlines())
-        chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
-        description = ' '.join(chunk for chunk in chunks if chunk)
-
-    return title, company, description
-
-def clean_text(text):
-    """Clean and normalize extracted text"""
-    if not text:
-        return None
-
-    # Remove extra whitespace
-    text = re.sub(r'\s+', ' ', text).strip()
-
-    # Remove common unwanted patterns
-    text = re.sub(r'^\s*[-•]\s*', '', text)  # Remove leading bullets
-    text = re.sub(r'\s*\|\s*', ' | ', text)  # Normalize separators
-
-    # Remove very long sequences of the same character
-    text = re.sub(r'(.)\1{10,}', r'\1\1\1', text)
-
-    return text
-
-def scrape_job_details(url):
+def scrape_job_data(url: str) -> dict[str, str]:
     """
     Scrape job details from a given URL with site-specific optimizations.
     Returns (title, company, description) tuple.
     """
-    headers = get_site_specific_headers(url)
     domain = urlparse(url).netloc.lower()
+
+    if domain == 'www.linkedin.com':
+        if 'jobs/collections' in url: # convert the collections job page for the view page allowing sellenium to actually get information 
+            job_id = url.split('=')[-1]
+            url = f'http://{domain}/jobs/view/{job_id}'
 
     try:
         # Add delay to avoid rate limiting
@@ -271,46 +106,40 @@ def scrape_job_details(url):
         max_retries = 3
         for attempt in range(max_retries):
             try:
-                response = requests.get(url, headers=headers, timeout=15, allow_redirects=True)
-                response.raise_for_status()
+                # Initialize the WebDriver. The ChromeDriverManager will download the correct
+                # ChromeDriver for Brave based on its version.
+                service = Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install())
+                # Instantiate a Chrome driver, but with Brave-specific options
+                driver = webdriver.Chrome(service=service, options=brave_options())
+                
+                # Navigate to the URL
+                driver.get(url)
+
+                if "expired_jd_redirect" in driver.current_url:
+                    current_app.logger.warning("The job posting has expired or been redirected.")
+                    raise Exception("Job no longer available")
+
+                # Wait for the main content to load. This is crucial for dynamic websites.
+                # We wait for the job title element to be present on the page.
+                WebDriverWait(driver, 20).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, ".top-card-layout__title"))
+                )
+
+                # Get the full page source after all JavaScript has been executed.
+                page_source = driver.page_source
                 break
             except requests.RequestException as e:
                 if attempt == max_retries - 1:
                     raise e
                 time.sleep(2 ** attempt)  # Exponential backoff
 
-        # Parse HTML
-        soup = BeautifulSoup(response.content, 'html.parser')
-
         # Try site-specific scrapers first
-        title, company, description = None, None, None
+        job_data = {}
 
         if 'linkedin.com' in domain:
-            title, company, description = scrape_linkedin_job(soup, url)
-        elif 'indeed.com' in domain:
-            title, company, description = scrape_indeed_job(soup, url)
-        elif 'glassdoor.com' in domain:
-            title, company, description = scrape_glassdoor_job(soup, url)
+            job_data = scrape_linkedin_job(page_source)
 
-        # Fallback to generic scraping if site-specific failed
-        if not title or not company or not description:
-            generic_title, generic_company, generic_description = scrape_generic_job(soup, url)
-            title = title or generic_title
-            company = company or generic_company
-            description = description or generic_description
-
-        # Clean up extracted data
-        if title:
-            title = clean_text(title)
-        if company:
-            company = clean_text(company)
-        if description:
-            description = clean_text(description)
-            # Limit description length
-            if len(description) > 3000:
-                description = description[:3000] + "..."
-
-        return title, company, description
+        return job_data
 
     except requests.RequestException as e:
         if "403" in str(e) or "Forbidden" in str(e):
@@ -324,52 +153,38 @@ def scrape_job_details(url):
     except Exception as e:
         raise Exception(f"Error scraping job details: {str(e)}")
 
-def scrape_glassdoor_job(soup, url):
-    """Specific scraper for Glassdoor job posts"""
-    title = None
-    company = None
-    description = None
+def convert_html_to_markdown(html_content):
+    """
+    Converts a string of HTML content into Markdown format.
+    
+    Args:
+        html_content (str): The HTML string to be converted.
 
-    # Glassdoor title selectors
-    title_selectors = [
-        '[data-test="job-title"]',
-        '.jobTitle',
-        'h1[data-test="job-title"]',
-        '.job-title'
-    ]
+    Returns:
+        str: The converted Markdown string.
+    """
+    # Create an html2text converter instance.
+    # We can customize it to ignore images, links, or specific tags if needed.
+    converter = html2text.HTML2Text()
+    converter.ignore_links = False
+    converter.ignore_images = True
+    converter.body_width=0
+    
+    # Convert the HTML to Markdown
+    markdown_text = converter.handle(html_content)
+    return markdown_text
 
-    for selector in title_selectors:
-        elem = soup.select_one(selector)
-        if elem:
-            title = elem.get_text().strip()
-            break
+def cleanup_markdown_newlines(markdown_text):
+    """
+    Removes excessive empty lines from a Markdown string.
+    
+    Args:
+        markdown_text (str): The Markdown string to be cleaned.
 
-    # Glassdoor company selectors
-    company_selectors = [
-        '[data-test="employer-name"]',
-        '.employerName',
-        'a[data-test="employer-name"]',
-        '.employer-name'
-    ]
-
-    for selector in company_selectors:
-        elem = soup.select_one(selector)
-        if elem:
-            company = elem.get_text().strip()
-            break
-
-    # Glassdoor description selectors
-    description_selectors = [
-        '[data-test="job-description"]',
-        '.jobDescription',
-        '.job-description-content',
-        '.desc'
-    ]
-
-    for selector in description_selectors:
-        elem = soup.select_one(selector)
-        if elem:
-            description = elem.get_text().strip()
-            break
-
-    return title, company, description
+    Returns:
+        str: The cleaned Markdown string with single empty lines between blocks.
+    """
+    # Use a regex to replace 3 or more consecutive newlines with 2 newlines.
+    # This leaves a single blank line between paragraphs.
+    cleaned_text = re.sub(r'\n\s*\n\s*\n+', '\n\n', markdown_text)
+    return cleaned_text.strip()

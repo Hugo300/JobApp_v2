@@ -6,7 +6,7 @@
 <div class="row">
     <div class="col-12">
         <h1><i class="fas fa-user me-2"></i>User Profile</h1>
-        <p class="text-muted">Manage your personal information and skills for job applications.</p>
+        <p class="text-muted">Manage your personal information for job applications.</p>
     </div>
 </div>
 
@@ -56,7 +56,7 @@
                     <div class="mb-3">
                         <label for="skills" class="form-label">Skills (comma-separated)</label>
                         <textarea class="form-control" id="skills" name="skills" rows="4" 
-                                  placeholder="e.g., Python, JavaScript, React, SQL, Docker">{{ user_data.skills if user_data else '' }}</textarea>
+                                  placeholder="e.g., Python, JavaScript, React, SQL, Docker">{{ user_skills if user_skills else '' }}</textarea>
                         <div class="form-text">Enter your skills separated by commas. These will be used to match against job descriptions.</div>
                     </div>
                     
@@ -79,19 +79,19 @@
                 <ul class="list-unstyled">
                     <li class="mb-2">
                         <i class="fas fa-check-circle text-success me-2"></i>
-                        Keep your skills up to date
+                        Keep your contact information up to date
                     </li>
                     <li class="mb-2">
                         <i class="fas fa-check-circle text-success me-2"></i>
-                        Use specific skill names
+                        Provide accurate professional links
                     </li>
                     <li class="mb-2">
                         <i class="fas fa-check-circle text-success me-2"></i>
-                        Include both technical and soft skills
+                        Use a professional email address
                     </li>
                     <li class="mb-2">
                         <i class="fas fa-check-circle text-success me-2"></i>
-                        Update regularly as you learn new skills
+                        Update regularly as your information changes
                     </li>
                 </ul>
             </div>

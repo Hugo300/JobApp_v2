@@ -3,14 +3,15 @@ Job service for handling job application business logic
 """
 from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any, Tuple
-from models import JobApplication, ApplicationStatus, JobMode, db
+from collections import defaultdict
+from sqlalchemy.orm import joinedload
+
+from models import JobApplication, JobSkill, ApplicationStatus, JobMode, db, Skill
+
 from .base_service import BaseService
-from .database_service import db_service, DatabaseError
-from .skill_extraction_service import SkillExtractionService
-from .skill_matching_service import SkillMatchingService
-# Removed SkillCategorizationService - functionality moved to other services
-from .industry_service import IndustryService
-from utils.scraper import scrape_job_details
+from .skill_service import SkillService
+
+from utils.scraper import scrape_job_data
 from utils.responses import handle_scraping_response
 from utils.forms import sanitize_input
 
@@ -20,10 +21,7 @@ class JobService(BaseService):
 
     def __init__(self):
         super().__init__()
-        self.skill_extractor = SkillExtractionService()
-        self.skill_matcher = SkillMatchingService()
-        # Skill categorizer removed - using built-in categorization
-        self.industry_service = IndustryService()
+        self.skill_service = SkillService()
 
     def get_job_by_id(self, job_id):
         """Get job application by ID"""
@@ -137,15 +135,6 @@ class JobService(BaseService):
         Returns:
             tuple: (success: bool, job: JobApplication, error: str)
         """
-        # Extract skills from job description if available
-        extracted_skills = []
-        if description and self.skill_extractor.is_available():
-            try:
-                extracted_skills = self.skill_extractor.extract_skills_simple(description)
-                self.logger.info(f"Extracted {len(extracted_skills)} skills during job creation")
-            except Exception as e:
-                self.logger.warning(f"Skill extraction failed during job creation: {str(e)}")
-
         # Validate and sanitize inputs
         try:
             if not company or not company.strip():
@@ -185,27 +174,9 @@ class JobService(BaseService):
         # Create the job
         success, job, error = self.create(JobApplication, **job_data)
 
-        # Set extracted skills if job creation was successful
-        if success and job and extracted_skills:
-            try:
-                job.set_extracted_skills(extracted_skills)
-                db.session.commit()
-                self.logger.info(f"Skills saved for job {job.id}: {len(extracted_skills)} skills")
-            except Exception as e:
-                self.logger.warning(f"Failed to save extracted skills for job {job.id}: {str(e)}")
-
-        # Auto-detect and assign industry if job creation was successful
-        if success and job:
-            try:
-                detected_industry = self.industry_service.detect_job_industry(
-                    job.title, job.company, job.description
-                )
-                if detected_industry:
-                    job.industry_id = detected_industry.id
-                    db.session.commit()
-                    self.logger.info(f"Auto-assigned industry '{detected_industry.name}' to job {job.id}")
-            except Exception as e:
-                self.logger.warning(f"Failed to auto-assign industry to job {job.id}: {str(e)}")
+        if success:
+            # extract the skills from the text
+            success, _ = self.extract_job_skills(job.id, job_data['description'])
 
         return success, job, error
     
@@ -224,32 +195,11 @@ class JobService(BaseService):
         if not job:
             return False, None, "Job not found"
 
-        # Check if description is being updated and extract skills
-        if 'description' in kwargs and kwargs['description'] and self.skill_extractor.is_available():
-            try:
-                extracted_skills = self.skill_extractor.extract_skills_simple(kwargs['description'])
-                self.logger.info(f"Extracted {len(extracted_skills)} skills during job update")
-                # We'll set the skills after the update is successful
-            except Exception as e:
-                self.logger.warning(f"Skill extraction failed during job update: {str(e)}")
-                extracted_skills = []
-        else:
-            extracted_skills = []
-
         # Update last_update timestamp
         kwargs['last_update'] = datetime.now(timezone.utc)
 
         # Update the job
         success, updated_job, error = self.update(job, **kwargs)
-
-        # Set extracted skills if update was successful and we have new skills
-        if success and updated_job and extracted_skills:
-            try:
-                updated_job.set_extracted_skills(extracted_skills)
-                db.session.commit()
-                self.logger.info(f"Skills updated for job {job_id}: {len(extracted_skills)} skills")
-            except Exception as e:
-                self.logger.warning(f"Failed to update extracted skills for job {job_id}: {str(e)}")
 
         return success, updated_job, error
     
@@ -387,7 +337,7 @@ class JobService(BaseService):
                 'top_countries': []
             }
     
-    def scrape_job_details(self, url):
+    def scrape_job_data(self, url):
         """
         Scrape job details from URL
         
@@ -398,38 +348,15 @@ class JobService(BaseService):
             dict: Scraped job details
         """
         try:
-            result = scrape_job_details(url)
+            result = scrape_job_data(url)
             return handle_scraping_response(result)
         except Exception as e:
-            self.logger.error(f"Error scraping job details: {str(e)}")
+            self.logger.error(str(e))
             return {
                 'success': False,
-                'error': 'Failed to scrape job details'
+                'error': f'Failed to scrape job data. More info: {str(e)}'
             }
-    
-    def analyze_job_match(self, job_id, user_skills):
-        """
-        Analyze job match against user skills using new skill extraction service
 
-        Args:
-            job_id: Job ID
-            user_skills: User skills string
-
-        Returns:
-            dict: Match analysis results
-        """
-        try:
-            job = self.get_job_by_id(job_id)
-            if not job:
-                return {'match_score': 0, 'matched_keywords': [], 'unmatched_keywords': []}
-
-            # Use new skill matching service
-            result = self.skill_matcher.analyze_job_match(job.description or '', user_skills or '')
-            return result
-
-        except Exception as e:
-            self.logger.error(f"Error analyzing job match: {str(e)}")
-            return {'match_score': 0, 'matched_keywords': [], 'unmatched_keywords': []}
     
     def update_job_status(self, job_id, new_status):
         """
@@ -448,3 +375,63 @@ class JobService(BaseService):
             return False, None, "Invalid status"
         
         return self.update_job(job_id, status=new_status)
+    
+    def extract_job_skills(self, job_id, job_description):
+        """
+        Extract skills from the job description and store them in the JobSkill table.
+
+        :param job_id: ID of the job
+        :param job_description: Description of the job
+        """
+        # Extract skills
+        extracted_skills = self.skill_service.extract_skills(job_description)
+
+        # Fetch or create skills in the database
+        skill_ids = []
+        for skill_name in extracted_skills['skills']:
+            skill = db.session.query(Skill).filter_by(name=skill_name).first()
+
+            # if skill does not exist then add it to the db
+            if not skill:
+                _, skill, _ = self.skill_service.create_skill(name=skill_name)
+
+            skill_ids.append(skill.id)
+
+        # Link skills to the job
+        for skill_id in skill_ids:
+            self.create(JobSkill, **{
+                'job_id': job_id,
+                'skill_id': skill_id
+            })
+
+        return True, extracted_skills
+
+    def get_job_skills(self, job_id):
+        query = JobApplication.query
+
+        job = query.filter(JobApplication.id == job_id).first()
+
+        skills = list(job.skills)
+
+        return skills
+    
+    def get_job_skills_by_category(self, job_id, get_blacklisted=False):
+        job = JobApplication.query.filter(JobApplication.id == job_id).first()
+
+        if not job:
+            return {}
+
+        skills_by_category = defaultdict(list)
+
+        # Use your association proxy to get skills directly
+        for skill in job.skills:  # Using your Job -> Skill association proxy
+            category = skill.category
+
+            category_name = "Uncategorized" if not category else category.name
+
+            if get_blacklisted:
+                skills_by_category[category_name].append(skill.name)
+            elif not skill.is_blacklisted:  # Fixed condition
+                skills_by_category[category_name].append(skill.name)
+
+        return dict(skills_by_category)

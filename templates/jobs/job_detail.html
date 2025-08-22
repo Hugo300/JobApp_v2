@@ -98,13 +98,13 @@
         </div>
 
         <!-- Extracted Skills -->
-        {% if extracted_skills %}
+        {% if job_skills %}
         <div class="card mb-4">
             <div class="card-header">
                 <div class="d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0">
                         <i class="fas fa-cogs me-2"></i>Extracted Skills
-                        <span class="badge bg-primary ms-2">{{ extracted_skills|length }}</span>
+                        <span class="badge bg-primary ms-2">{{ job_skills|length }}</span>
                     </h5>
                     <div class="d-flex align-items-center gap-2">
                         {% if user_data and user_data.skills %}
@@ -114,98 +114,26 @@
                                 </span>
                             </div>
                         {% endif %}
-                        <a href="{{ url_for('skills.manage_skills') }}" class="btn btn-sm btn-outline-secondary" title="Manage Skills">
-                            <i class="fas fa-cog"></i>
-                        </a>
                     </div>
                 </div>
             </div>
             <div class="card-body">
                 <div class="skills-container">
-                    {% if categorized_skills %}
-                        <!-- Hard Skills Section -->
-                        {% set hard_skills = categorized_skills.hard_skills %}
-                        {% if hard_skills.matched or hard_skills.unmatched %}
-                            <div class="skill-category mb-3">
-                                <h6 class="skill-category-title">
-                                    <i class="fas fa-code me-1"></i>Technical Skills
-                                    <span class="badge bg-info ms-2">{{ (hard_skills.matched|length + hard_skills.unmatched|length) }}</span>
-                                </h6>
-                                <div class="skill-category-items">
-                                    <!-- Matched hard skills -->
-                                    {% for skill in hard_skills.matched %}
-                                        <span class="badge me-2 mb-2 skill-badge bg-success text-white skill-matched">
-                                            <i class="fas fa-check-circle me-1"></i>{{ skill }}
-                                        </span>
-                                    {% endfor %}
-                                    <!-- Unmatched hard skills -->
-                                    {% for skill in hard_skills.unmatched %}
-                                        <span class="badge me-2 mb-2 skill-badge bg-light text-dark border">
-                                            <i class="fas fa-code me-1"></i>{{ skill }}
-                                        </span>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                        {% endif %}
-
-                        <!-- Soft Skills Section -->
-                        {% set soft_skills = categorized_skills.soft_skills %}
-                        {% if soft_skills.matched or soft_skills.unmatched %}
-                            <div class="skill-category mb-3">
-                                <h6 class="skill-category-title">
-                                    <i class="fas fa-users me-1"></i>Soft Skills
-                                    <span class="badge bg-info ms-2">{{ (soft_skills.matched|length + soft_skills.unmatched|length) }}</span>
-                                </h6>
-                                <div class="skill-category-items">
-                                    <!-- Matched soft skills -->
-                                    {% for skill in soft_skills.matched %}
-                                        <span class="badge me-2 mb-2 skill-badge bg-success text-white skill-matched">
-                                            <i class="fas fa-check-circle me-1"></i>{{ skill }}
-                                        </span>
-                                    {% endfor %}
-                                    <!-- Unmatched soft skills -->
-                                    {% for skill in soft_skills.unmatched %}
-                                        <span class="badge me-2 mb-2 skill-badge bg-light text-dark border">
-                                            <i class="fas fa-users me-1"></i>{{ skill }}
-                                        </span>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                        {% endif %}
-
-                        <!-- Other Skills Section -->
-                        {% set other_skills = categorized_skills.other_skills %}
-                        {% if other_skills.matched or other_skills.unmatched %}
-                            <div class="skill-category mb-3">
-                                <h6 class="skill-category-title">
-                                    <i class="fas fa-tag me-1"></i>Other Skills
-                                    <span class="badge bg-info ms-2">{{ (other_skills.matched|length + other_skills.unmatched|length) }}</span>
-                                </h6>
-                                <div class="skill-category-items">
-                                    <!-- Matched other skills -->
-                                    {% for skill in other_skills.matched %}
-                                        <span class="badge me-2 mb-2 skill-badge bg-success text-white skill-matched">
-                                            <i class="fas fa-check-circle me-1"></i>{{ skill }}
-                                        </span>
-                                    {% endfor %}
-                                    <!-- Unmatched other skills -->
-                                    {% for skill in other_skills.unmatched %}
-                                        <span class="badge me-2 mb-2 skill-badge bg-light text-dark border">
-                                            <i class="fas fa-tag me-1"></i>{{ skill }}
-                                        </span>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                        {% endif %}
-                    {% else %}
-                        <!-- Fallback to simple display if categorization fails -->
-                        {% for skill in extracted_skills %}
-                            {% set is_matched = skill.lower() in (matched_keywords | map('lower') | list) %}
-                            <span class="badge me-2 mb-2 skill-badge {% if is_matched %}bg-success text-white skill-matched{% else %}bg-light text-dark border{% endif %}">
-                                <i class="fas fa-{% if is_matched %}check-circle{% else %}tag{% endif %} me-1"></i>{{ skill }}
-                            </span>
-                        {% endfor %}
-                    {% endif %}
+                {% for category, skills in job_skills.items() %}
+                    <div class="skill-category mb-3">
+                        <div class="skill-category-title">
+                            {{ category }}
+                            <span class="skill-count">{{ skills|length }}</span>
+                        </div>
+                        <div class="skill-category-items">
+                            {% for skill in skills %}
+                                <span class="badge me-2 mb-2 skill-badge bg-success text-white skill-matched">
+                                    <i class="fas fa-check-circle me-1"></i>{{ skill }}
+                                </span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endfor %}
                 </div>
                 <div class="mt-3">
                     <small class="text-muted">
@@ -451,131 +379,6 @@
         {% endif %}
     </div>
 </div>
-{% endblock %}
-
-{% block styles %}
-<style>
-.timeline-container {
-    position: relative;
-    padding: 1rem 0;
-}
-
-.timeline-item {
-    position: relative;
-    display: flex;
-    margin-bottom: 0;
-    padding: 1rem 0;
-    border-left: 3px solid #e9ecef;
-    margin-left: 1.5rem;
-}
-
-.timeline-item:not(.timeline-item-last)::after {
-    content: '';
-    position: absolute;
-    left: -3px;
-    bottom: 0;
-    width: 3px;
-    height: 1rem;
-    background: #e9ecef;
-}
-
-.timeline-item-first {
-    border-top-left-radius: 0.375rem;
-}
-
-.timeline-item-last {
-    border-bottom-left-radius: 0.375rem;
-}
-
-.timeline-marker-container {
-    position: absolute;
-    left: -12px;
-    top: 1.25rem;
-    z-index: 2;
-}
-
-.timeline-marker {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 10px;
-    border: 2px solid white;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.timeline-marker-status {
-    background: linear-gradient(135deg, #007bff, #0056b3);
-    color: white;
-}
-
-.timeline-marker-note {
-    background: linear-gradient(135deg, #6c757d, #495057);
-    color: white;
-}
-
-.timeline-content {
-    flex: 1;
-    padding-left: 1.5rem;
-    padding-right: 1rem;
-}
-
-.timeline-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 0.75rem;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-}
-
-.timeline-date {
-    flex: 1;
-    min-width: 200px;
-}
-
-.status-change-badges {
-    display: flex;
-    align-items: center;
-    flex-shrink: 0;
-}
-
-.timeline-note {
-    background: #f8f9fa;
-    border-radius: 0.375rem;
-    padding: 0.75rem;
-    border-left: 3px solid #007bff;
-    margin-top: 0.5rem;
-}
-
-.timeline-note p {
-    margin-bottom: 0.5rem;
-    line-height: 1.5;
-}
-
-.timeline-note p:last-child {
-    margin-bottom: 0;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .timeline-header {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .status-change-badges {
-        margin-top: 0.25rem;
-    }
-
-    .timeline-content {
-        padding-left: 1rem;
-        padding-right: 0.5rem;
-    }
-}
-</style>
 {% endblock %}
 
 {% block scripts %}

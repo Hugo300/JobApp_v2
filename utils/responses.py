@@ -125,21 +125,15 @@ def handle_scraping_response(scraping_result):
     Returns:
         dict: Response data for AJAX requests
     """
-    if scraping_result and len(scraping_result) == 3:
-        title, company, description = scraping_result
+    if scraping_result:
         
-        if title or company or description:
+        if scraping_result['title'] or scraping_result['description']:
             response_data = {
                 'success': True,
                 'message': 'Job details scraped successfully!'
             }
             
-            if title:
-                response_data['title'] = title
-            if company:
-                response_data['company'] = company
-            if description:
-                response_data['description'] = description
+            response_data['data'] = scraping_result
                 
             return response_data
     
@@ -149,30 +143,7 @@ def handle_scraping_response(scraping_result):
     }
 
 
-def handle_job_match_response(match_result):
-    """
-    Handle job matching analysis results
-    
-    Args:
-        match_result: Result from job matching analysis
-        
-    Returns:
-        dict: Formatted match data
-    """
-    if match_result and len(match_result) == 3:
-        match_score, matched_keywords, unmatched_keywords = match_result
-        
-        return {
-            'match_score': match_score,
-            'matched_keywords': matched_keywords,
-            'unmatched_keywords': unmatched_keywords
-        }
-    
-    return {
-        'match_score': 0,
-        'matched_keywords': [],
-        'unmatched_keywords': []
-    }
+
 
 
 def log_and_flash_error(error_message, flash_message=None, log_level=logging.ERROR):

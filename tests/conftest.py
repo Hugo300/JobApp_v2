@@ -49,8 +49,7 @@ def sample_user(app):
             email="test@example.com",
             phone="123-456-7890",
             linkedin="https://linkedin.com/in/testuser",
-            github="https://github.com/testuser",
-            skills="Python, Flask, JavaScript, SQL"
+            github="https://github.com/testuser"
         )
         db.session.add(user)
         db.session.commit()

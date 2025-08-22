@@ -1,0 +1,64 @@
+/* ==========================================================================
+   Status badges (BEM naming convention)
+   ========================================================================== */
+
+.badge {
+    font-weight: 500;
+    font-size: 0.75rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: var(--border-radius-pill) !important;
+}
+
+/* Ensure all badge variants are rounded */
+.badge,
+.badge.bg-primary,
+.badge.bg-secondary,
+.badge.bg-success,
+.badge.bg-danger,
+.badge.bg-warning,
+.badge.bg-info,
+.badge.bg-light,
+.badge.bg-dark {
+    border-radius: var(--border-radius-pill) !important;
+}
+
+/* Status-specific badges */
+.badge--status-collected {
+    background-color: var(--status-collected) !important;
+}
+
+.badge--status-applied {
+    background-color: var(--status-applied) !important;
+}
+
+.badge--status-process {
+    background-color: var(--status-process) !important;
+}
+
+.badge--status-waiting {
+    background-color: var(--status-waiting) !important;
+}
+
+.badge--status-completed {
+    background-color: var(--status-completed) !important;
+}
+
+.badge--status-rejected {
+    background-color: var(--status-rejected) !important;
+}
+
+/* Job mode badges */
+.badge--mode-remote {
+    background-color: #20c997 !important;
+    color: white;
+}
+
+.badge--mode-hybrid {
+    background-color: #6f42c1 !important;
+    color: white;
+}
+
+.badge--mode-onsite {
+    background-color: #fd7e14 !important;
+    color: white;
+}

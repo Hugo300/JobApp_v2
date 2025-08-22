@@ -14,34 +14,12 @@ class TestUserData:
         with app.app_context():
             user = UserData(
                 name="Test User",
-                email="test@example.com",
-                skills="Python, Flask"
+                email="test@example.com"
             )
             assert user.name == "Test User"
             assert user.email == "test@example.com"
-            assert user.skills == "Python, Flask"
     
-    def test_get_skills_list(self, app):
-        """Test skills list conversion"""
-        with app.app_context():
-            user = UserData(
-                name="Test User",
-                email="test@example.com",
-                skills="Python, Flask, JavaScript, SQL"
-            )
-            skills_list = user.get_skills_list()
-            assert skills_list == ["Python", "Flask", "JavaScript", "SQL"]
-    
-    def test_get_skills_list_empty(self, app):
-        """Test empty skills list"""
-        with app.app_context():
-            user = UserData(
-                name="Test User",
-                email="test@example.com",
-                skills=""
-            )
-            skills_list = user.get_skills_list()
-            assert skills_list == []
+
 
 
 class TestJobApplication:
