@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card-body">
+    <div class="row align-items-center">
+        <div class="col">
+            <h1 class="card-title mb-1">
+                <i class="bi bi-list-ul text-primary me-2"></i>Skills Management
+            </h1>
+            <p class="card-text text-muted">Manage your skills database and their variants</p>
+        </div>
+        <div class="col-auto">
+            <div class="d-flex gap-2">
+                <span class="badge bg-primary fs-6">{{ skills|length }} Skills</span>
+                <span class="badge bg-info fs-6">{{ total_variants }} Total Variants</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search and Filters Card -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <div class="row g-3 align-items-center">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" id="skillSearch" class="form-control" placeholder="Search skills by name or category...">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <select id="categoryFilter" class="form-select">
+                    <option value="">All Categories</option>
+                    {% for category in categories %}
+                        <option value="{{ category.name }}">{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">
+                    <i class="bi bi-arrow-clockwise me-1"></i>Clear
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Skills Table Card -->
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Skill Name</th>
+                <th>Category</th>
+                <th>Variants Count</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="skillsTableBody">
+            {% for skill in skills %}
+            <tr class="skill-row {{ 'table-warning' if skill.is_blacklisted else '' }}" 
+                data-skill-name="{{ skill.name.lower() }}" 
+                data-category="{{ skill.category.name.lower() if skill.category else 'uncategorized' }}"
+                data-blacklisted="{{ 'true' if skill.is_blacklisted else 'false' }}">
+                <td class="ps-3">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-3">
+                            {% if skill.is_blacklisted %}
+                                <i class="bi bi-x-circle-fill text-danger"></i>
+                            {% else %}
+                                <i class="bi bi-code-square text-primary"></i>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <strong>{{ skill.name }}</strong>
+                            {% if skill.is_blacklisted %}
+                                <span class="badge bg-danger ms-2">Blacklisted</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </td>
+                <td class="align-middle">
+                    {% if skill.category %}
+                        <span class="badge rounded-pill bg-secondary">
+                            {{ skill.category.name }}
+                        </span>
+                    {% else %}
+                        <span class="badge rounded-pill bg-light text-muted">
+                            Uncategorized
+                        </span>
+                    {% endif %}
+                </td>
+                <td class="text-center align-middle">
+                    {% if skill.variants|length > 0 %}
+                        <span class="badge bg-info rounded-pill fs-6">
+                            {{ skill.variants|length }}
+                        </span>
+                    {% else %}
+                        <span class="badge bg-light text-muted rounded-pill">0</span>
+                    {% endif %}
+                </td>
+                <td class="text-center align-middle">
+                    <div class="btn-group" role="group">
+                        <a href="{{ url_for('skill.manage_variants', skill_id=skill.id) }}" 
+                            class="btn btn-sm btn-outline-primary" 
+                            data-bs-toggle="tooltip" 
+                            title="Manage variants for {{ skill.name }}">
+                            <i class="bi bi-pencil-square me-1"></i>
+                            Manage Variants
+                        </a>
+                        
+                        <!-- Blacklist Toggle Button -->
+                        <form method="POST" action="{{ url_for('skill.toggle_blacklist', skill_id=skill.id) }}" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="current_filter" value="{{ current_blacklist_filter }}">
+                            {% if skill.is_blacklisted %}
+                                <button type="submit" 
+                                        class="btn btn-sm btn-outline-success"
+                                        data-bs-toggle="tooltip" 
+                                        title="Remove from blacklist"
+                                        onclick="return confirm('Remove {{ skill.name }} from blacklist?')">
+                                    <i class="bi bi-check-circle me-1"></i>
+                                    Unblacklist
+                                </button>
+                            {% else %}
+                                <button type="submit" 
+                                        class="btn btn-sm btn-outline-danger"
+                                        data-bs-toggle="tooltip" 
+                                        title="Add to blacklist"
+                                        onclick="return confirm('Add {{ skill.name }} to blacklist? This will exclude it from skill extraction.')">
+                                    <i class="bi bi-x-circle me-1"></i>
+                                    Blacklist
+                                </button>
+                            {% endif %}
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4" class="text-center py-4 text-muted">
+                    <i class="bi bi-inbox display-1 d-block mb-3 text-muted opacity-50"></i>
+                    <h5>No skills found</h5>
+                    <p>Add some skills to your database first.</p>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Search and filter functionality
+    function filterTable() {
+        const searchTerm = document.getElementById('skillSearch').value.toLowerCase();
+        const categoryFilter = document.getElementById('categoryFilter').value.toLowerCase();
+        const rows = document.querySelectorAll('.skill-row');
+        let visibleCount = 0;
+        
+        rows.forEach(row => {
+            const skillName = row.dataset.skillName || '';
+            const category = row.dataset.category || '';
+            
+            const matchesSearch = skillName.includes(searchTerm) ||
+                                category.includes(searchTerm) ||
+                                row.textContent.toLowerCase().includes(searchTerm);
+            const matchesCategory = !categoryFilter || category === categoryFilter;
+            
+            if (matchesSearch && matchesCategory) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        
+        document.getElementById('resultsCount').textContent = `Showing ${visibleCount} skills`;
+    }
+
+    function clearFilters() {
+        const searchInput = document.getElementById('skillSearch');
+        const categorySelect = document.getElementById('categoryFilter');
+        
+        if (searchInput) searchInput.value = '';
+        if (categorySelect) categorySelect.value = '';
+        
+        filterTable();
+    }
+
+    function filterByBlacklist() {
+        const selectedFilter = document.getElementById('blacklistFilter').value;
+        // Redirect to the same page with the blacklist filter parameter
+        const currentUrl = new URL(window.location);
+        currentUrl.searchParams.set('blacklist', selectedFilter);
+        window.location.href = currentUrl.toString();
+    }
+
+    // Event listeners with null checks
+    const searchInput = document.getElementById('skillSearch');
+    const categorySelect = document.getElementById('categoryFilter');
+    
+    if (searchInput) {
+        searchInput.addEventListener('input', filterTable);
+    }
+    
+    if (categorySelect) {
+        categorySelect.addEventListener('change', filterTable);
+    }
+</script>
+{% endblock %}
