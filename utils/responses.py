@@ -125,21 +125,15 @@ def handle_scraping_response(scraping_result):
     Returns:
         dict: Response data for AJAX requests
     """
-    if scraping_result and len(scraping_result) == 3:
-        title, company, description = scraping_result
+    if scraping_result:
         
-        if title or company or description:
+        if scraping_result['title'] or scraping_result['description']:
             response_data = {
                 'success': True,
                 'message': 'Job details scraped successfully!'
             }
             
-            if title:
-                response_data['title'] = title
-            if company:
-                response_data['company'] = company
-            if description:
-                response_data['description'] = description
+            response_data['data'] = scraping_result
                 
             return response_data
     
