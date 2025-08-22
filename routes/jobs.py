@@ -7,7 +7,7 @@ from datetime import datetime
 from services import JobService, UserService, LogService, TemplateService
 from services.database_service import DatabaseError
 from utils.latex import compile_latex, compile_latex_template
-from utils.scraper import scrape_job_details
+from utils.scraper import scrape_job_data
 from utils.responses import success_response, error_response, flash_success, flash_error
 from utils.forms import populate_job_form_choices, populate_log_form_choices, extract_form_data, sanitize_form_data
 from utils.validation import validate_job_data, ValidationError
@@ -133,6 +133,7 @@ def job_detail(job_id):
 @jobs_bp.route('/scrape', methods=['POST'])
 def scrape_new_job():
     """Scrape job details from URL for new job creation"""
+    print(request)
     url = request.json.get('url')
 
     if not url:
@@ -143,14 +144,12 @@ def scrape_new_job():
         current_app.logger.info(f'Scraping job details from URL: {url}')
 
         # Use service to scrape job details
-        result = job_service.scrape_job_details(url)
+        result = job_service.scrape_job_data(url)
 
         if result['success']:
             current_app.logger.info(f'Scraping completed successfully')
             return success_response(result.get('message', 'Job details scraped successfully!'), {
-                'title': result.get('title'),
-                'company': result.get('company'),
-                'description': result.get('description')
+                'data': result.get('data'),
             })
         else:
             return error_response(result.get('error', 'Failed to scrape job details'))
@@ -172,16 +171,18 @@ def scrape_job(job_id):
 
     try:
         current_app.logger.info(f'Scraping job details from URL for job {job_id}: {url}')
-        title, company, description = scrape_job_details(url)
+        job_service = JobService()
+        response = job_service.scrape_job_data(url)
+        data = response['data']
 
         # Store original values for logging
         old_title = job.title
         old_company = job.company
 
         # Update job with scraped data (keep existing if scraping returns None)
-        job.title = title or job.title
-        job.company = company or job.company
-        job.description = description or job.description
+        job.title = data['title'] or job.title
+        job.company = data['company'] or job.company
+        job.description = data['description'] or job.description
         job.url = url
 
         db.session.commit()
@@ -198,11 +199,9 @@ def scrape_job(job_id):
 
         return jsonify({
             'success': True,
-            'title': job.title,
-            'company': job.company,
-            'description': job.description,
-            'message': 'Job details updated successfully using Python scraper!'
-        })
+            'message': 'Job details updated successfully using Python scraper!',
+            'data': data
+        }), 200
     except Exception as e:
         current_app.logger.error(f'Error scraping job details for job {job_id} from {url}: {str(e)}')
         return jsonify({'error': f'Scraping failed: {str(e)}'}), 500
