@@ -24,7 +24,6 @@ _pycache_/
 
 *.db
 
-
 docs/
 logs/
 .investigations/
