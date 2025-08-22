@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/forms.html" import render_input_group %}
 
 {% block title %}Edit Job Application - {{ job.title }} at {{ job.company }} - Job Application Manager{% endblock %}
 
@@ -51,23 +52,15 @@
                         {% endif %}
                     </div>
                     
-                    <div class="mb-3">
-                        {{ form.url.label(class="form-label") }}
-                        <div class="input-group">
-                            {{ form.url(class="form-control", id="url", placeholder="https://example.com/job-posting") }}
-                            <button type="button" class="btn btn-outline-primary" id="scrapeBtn" onclick="scrapeJob()">
-                                <i class="fas fa-magic me-1"></i>Update with Python
-                            </button>
-                        </div>
-                        {% if form.url.errors %}
-                            <div class="text-danger">
-                                {% for error in form.url.errors %}
-                                    <small>{{ error }}</small>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                        <div class="form-text">Optional: Enter a job posting URL to automatically fill in details</div>
-                    </div>
+                    {{ render_input_group(
+                        form.url,
+                        "scrapeBtn",
+                        "fa-magic",
+                        "Parse data",
+                        "scrapeJob()",
+                        help_text="Optional: Enter a job posting URL to automatically fill in details",
+                        placeholder="https://example.com/job-posting"
+                    ) }}
                     
                     <div class="mb-3">
                         {{ form.description.label(class="form-label") }}
@@ -198,9 +191,13 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
+
+{% block scripts %}
 <script>
 function scrapeJob() {
+    const csrfToken = document.getElementById('csrf_token').value;
     const url = document.getElementById('url').value;
     if (!url) {
         showAlert('Please enter a job posting URL first', 'warning');
@@ -228,38 +225,33 @@ function scrapeJob() {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
         },
         body: JSON.stringify({url: url})
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Update form fields
-            document.getElementById('title').value = data.title || '';
-            document.getElementById('company').value = data.company || '';
-            document.getElementById('description').value = data.description || '';
+            console.log(data)
+            // Fill in the form fields
+            document.getElementById('company').value = data.data.company || '';
+            document.getElementById('title').value = data.data.title || '';
+            document.getElementById('description').value = data.data.description || '';
+            document.getElementById('office_location').value = data.data.office_location || '';
+            document.getElementById('country').value = data.data.country || '';
 
-            // Show success message
-            let message = '✅ ' + (data.message || 'Job details updated successfully!');
-            if (data.title || data.company) {
-                message += `\n\n📋 Updated: ${data.title || 'No title'} at ${data.company || 'Unknown company'}`;
+            // Show success message with details
+            let message = '✅ ' + (data.message || 'Job details scraped successfully!');
+            if (data.data.title || data.data.company) {
+                message += `\n\n📋 Found: ${data.data.title || 'No title'} at ${data.data.company || 'Unknown company'}`;
             }
-            message += '\n\n💡 A log entry has been created to track this update.';
             showAlert(message, 'success');
 
-            // Highlight updated fields
-            highlightUpdatedFields();
+            // Highlight filled fields
+            highlightFilledFields();
         } else {
             showAlert('❌ Scraping failed: ' + (data.error || 'Unknown error'), 'danger');
         }
-    })
-    .catch(error => {
-        console.error('Scraping error:', error);
-        showAlert('❌ Network error while scraping: ' + error.message, 'danger');
-    })
-    .finally(() => {
-        scrapeBtn.innerHTML = originalText;
-        scrapeBtn.disabled = false;
     });
 }
 
