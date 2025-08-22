@@ -23,7 +23,7 @@
     </div>
 {% endmacro %}
 
-{% macro render_input_group(field, button_text, button_onclick, label_class="form-label", input_class="form-control", help_text="", placeholder="") %}
+{% macro render_input_group(field, button_id, button_icon, button_text, button_onclick, label_class="form-label", input_class="form-control", help_text="", placeholder="") %}
     <div class="mb-3">
         {{ field.label(class=label_class) }}
         <div class="input-group">
@@ -32,7 +32,8 @@
             {% else %}
                 {{ field(class=input_class) }}
             {% endif %}
-            <button type="button" class="btn btn-outline-secondary" onclick="{{ button_onclick }}">
+            <button type="button" id="{{ button_id }}" class="btn btn-outline-primary" onclick="{{ button_onclick }}">
+                <i class="fas {{ button_icon }}"></i>
                 {{ button_text }}
             </button>
         </div>
