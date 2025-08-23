@@ -7,15 +7,17 @@ from utils.forms import sanitize_input
 from configurations.skill_config import SkillExtractionConfig
 from dtos.skill_dtos import ProcessedSkillsResult
 
+from ..base_service import BaseService
 from services.skill.skill_lookup_service import SkillLookupService
 from services.skill.skill_extractor import SkillExtractor
 from services.skill.skill_normalizer import SkillNormalizer
 from services.skill.skill_categorizer import SkillCategorizer
 
-class SkillService:
+class SkillService(BaseService):
     """Main skill service using SQLAlchemy ORM models directly"""
     
     def __init__(self):
+        super().__init__()
         self.config = SkillExtractionConfig()
         self.lookup_service = SkillLookupService()
         self.extractor = SkillExtractor(self.config)
@@ -137,12 +139,9 @@ class SkillService:
     
     def get_skill_by_name(self, skill_name: str) -> Optional[Skill]:
         """Get skill by name"""
-        try:
-            return Skill.query.filter_by(name=skill_name).first()
-        except SQLAlchemyError as e:
-            print(f"Database error getting skill by name '{skill_name}': {e}")
-            return None
-    
+        result = self.filter_by(Skill, order_by=None, **{"name": skill_name})
+        return result[0] if result else None
+
     def get_all_skills(self, order_by=None, include_relationships: bool = False) -> List[Skill]:
         """Get all existing skills"""
         try:
