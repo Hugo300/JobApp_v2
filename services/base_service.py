@@ -32,11 +32,13 @@ class BaseService:
             result = operation(*args, **kwargs)
             db.session.commit()
             return True, result, None
+        
         except SQLAlchemyError as e:
             db.session.rollback()
             error_msg = f"Database error: {str(e)}"
             self.logger.error(error_msg)
             return False, None, error_msg
+        
         except Exception as e:
             db.session.rollback()
             error_msg = f"Unexpected error: {str(e)}"
