@@ -28,7 +28,7 @@ class CategoryService(BaseService):
             if include_relationships:
                 from sqlalchemy.orm import joinedload
                 query = query.options(
-                    joinedload(Skill.skill_category),
+                    joinedload(Skill.category),
                 )
 
             if order_by is None:
