@@ -1,5 +1,6 @@
 from flask import Blueprint, redirect, request, jsonify, render_template, url_for, current_app
-from services import SkillService, CategoryService
+from services import CategoryService
+from services.skill import SkillService
 from models import db
 
 skills_bp = Blueprint('skills', __name__)
