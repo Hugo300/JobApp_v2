@@ -97,24 +97,24 @@ def add_variant(skill_id):
         skill = skill_service.get_skill_by_id(skill_id)
         if not skill:
             flash('Skill not found', 'error')
-            return redirect(url_for('skill.manage_skills'))
+            return redirect(url_for('skill.edit_skill'))
         
         variant_name = request.form.get('variant_name', '').strip()
         
         if not variant_name:
             flash('Variant name cannot be empty', 'error')
-            return redirect(url_for('skill.manage_variants', skill_id=skill_id))
+            return redirect(url_for('skill.edit_skill', skill_id=skill_id))
         
         # Check if variant already exists for this skill
         existing = SkillVariant.query.filter_by(skill_id=skill_id, variant_name=variant_name).first()
         if existing:
             flash('This variant already exists', 'error')
-            return redirect(url_for('skill.manage_variants', skill_id=skill_id))
+            return redirect(url_for('skill.edit_skill', skill_id=skill_id))
         
         # Check if variant exists as a main skill name using SkillService
         if skill_service.get_skill_by_name(variant_name):
             flash('This variant name conflicts with an existing skill', 'error')
-            return redirect(url_for('skill.manage_variants', skill_id=skill_id))
+            return redirect(url_for('skill.edit_skill', skill_id=skill_id))
         
         # Create the variant
         variant = SkillVariant(skill_id=skill_id, variant_name=variant_name)
@@ -130,7 +130,7 @@ def add_variant(skill_id):
         db.session.rollback()
         flash(f'Error adding variant: {str(e)}', 'error')
     
-    return redirect(url_for('skill.manage_variants', skill_id=skill_id))
+    return redirect(url_for('skill.edit_skill', skill_id=skill_id))
 
 @skill_new_bp.route('/variants/<int:variant_id>/delete', methods=['POST'])
 def delete_variant(variant_id):
@@ -153,7 +153,7 @@ def delete_variant(variant_id):
         flash(f'Error deleting variant: {str(e)}', 'error')
         skill_id = request.form.get('skill_id')  # Fallback if we can't get it from variant
     
-    return redirect(url_for('skill.manage_variants', skill_id=skill_id))
+    return redirect(url_for('skill.edit_skill', skill_id=skill_id))
 
 @skill_new_bp.route('/create', methods=['GET', 'POST'])
 def create_skill():
@@ -194,7 +194,7 @@ def create_skill():
 
 @skill_new_bp.route('/<int:skill_id>/edit', methods=['GET', 'POST'])
 def edit_skill(skill_id):
-    """Edit an existing skill"""
+    """Edit an existing skill - comprehensive edit page"""
     try:
         skill = skill_service.get_skill_by_id(skill_id)
         if not skill:
@@ -202,8 +202,14 @@ def edit_skill(skill_id):
             return redirect(url_for('skill.manage_skills'))
         
         if request.method == 'GET':
+            # Load skill with all relationships for the edit page
+            skill = skill_service.get_skill_by_id(skill_id, include_relationships=True)
+            print(skill)
+
             categories = SkillCategory.query.all()
-            return render_template('admin/edit_skill.html', skill=skill, categories=categories)
+            return render_template('admin/skill_details.html', 
+                                 skill=skill, 
+                                 categories=categories)
         
         # Handle POST request
         name = request.form.get('name', '').strip()
@@ -224,7 +230,8 @@ def edit_skill(skill_id):
         
         if success:
             flash(f'Skill "{updated_skill.name}" updated successfully', 'success')
-            return redirect(url_for('skill.manage_skills'))
+            # Stay on the edit page to continue editing
+            return redirect(url_for('skill.edit_skill', skill_id=skill_id))
         else:
             flash(f'Error updating skill: {error}', 'error')
             
@@ -233,8 +240,16 @@ def edit_skill(skill_id):
         return redirect(url_for('skill.manage_skills'))
     
     # Reload form with categories on error
+    from sqlalchemy.orm import joinedload
+    from models import Skill
+    skill_with_relations = Skill.query.options(
+        joinedload(Skill.category),
+        joinedload(Skill.variants)
+    ).get(skill_id)
     categories = SkillCategory.query.all()
-    return render_template('admin/edit_skill.html', skill=skill, categories=categories)
+    return render_template('admin/skill_edit.html', 
+                         skill=skill_with_relations, 
+                         categories=categories)
 
 @skill_new_bp.route('/<int:skill_id>/delete', methods=['POST'])
 def delete_skill(skill_id):
