@@ -1,11 +1,13 @@
 {% extends "base.html" %}
+{% from 'bootstrap5/utils.html' import render_icon %}
 
 {% block content %}
 <div class="card-body">
     <div class="row align-items-center">
         <div class="col">
             <h1 class="card-title mb-1">
-                <i class="bi bi-list-ul text-primary me-2"></i>Skills Management
+                {{ render_icon("list-ul", color='primary') }}
+                Skills Management
             </h1>
             <p class="card-text text-muted">Manage your skills database and their variants</p>
         </div>
@@ -25,7 +27,7 @@
             <div class="col-md-6">
                 <div class="input-group">
                     <span class="input-group-text">
-                        <i class="bi bi-search"></i>
+                        {{ render_icon("search") }}
                     </span>
                     <input type="text" id="skillSearch" class="form-control" placeholder="Search skills by name or category...">
                 </div>
@@ -40,7 +42,8 @@
             </div>
             <div class="col-md-2">
                 <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">
-                    <i class="bi bi-arrow-clockwise me-1"></i>Clear
+                    {{ render_icon("arrow-clockwise") }}
+                    Clear
                 </button>
             </div>
         </div>
@@ -68,9 +71,9 @@
                     <div class="d-flex align-items-center">
                         <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-3">
                             {% if skill.is_blacklisted %}
-                                <i class="bi bi-x-circle-fill text-danger"></i>
+                                {{ render_icon("x-circle-fill", color='danger') }}
                             {% else %}
-                                <i class="bi bi-code-square text-primary"></i>
+                                {{ render_icon("code-square", color='primary') }}
                             {% endif %}
                         </div>
                         <div>
@@ -108,7 +111,7 @@
                            class="btn btn-sm btn-outline-primary" 
                            data-bs-toggle="tooltip" 
                            title="Edit skill details and manage variants">
-                            <i class="bi bi-pencil me-1"></i>
+                            {{ render_icon("pencil-fill") }}
                             Edit
                         </a>
                         
@@ -122,16 +125,16 @@
                                         data-bs-toggle="tooltip" 
                                         title="Remove from blacklist"
                                         onclick="return confirm('Remove {{ skill.name }} from blacklist?')">
-                                    <i class="bi bi-check-circle me-1"></i>
+                                    {{ render_icon("check-circle-fill") }}
                                     Unblacklist
                                 </button>
                             {% else %}
                                 <button type="submit" 
-                                        class="btn btn-sm btn-outline-danger"
+                                        class="btn btn-sm btn-outline-warning"
                                         data-bs-toggle="tooltip" 
                                         title="Add to blacklist"
                                         onclick="return confirm('Add {{ skill.name }} to blacklist? This will exclude it from skill extraction.')">
-                                    <i class="bi bi-x-circle me-1"></i>
+                                    {{ render_icon("x-circle-fill") }}
                                     Blacklist
                                 </button>
                             {% endif %}
@@ -142,7 +145,7 @@
             {% else %}
             <tr>
                 <td colspan="4" class="text-center py-4 text-muted">
-                    <i class="bi bi-inbox display-1 d-block mb-3 text-muted opacity-50"></i>
+                    {{ render_icon("inbox") }}
                     <h5>No skills found</h5>
                     <p>Add some skills to your database first.</p>
                 </td>
