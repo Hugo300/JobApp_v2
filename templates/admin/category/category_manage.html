@@ -1,0 +1,376 @@
+{% extends "base.html" %}
+{% from 'bootstrap5/utils.html' import render_icon %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-6 mb-0">
+                        {{ render_icon("folder-fill", color='primary') }}
+                        Skill Categories
+                    </h1>
+                    <p class="text-muted">Organize your skills into meaningful categories</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('skill_category.create_category') }}" class="btn btn-primary">
+                        {{ render_icon("plus-circle-fill") }}
+                        Add Category
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="display-6 text-primary">{{ total_categories }}</div>
+                    <h6 class="card-title">Categories</h6>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="display-6 text-success">{{ categorized_skills }}</div>
+                    <h6 class="card-title">Categorized Skills</h6>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="display-6 text-warning">{{ uncategorized_skills }}</div>
+                    <h6 class="card-title">Uncategorized Skills</h6>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="display-6 text-info">{{ total_skills }}</div>
+                    <h6 class="card-title">Total Skills</h6>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row g-3 align-items-center">
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            {{ render_icon("search") }}
+                        </span>
+                        <input type="text" id="categorySearch" class="form-control" placeholder="Search categories by name or description...">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <select id="skillCountFilter" class="form-select">
+                        <option value="">All Categories</option>
+                        <option value="empty">Empty Categories</option>
+                        <option value="populated">With Skills</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">
+                        {{ render_icon("arrow-clockwise") }}
+                        Clear
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Categories Table -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            {% if categories %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Category Name</th>
+                                <th>Description</th>
+                                <th class="text-center">Skills</th>
+                                <th class="text-center">Active Skills</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="categoriesTableBody">
+                            {% for category in categories %}
+                            <tr class="category-row" 
+                                data-category-name="{{ category.name.lower() }}" 
+                                data-description="{{ (category.description or '').lower() }}"
+                                data-skill-count="{{ category.skill_count }}">
+                                <td class="ps-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-3">
+                                            {{ render_icon("folder-fill", color='primary') }}
+                                        </div>
+                                        <div>
+                                            <strong>{{ category.name }}</strong>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="align-middle">
+                                    {% if category.description %}
+                                        <span class="text-muted">{{ category.description[:100] }}{% if category.description|length > 100 %}...{% endif %}</span>
+                                    {% else %}
+                                        <span class="text-muted fst-italic">No description</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center align-middle">
+                                    {% if category.skill_count > 0 %}
+                                        <span class="badge bg-info rounded-pill">{{ category.skill_count }}</span>
+                                    {% else %}
+                                        <span class="badge bg-light text-muted rounded-pill">0</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center align-middle">
+                                    {% if category.active_skill_count > 0 %}
+                                        <span class="badge bg-success rounded-pill">{{ category.active_skill_count }}</span>
+                                    {% else %}
+                                        <span class="badge bg-light text-muted rounded-pill">0</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center align-middle">
+                                    <div class="btn-group" role="group">
+                                        <!-- View Skills Button -->
+                                        {% if category.skill_count > 0 %}
+                                        <a href="{{ url_for('skill_category.view_category_skills', category_id=category.id) }}" 
+                                           class="btn btn-sm btn-outline-info" 
+                                           data-bs-toggle="tooltip" 
+                                           title="View skills in this category">
+                                            {{ render_icon("eye-fill") }}
+                                        </a>
+                                        {% endif %}
+                                        
+                                        <!-- Edit Button -->
+                                        <a href="{{ url_for('skill_category.edit_category', category_id=category.id) }}" 
+                                           class="btn btn-sm btn-outline-primary" 
+                                           data-bs-toggle="tooltip" 
+                                           title="Edit category">
+                                            {{ render_icon("pencil-fill") }}
+                                        </a>
+                                        
+                                        <!-- Delete Button -->
+                                        <button type="button" 
+                                                class="btn btn-sm btn-outline-danger"
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#deleteCategoryModal"
+                                                data-category-id="{{ category.id }}"
+                                                data-category-name="{{ category.name }}"
+                                                data-skill-count="{{ category.skill_count }}"
+                                                title="Delete category">
+                                            {{ render_icon("trash-fill") }}
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <div class="mb-4">
+                        {{ render_icon("folder-plus", size=48, color='muted') }}
+                    </div>
+                    <h5 class="text-muted">No categories yet</h5>
+                    <p class="text-muted">Start organizing your skills by creating categories</p>
+                    <a href="{{ url_for('skill_category.create_category') }}" class="btn btn-primary">
+                        {{ render_icon("plus-circle-fill") }}
+                        Create First Category
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Delete Category Modal -->
+<div class="modal fade" id="deleteCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger">
+                    {{ render_icon("exclamation-triangle-fill") }}
+                    Delete Category
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" id="deleteCategoryForm">
+                <div class="modal-body">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    
+                    <div class="alert alert-warning">
+                        <h6 class="alert-heading">Confirm Deletion</h6>
+                        <p class="mb-0">You are about to delete the category <strong id="categoryNameToDelete"></strong>.</p>
+                    </div>
+                    
+                    <div id="skillActionSection" style="display: none;">
+                        <p>This category contains <strong id="skillCountToDelete"></strong> skill(s). What should happen to these skills?</p>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="skill_action" id="keepSkills" value="keep" checked>
+                            <label class="form-check-label" for="keepSkills">
+                                <strong>Keep skills</strong> - Move them to "Uncategorized"
+                            </label>
+                        </div>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="skill_action" id="deleteSkills" value="delete">
+                            <label class="form-check-label" for="deleteSkills">
+                                <strong class="text-danger">Delete skills</strong> - Permanently remove all skills in this category
+                            </label>
+                        </div>
+                        
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="skill_action" id="cancelDelete" value="cancel">
+                            <label class="form-check-label" for="cancelDelete">
+                                <strong>Cancel</strong> - Don't delete the category
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger" id="confirmDeleteBtn">
+                        {{ render_icon("trash-fill") }}
+                        Delete Category
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Initialize tooltips
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+
+    // Search and filter functionality
+    function filterTable() {
+        const searchTerm = document.getElementById('categorySearch').value.toLowerCase();
+        const skillCountFilter = document.getElementById('skillCountFilter').value;
+        const rows = document.querySelectorAll('.category-row');
+        let visibleCount = 0;
+        
+        rows.forEach(row => {
+            const categoryName = row.dataset.categoryName || '';
+            const description = row.dataset.description || '';
+            const skillCount = parseInt(row.dataset.skillCount) || 0;
+            
+            const matchesSearch = categoryName.includes(searchTerm) ||
+                                description.includes(searchTerm) ||
+                                row.textContent.toLowerCase().includes(searchTerm);
+            
+            let matchesFilter = true;
+            if (skillCountFilter === 'empty') {
+                matchesFilter = skillCount === 0;
+            } else if (skillCountFilter === 'populated') {
+                matchesFilter = skillCount > 0;
+            }
+            
+            if (matchesSearch && matchesFilter) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    function clearFilters() {
+        document.getElementById('categorySearch').value = '';
+        document.getElementById('skillCountFilter').value = '';
+        filterTable();
+    }
+
+    // Event listeners
+    document.getElementById('categorySearch').addEventListener('input', filterTable);
+    document.getElementById('skillCountFilter').addEventListener('change', filterTable);
+
+    // Delete modal functionality
+    const deleteCategoryModal = document.getElementById('deleteCategoryModal');
+    if (deleteCategoryModal) {
+        deleteCategoryModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const categoryId = button.getAttribute('data-category-id');
+            const categoryName = button.getAttribute('data-category-name');
+            const skillCount = parseInt(button.getAttribute('data-skill-count')) || 0;
+            
+            // Update form action
+            const form = document.getElementById('deleteCategoryForm');
+            form.action = `{{ url_for('skill_category.delete_category', category_id=0) }}`.replace('0', categoryId);
+            
+            // Update modal content
+            document.getElementById('categoryNameToDelete').textContent = categoryName;
+            document.getElementById('skillCountToDelete').textContent = skillCount;
+            
+            // Show/hide skill action section
+            const skillActionSection = document.getElementById('skillActionSection');
+            if (skillCount > 0) {
+                skillActionSection.style.display = 'block';
+            } else {
+                skillActionSection.style.display = 'none';
+                // Set default action for empty categories
+                document.getElementById('keepSkills').checked = true;
+            }
+        });
+    }
+
+    // Update delete button text based on selected action
+    const skillActionInputs = document.querySelectorAll('input[name="skill_action"]');
+    const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+    
+    skillActionInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            if (this.value === 'cancel') {
+                confirmDeleteBtn.textContent = 'Cancel Deletion';
+                confirmDeleteBtn.className = 'btn btn-secondary';
+            } else if (this.value === 'delete') {
+                confirmDeleteBtn.innerHTML = '{{ render_icon("trash-fill") }} Delete Category & Skills';
+                confirmDeleteBtn.className = 'btn btn-danger';
+            } else {
+                confirmDeleteBtn.innerHTML = '{{ render_icon("trash-fill") }} Delete Category';
+                confirmDeleteBtn.className = 'btn btn-danger';
+            }
+        });
+    });
+
+    // Utility function to show alerts
+    function showAlert(type, message) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        const container = document.querySelector('.container');
+        container.insertBefore(alertDiv, container.firstChild);
+        
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 5000);
+    }
+</script>
+{% endblock %}
