@@ -1,3 +1,5 @@
+{% from 'bootstrap5/utils.html' import render_icon %}
+
 {% macro render_job_card(job, show_actions=true, show_match_score=false, match_score=0, matched_keywords=[], unmatched_keywords=[]) %}
     <div class="card mb-3 job-card" data-job-id="{{ job.id }}">
         <div class="card-body">
@@ -29,17 +31,17 @@
             <div class="row text-muted small">
                 <div class="col-md-6">
                     {% if job.office_location %}
-                        <i class="fas fa-map-marker-alt me-1"></i>{{ job.office_location }}
+                        {{ render_icon('geo-alt-fill') }} {{ job.office_location }}
                     {% endif %}
                     {% if job.country %}
-                        <br><i class="fas fa-globe me-1"></i>{{ job.country }}
+                        <br>{{ render_icon('globe') }} {{ job.country }}
                     {% endif %}
                 </div>
                 <div class="col-md-6 text-md-end">
-                    <i class="fas fa-clock me-1"></i>Updated {{ job.last_update.strftime('%Y-%m-%d') }}
+                    {{ render_icon('clock') }} Updated {{ job.last_update.strftime('%Y-%m-%d') }}
                     {% if job.url %}
                         <br><a href="{{ job.url }}" target="_blank" class="text-decoration-none">
-                            <i class="fas fa-external-link-alt me-1"></i>View Posting
+                            {{ render_icon('link-45deg') }} View Posting
                         </a>
                     {% endif %}
                 </div>
@@ -60,7 +62,7 @@
                     {% if matched_keywords %}
                         <div class="mb-1">
                             <small class="text-success">
-                                <i class="fas fa-check-circle me-1"></i>
+                                {{ render_icon('check-circle') }}
                                 {% for keyword in matched_keywords[:5] %}
                                     <span class="badge bg-success-subtle text-success me-1">{{ keyword }}</span>
                                 {% endfor %}
@@ -76,10 +78,10 @@
             {% if show_actions %}
                 <div class="mt-3 d-flex gap-2">
                     <a href="{{ url_for('jobs.job_detail', job_id=job.id) }}" class="btn btn-sm btn-outline-primary">
-                        <i class="fas fa-eye me-1"></i>View Details
+                        {{ render_icon('eye-fill') }} View Details
                     </a>
                     <a href="{{ url_for('jobs.edit_job', job_id=job.id) }}" class="btn btn-sm btn-outline-secondary">
-                        <i class="fas fa-edit me-1"></i>Edit
+                        {{ render_icon('pencil-fill') }} Edit
                     </a>
                 </div>
             {% endif %}
@@ -99,7 +101,7 @@
                 </div>
                 <div class="text-end">
                     <small class="text-muted">
-                        <i class="fas fa-clock me-1"></i>
+                        {{ render_icon('clock') }}
                         {% if template.updated_at %}
                             {{ template.updated_at.strftime('%Y-%m-%d') }}
                         {% else %}
@@ -123,14 +125,14 @@
             {% if show_actions %}
                 <div class="mt-3 d-flex gap-2">
                     <a href="{{ url_for('templates.view_template', template_id=template.id) }}" class="btn btn-sm btn-outline-primary">
-                        <i class="fas fa-eye me-1"></i>View
+                        {{ render_icon('eye-fill') }} View
                     </a>
                     <a href="{{ url_for('templates.edit_template', template_id=template.id) }}" class="btn btn-sm btn-outline-secondary">
-                        <i class="fas fa-edit me-1"></i>Edit
+                        {{ render_icon('pencil-fill') }} Edit
                     </a>
                     <button type="button" class="btn btn-sm btn-outline-danger" 
                             onclick="deleteTemplate({{ template.id }}, '{{ template.name }}')">
-                        <i class="fas fa-trash me-1"></i>Delete
+                        {{ render_icon('trash-fill') }} Delete
                     </button>
                 </div>
             {% endif %}
