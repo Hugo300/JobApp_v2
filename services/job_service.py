@@ -9,19 +9,19 @@ from sqlalchemy.orm import joinedload
 from models import JobApplication, JobSkill, ApplicationStatus, JobMode, db, Skill
 
 from .base_service import BaseService
-from .skill_service import SkillService
+from .skill.skill_service import get_skill_service
 
 from utils.scraper import scrape_job_data
 from utils.responses import handle_scraping_response
 from utils.forms import sanitize_input
-
 
 class JobService(BaseService):
     """Service for job application operations"""
 
     def __init__(self):
         super().__init__()
-        self.skill_service = SkillService()
+        # Get the skill service instance
+        self.skill_service = get_skill_service()
 
     def get_job_by_id(self, job_id):
         """Get job application by ID"""

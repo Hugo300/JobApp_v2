@@ -5,7 +5,7 @@ from collections import defaultdict
 from typing import List
 from models import UserData, UserSkill, Skill, db
 
-from .skill_service import SkillService
+from .skill.skill_service import get_skill_service
 from .base_service import BaseService
 
 from utils.forms import validate_user_data_form
@@ -16,7 +16,8 @@ class UserService(BaseService):
 
     def __init__(self):
         super().__init__()
-        self.skill_service = SkillService()
+        # Get the skill service instance
+        self.skill_service = get_skill_service()
     
     def get_user_data(self):
         """Get the first (and typically only) user data record"""
