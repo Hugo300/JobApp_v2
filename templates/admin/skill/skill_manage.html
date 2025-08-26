@@ -41,7 +41,7 @@
                 </select>
             </div>
             <div class="col-md-2">
-                <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">
+                <button id="clearButton" class="btn btn-outline-secondary w-100">
                     {{ render_icon("arrow-clockwise") }}
                     Clear
                 </button>
@@ -158,67 +158,74 @@
 
 {% block scripts %}
 <script>
-    // Initialize tooltips
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-
-    // Search and filter functionality
-    function filterTable() {
-        const searchTerm = document.getElementById('skillSearch').value.toLowerCase();
-        const categoryFilter = document.getElementById('categoryFilter').value.toLowerCase();
-        const rows = document.querySelectorAll('.skill-row');
-        let visibleCount = 0;
-        
-        rows.forEach(row => {
-            const skillName = row.dataset.skillName || '';
-            const category = row.dataset.category || '';
-            
-            const matchesSearch = skillName.includes(searchTerm) ||
-                                category.includes(searchTerm) ||
-                                row.textContent.toLowerCase().includes(searchTerm);
-            const matchesCategory = !categoryFilter || category === categoryFilter;
-            
-            if (matchesSearch && matchesCategory) {
-                row.style.display = '';
-                visibleCount++;
-            } else {
-                row.style.display = 'none';
-            }
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
         });
-        
-        document.getElementById('resultsCount').textContent = `Showing ${visibleCount} skills`;
-    }
 
-    function clearFilters() {
+        // Search and filter functionality
+        function filterTable() {
+            const searchTerm = document.getElementById('skillSearch').value.toLowerCase();
+            const categoryFilter = document.getElementById('categoryFilter').value.toLowerCase();
+            const rows = document.querySelectorAll('.skill-row');
+            let visibleCount = 0;
+            
+            rows.forEach(row => {
+                const skillName = row.dataset.skillName || '';
+                const category = row.dataset.category || '';
+                
+                const matchesSearch = skillName.includes(searchTerm) ||
+                                    category.includes(searchTerm) ||
+                                    row.textContent.toLowerCase().includes(searchTerm);
+                const matchesCategory = !categoryFilter || category === categoryFilter;
+                
+                if (matchesSearch && matchesCategory) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            document.getElementById('resultsCount').textContent = `Showing ${visibleCount} skills`;
+        }
+
+        function clearFilters() {
+            const searchInput = document.getElementById('skillSearch');
+            const categorySelect = document.getElementById('categoryFilter');
+            
+            if (searchInput) searchInput.value = '';
+            if (categorySelect) categorySelect.value = '';
+            
+            filterTable();
+        }
+
+        function filterByBlacklist() {
+            const selectedFilter = document.getElementById('blacklistFilter').value;
+            // Redirect to the same page with the blacklist filter parameter
+            const currentUrl = new URL(window.location);
+            currentUrl.searchParams.set('blacklist', selectedFilter);
+            window.location.href = currentUrl.toString();
+        }
+
+        // Event listeners with null checks
         const searchInput = document.getElementById('skillSearch');
         const categorySelect = document.getElementById('categoryFilter');
+        const clearButton = document.getElementById('clearButton');
         
-        if (searchInput) searchInput.value = '';
-        if (categorySelect) categorySelect.value = '';
+        if (searchInput) {
+            searchInput.addEventListener('input', filterTable);
+        }
         
-        filterTable();
-    }
+        if (categorySelect) {
+            categorySelect.addEventListener('change', filterTable);
+        }
 
-    function filterByBlacklist() {
-        const selectedFilter = document.getElementById('blacklistFilter').value;
-        // Redirect to the same page with the blacklist filter parameter
-        const currentUrl = new URL(window.location);
-        currentUrl.searchParams.set('blacklist', selectedFilter);
-        window.location.href = currentUrl.toString();
-    }
-
-    // Event listeners with null checks
-    const searchInput = document.getElementById('skillSearch');
-    const categorySelect = document.getElementById('categoryFilter');
-    
-    if (searchInput) {
-        searchInput.addEventListener('input', filterTable);
-    }
-    
-    if (categorySelect) {
-        categorySelect.addEventListener('change', filterTable);
-    }
+        if (clearButton) {
+            clearButton.addEventListener('click', clearFilters);
+        }
+    });
 </script>
 {% endblock %}
