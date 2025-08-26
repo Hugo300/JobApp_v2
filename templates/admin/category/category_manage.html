@@ -80,7 +80,7 @@
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">
+                    <button id="clearButton" class="btn btn-outline-secondary w-100">
                         {{ render_icon("arrow-clockwise") }}
                         Clear
                     </button>
@@ -142,17 +142,7 @@
                                     {% endif %}
                                 </td>
                                 <td class="text-center align-middle">
-                                    <div class="btn-group" role="group">
-                                        <!-- View Skills Button -->
-                                        {% if category.skill_count > 0 %}
-                                        <a href="{{ url_for('skill_category.view_category_skills', category_id=category.id) }}" 
-                                           class="btn btn-sm btn-outline-info" 
-                                           data-bs-toggle="tooltip" 
-                                           title="View skills in this category">
-                                            {{ render_icon("eye-fill") }}
-                                        </a>
-                                        {% endif %}
-                                        
+                                    <div class="btn-group" role="group">                                        
                                         <!-- Edit Button -->
                                         <a href="{{ url_for('skill_category.edit_category', category_id=category.id) }}" 
                                            class="btn btn-sm btn-outline-primary" 
@@ -256,121 +246,137 @@
 
 {% block scripts %}
 <script>
-    // Initialize tooltips
     document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
         var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
         var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl);
         });
+
+        // Search and filter functionality
+        function filterTable() {
+            const searchTerm = document.getElementById('categorySearch').value.toLowerCase();
+            const skillCountFilter = document.getElementById('skillCountFilter').value;
+            const rows = document.querySelectorAll('.category-row');
+            let visibleCount = 0;
+            
+            rows.forEach(row => {
+                const categoryName = row.dataset.categoryName || '';
+                const description = row.dataset.description || '';
+                const skillCount = parseInt(row.dataset.skillCount) || 0;
+                
+                const matchesSearch = categoryName.includes(searchTerm) ||
+                                    description.includes(searchTerm) ||
+                                    row.textContent.toLowerCase().includes(searchTerm);
+                
+                let matchesFilter = true;
+                if (skillCountFilter === 'empty') {
+                    matchesFilter = skillCount === 0;
+                } else if (skillCountFilter === 'populated') {
+                    matchesFilter = skillCount > 0;
+                }
+                
+                if (matchesSearch && matchesFilter) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        function clearFilters() {
+            document.getElementById('categorySearch').value = '';
+            document.getElementById('skillCountFilter').value = '';
+            filterTable();
+        }
+
+        // Event listeners
+        const searchInput = document.getElementById('categorySearch');
+        const numberSkills = document.getElementById('skillCountFilter');
+        const clearButton = document.getElementById('clearButton');
+
+        if (searchInput) {
+            searchInput.addEventListener('input', filterTable);
+        }
+
+        if (numberSkills) {
+            numberSkills.addEventListener('change', filterTable);
+        }
+
+        if (clearButton) {
+            clearButton.addEventListener('click', clearFilters);
+        }
+
+        // Delete modal functionality
+        const deleteCategoryModal = document.getElementById('deleteCategoryModal');
+        if (deleteCategoryModal) {
+            deleteCategoryModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                const categoryId = button.getAttribute('data-category-id');
+                const categoryName = button.getAttribute('data-category-name');
+                const skillCount = parseInt(button.getAttribute('data-skill-count')) || 0;
+                
+                // Update form action
+                const form = document.getElementById('deleteCategoryForm');
+                form.action = `{{ url_for('skill_category.delete_category', category_id=0) }}`.replace('0', categoryId);
+                
+                // Update modal content
+                document.getElementById('categoryNameToDelete').textContent = categoryName;
+                document.getElementById('skillCountToDelete').textContent = skillCount;
+                
+                // Show/hide skill action section
+                const skillActionSection = document.getElementById('skillActionSection');
+                if (skillCount > 0) {
+                    skillActionSection.style.display = 'block';
+                } else {
+                    skillActionSection.style.display = 'none';
+                    // Set default action for empty categories
+                    document.getElementById('keepSkills').checked = true;
+                }
+            });
+        }
+
+        // Update delete button text based on selected action
+        const skillActionInputs = document.querySelectorAll('input[name="skill_action"]');
+        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+
+        // Store the rendered icon HTML in JavaScript variables
+        const trashIconHtml = `{{ render_icon("trash-fill") | safe }}`;
+        
+        skillActionInputs.forEach(input => {
+            input.addEventListener('change', function() {
+                if (this.value === 'cancel') {
+                    confirmDeleteBtn.textContent = 'Cancel Deletion';
+                    confirmDeleteBtn.className = 'btn btn-secondary';
+                } else if (this.value === 'delete') {
+                    confirmDeleteBtn.innerHTML = trashIconHtml + ' Delete Category & Skills';
+                    confirmDeleteBtn.className = 'btn btn-danger';
+                } else {
+                    confirmDeleteBtn.innerHTML = trashIconHtml + ' Delete Category';
+                    confirmDeleteBtn.className = 'btn btn-danger';
+                }
+            });
+        });
+
+        // Utility function to show alerts
+        function showAlert(type, message) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            const container = document.querySelector('.container');
+            container.insertBefore(alertDiv, container.firstChild);
+            
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
     });
-
-    // Search and filter functionality
-    function filterTable() {
-        const searchTerm = document.getElementById('categorySearch').value.toLowerCase();
-        const skillCountFilter = document.getElementById('skillCountFilter').value;
-        const rows = document.querySelectorAll('.category-row');
-        let visibleCount = 0;
-        
-        rows.forEach(row => {
-            const categoryName = row.dataset.categoryName || '';
-            const description = row.dataset.description || '';
-            const skillCount = parseInt(row.dataset.skillCount) || 0;
-            
-            const matchesSearch = categoryName.includes(searchTerm) ||
-                                description.includes(searchTerm) ||
-                                row.textContent.toLowerCase().includes(searchTerm);
-            
-            let matchesFilter = true;
-            if (skillCountFilter === 'empty') {
-                matchesFilter = skillCount === 0;
-            } else if (skillCountFilter === 'populated') {
-                matchesFilter = skillCount > 0;
-            }
-            
-            if (matchesSearch && matchesFilter) {
-                row.style.display = '';
-                visibleCount++;
-            } else {
-                row.style.display = 'none';
-            }
-        });
-    }
-
-    function clearFilters() {
-        document.getElementById('categorySearch').value = '';
-        document.getElementById('skillCountFilter').value = '';
-        filterTable();
-    }
-
-    // Event listeners
-    document.getElementById('categorySearch').addEventListener('input', filterTable);
-    document.getElementById('skillCountFilter').addEventListener('change', filterTable);
-
-    // Delete modal functionality
-    const deleteCategoryModal = document.getElementById('deleteCategoryModal');
-    if (deleteCategoryModal) {
-        deleteCategoryModal.addEventListener('show.bs.modal', function (event) {
-            const button = event.relatedTarget;
-            const categoryId = button.getAttribute('data-category-id');
-            const categoryName = button.getAttribute('data-category-name');
-            const skillCount = parseInt(button.getAttribute('data-skill-count')) || 0;
-            
-            // Update form action
-            const form = document.getElementById('deleteCategoryForm');
-            form.action = `{{ url_for('skill_category.delete_category', category_id=0) }}`.replace('0', categoryId);
-            
-            // Update modal content
-            document.getElementById('categoryNameToDelete').textContent = categoryName;
-            document.getElementById('skillCountToDelete').textContent = skillCount;
-            
-            // Show/hide skill action section
-            const skillActionSection = document.getElementById('skillActionSection');
-            if (skillCount > 0) {
-                skillActionSection.style.display = 'block';
-            } else {
-                skillActionSection.style.display = 'none';
-                // Set default action for empty categories
-                document.getElementById('keepSkills').checked = true;
-            }
-        });
-    }
-
-    // Update delete button text based on selected action
-    const skillActionInputs = document.querySelectorAll('input[name="skill_action"]');
-    const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
-    
-    skillActionInputs.forEach(input => {
-        input.addEventListener('change', function() {
-            if (this.value === 'cancel') {
-                confirmDeleteBtn.textContent = 'Cancel Deletion';
-                confirmDeleteBtn.className = 'btn btn-secondary';
-            } else if (this.value === 'delete') {
-                confirmDeleteBtn.innerHTML = '{{ render_icon("trash-fill") }} Delete Category & Skills';
-                confirmDeleteBtn.className = 'btn btn-danger';
-            } else {
-                confirmDeleteBtn.innerHTML = '{{ render_icon("trash-fill") }} Delete Category';
-                confirmDeleteBtn.className = 'btn btn-danger';
-            }
-        });
-    });
-
-    // Utility function to show alerts
-    function showAlert(type, message) {
-        const alertDiv = document.createElement('div');
-        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-        alertDiv.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-        
-        const container = document.querySelector('.container');
-        container.insertBefore(alertDiv, container.firstChild);
-        
-        setTimeout(() => {
-            if (alertDiv.parentNode) {
-                alertDiv.remove();
-            }
-        }, 5000);
-    }
 </script>
 {% endblock %}
