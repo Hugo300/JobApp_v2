@@ -9,18 +9,18 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h2><i class="fas fa-chart-line me-2"></i>Job Analytics Dashboard</h2>
+                    <h2><i class="bi ni-graph-up me-2"></i>Job Analytics Dashboard</h2>
                     <p class="text-muted mb-0">Comprehensive insights into your job application journey</p>
                 </div>
                 <div class="d-flex gap-2">
                     <button class="btn btn-outline-primary" onclick="refreshAnalytics()">
-                        <i class="fas fa-sync me-1"></i>Refresh
+                        <i class="bi bi-arrow-repeat me-1"></i>Refresh
                     </button>
                     <button class="btn btn-outline-secondary" onclick="exportAnalytics()">
-                        <i class="fas fa-download me-1"></i>Export
+                        <i class="bi bi-download me-1"></i>Export
                     </button>
                     <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary">
-                        <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+                        <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
                     </a>
                 </div>
             </div>
@@ -39,7 +39,7 @@
                             <small class="opacity-75">{{ overview_stats.recent_jobs }} in last 30 days</small>
                         </div>
                         <div class="align-self-center">
-                            <i class="fas fa-briefcase fa-2x opacity-75"></i>
+                            <i class="bi bi-briefcase bi-2x opacity-75"></i>
                         </div>
                     </div>
                 </div>
@@ -56,7 +56,7 @@
                             <small class="opacity-75">Applied + Interview + Offer</small>
                         </div>
                         <div class="align-self-center">
-                            <i class="fas fa-chart-line fa-2x opacity-75"></i>
+                            <i class="bi bi-graph-up bi-2x opacity-75"></i>
                         </div>
                     </div>
                 </div>
@@ -73,7 +73,7 @@
                             <small class="opacity-75">Applied + Interview</small>
                         </div>
                         <div class="align-self-center">
-                            <i class="fas fa-clock fa-2x opacity-75"></i>
+                            <i class="bi bi-clock bi-2x opacity-75"></i>
                         </div>
                     </div>
                 </div>
@@ -90,7 +90,7 @@
                             <small class="opacity-75">{{ performance_metrics.offer_rate }}% offer rate</small>
                         </div>
                         <div class="align-self-center">
-                            <i class="fas fa-handshake fa-2x opacity-75"></i>
+                            <i class="bi bi-person-video opacity-75"></i>
                         </div>
                     </div>
                 </div>
@@ -105,7 +105,7 @@
             <div class="card analytics-card">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-chart-area me-2"></i>Application Timeline
+                        <i class="bi bi-bar-chart-steps me-2"></i>Application Timeline
                     </h5>
                 </div>
                 <div class="card-body">
@@ -121,7 +121,7 @@
             <div class="card analytics-card">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-chart-pie me-2"></i>Status Distribution
+                        <i class="bi bi-pie-chart-fill me-2"></i>Status Distribution
                     </h5>
                 </div>
                 <div class="card-body">
@@ -141,7 +141,7 @@
                 <div class="card-header">
                     <div class="d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0">
-                            <i class="fas fa-building me-2"></i>Top Companies
+                            <i class="bi bi-building me-2"></i>Top Companies
                         </h5>
                         <span class="badge bg-primary">{{ company_analytics.total_companies }} total</span>
                     </div>
@@ -160,7 +160,7 @@
                         {% endfor %}
                     {% else %}
                         <div class="text-center text-muted py-4">
-                            <i class="fas fa-building fa-3x mb-3 opacity-50"></i>
+                            <i class="bi bi-building mb-3 opacity-50"></i>
                             <p>No company data available yet</p>
                             <small>Companies will appear as you add job applications</small>
                         </div>
@@ -177,7 +177,7 @@
             <div class="card analytics-card">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-funnel-dollar me-2"></i>Application Funnel
+                        <i class="bi bi-funnel-fill me-2"></i>Application Funnel
                     </h5>
                 </div>
                 <div class="card-body">
@@ -213,7 +213,7 @@
                         </div>
                     {% else %}
                         <div class="text-center text-muted py-4">
-                            <i class="fas fa-funnel-dollar fa-3x mb-3 opacity-50"></i>
+                            <i class="bi bi-funnel-fill mb-3 opacity-50"></i>
                             <p>No conversion data available yet</p>
                         </div>
                     {% endif %}
@@ -226,14 +226,14 @@
             <div class="card analytics-card">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-globe me-2"></i>Location & Work Mode
+                        <i class="bi bi-globe me-2"></i>Location & Work Mode
                     </h5>
                 </div>
                 <div class="card-body">
                     <!-- Remote Work Percentage -->
                     <div class="mb-4">
                         <div class="d-flex justify-content-between mb-2">
-                            <span><i class="fas fa-home me-1"></i>Remote Work</span>
+                            <span><i class="bi bi-house me-1"></i>Remote Work</span>
                             <span class="fw-bold">{{ "%.1f"|format(location_analytics.remote_percentage) }}%</span>
                         </div>
                         <div class="progress progress-thin">
@@ -262,7 +262,7 @@
             <div class="card analytics-card">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-trending-up me-2"></i>Trends & Insights
+                        <i class="bi bi-graph-up me-2"></i>Trends & Insights
                     </h5>
                 </div>
                 <div class="card-body">

@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% from 'bootstrap5/utils.html' import render_icon %}
 
 {% block content %}
 <div class="container mt-4">
@@ -9,14 +8,14 @@
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <h1 class="display-6 mb-0">
-                        {{ render_icon("folder-fill", color='primary') }}
+                        <i class="bi bi-folder-fill text-primary"></i>
                         Skill Categories
                     </h1>
                     <p class="text-muted">Organize your skills into meaningful categories</p>
                 </div>
                 <div>
                     <a href="{{ url_for('skill_category.create_category') }}" class="btn btn-primary">
-                        {{ render_icon("plus-circle-fill") }}
+                        <i class="bi bi-plus-circle"></i>
                         Add Category
                     </a>
                 </div>
@@ -67,7 +66,7 @@
                 <div class="col-md-8">
                     <div class="input-group">
                         <span class="input-group-text">
-                            {{ render_icon("search") }}
+                            <i class="bi bi-search"></i>
                         </span>
                         <input type="text" id="categorySearch" class="form-control" placeholder="Search categories by name or description...">
                     </div>
@@ -81,7 +80,7 @@
                 </div>
                 <div class="col-md-2">
                     <button id="clearButton" class="btn btn-outline-secondary w-100">
-                        {{ render_icon("arrow-clockwise") }}
+                        <i class="bi bi-arrow-clockwise"></i>
                         Clear
                     </button>
                 </div>
@@ -113,7 +112,7 @@
                                 <td class="ps-3">
                                     <div class="d-flex align-items-center">
                                         <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-3">
-                                            {{ render_icon("folder-fill", color='primary') }}
+                                            <i class="bi bi-folder-fill text-primary"></i>
                                         </div>
                                         <div>
                                             <strong>{{ category.name }}</strong>
@@ -148,7 +147,7 @@
                                            class="btn btn-sm btn-outline-primary" 
                                            data-bs-toggle="tooltip" 
                                            title="Edit category">
-                                            {{ render_icon("pencil-fill") }}
+                                            <i class="bi bi-pencil-fill"></i>
                                         </a>
                                         
                                         <!-- Delete Button -->
@@ -160,7 +159,7 @@
                                                 data-category-name="{{ category.name }}"
                                                 data-skill-count="{{ category.skill_count }}"
                                                 title="Delete category">
-                                            {{ render_icon("trash-fill") }}
+                                            <i class="bi bi-trash-fill"></i>
                                         </button>
                                     </div>
                                 </td>
@@ -172,12 +171,12 @@
             {% else %}
                 <div class="text-center py-5">
                     <div class="mb-4">
-                        {{ render_icon("folder-plus", size=48, color='muted') }}
+                        <i class="bi bi-folder-plus text-muted" width=48 height=48></i>
                     </div>
                     <h5 class="text-muted">No categories yet</h5>
                     <p class="text-muted">Start organizing your skills by creating categories</p>
                     <a href="{{ url_for('skill_category.create_category') }}" class="btn btn-primary">
-                        {{ render_icon("plus-circle-fill") }}
+                        <i class="bi bi-plus-circle"></i>
                         Create First Category
                     </a>
                 </div>
@@ -192,7 +191,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title text-danger">
-                    {{ render_icon("exclamation-triangle-fill") }}
+                    <i class="bi bi-exclamation-triangle"></i>
                     Delete Category
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -234,7 +233,7 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-danger" id="confirmDeleteBtn">
-                        {{ render_icon("trash-fill") }}
+                        <i class="bi bi-trash-fill"></i>
                         Delete Category
                     </button>
                 </div>
@@ -342,7 +341,7 @@
         const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
 
         // Store the rendered icon HTML in JavaScript variables
-        const trashIconHtml = `{{ render_icon("trash-fill") | safe }}`;
+        const trashIconHtml = `<i class="bi bi-trash-fill"></i>`;
         
         skillActionInputs.forEach(input => {
             input.addEventListener('change', function() {

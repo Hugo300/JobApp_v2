@@ -1,12 +1,11 @@
 {% extends "base.html" %}
-{% from 'bootstrap5/utils.html' import render_icon %}
 
 {% block content %}
 <div class="card-body">
     <div class="row align-items-center">
         <div class="col">
             <h1 class="card-title mb-1">
-                {{ render_icon("list-ul", color='primary') }}
+                <i class="bi bi-list-ul text-primary"></i>
                 Skills Management
             </h1>
             <p class="card-text text-muted">Manage your skills database and their variants</p>
@@ -27,7 +26,7 @@
             <div class="col-md-6">
                 <div class="input-group">
                     <span class="input-group-text">
-                        {{ render_icon("search") }}
+                        <i class="bi bi-search"></i>
                     </span>
                     <input type="text" id="skillSearch" class="form-control" placeholder="Search skills by name or category...">
                 </div>
@@ -42,7 +41,7 @@
             </div>
             <div class="col-md-2">
                 <button id="clearButton" class="btn btn-outline-secondary w-100">
-                    {{ render_icon("arrow-clockwise") }}
+                    <i class="bi bi-arrow-clockwise"></i>
                     Clear
                 </button>
             </div>
@@ -71,9 +70,9 @@
                     <div class="d-flex align-items-center">
                         <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-3">
                             {% if skill.is_blacklisted %}
-                                {{ render_icon("x-circle-fill", color='danger') }}
+                            <i class="bi bi-x-circle-fill"></i>
                             {% else %}
-                                {{ render_icon("code-square", color='primary') }}
+                            <i class="bi bi-code-square"></i>
                             {% endif %}
                         </div>
                         <div>
@@ -111,7 +110,7 @@
                            class="btn btn-sm btn-outline-primary" 
                            data-bs-toggle="tooltip" 
                            title="Edit skill details and manage variants">
-                            {{ render_icon("pencil-fill") }}
+                            <i class="bi bi-pencil-fill"></i>
                             Edit
                         </a>
                         
@@ -125,7 +124,7 @@
                                         data-bs-toggle="tooltip" 
                                         title="Remove from blacklist"
                                         onclick="return confirm('Remove {{ skill.name }} from blacklist?')">
-                                    {{ render_icon("check-circle-fill") }}
+                                    <i class="bi bi-check-circle"></i>
                                     Unblacklist
                                 </button>
                             {% else %}
@@ -134,7 +133,7 @@
                                         data-bs-toggle="tooltip" 
                                         title="Add to blacklist"
                                         onclick="return confirm('Add {{ skill.name }} to blacklist? This will exclude it from skill extraction.')">
-                                    {{ render_icon("x-circle-fill") }}
+                                    <i class="bi bi-x-circle"></i>
                                     Blacklist
                                 </button>
                             {% endif %}
@@ -145,7 +144,7 @@
             {% else %}
             <tr>
                 <td colspan="4" class="text-center py-4 text-muted">
-                    {{ render_icon("inbox") }}
+                    <i class="bi bi-inbox"></i>
                     <h5>No skills found</h5>
                     <p>Add some skills to your database first.</p>
                 </td>

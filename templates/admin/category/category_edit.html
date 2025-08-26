@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% from 'bootstrap5/utils.html' import render_icon %}
 
 {% block content %}
 <div class="container mt-4">
@@ -15,13 +14,13 @@
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <h1 class="display-6 mb-0">
-                        {{ render_icon("pencil-square", color='primary') }}
+                        <i class="bi bi-pencil-square text-primary"></i>
                         Edit Category: <span class="text-primary fw-bold">{{ category.name }}</span>
                     </h1>
                 </div>
                 <div>
                     <a href="{{ url_for('skill_category.manage_categories') }}" class="btn btn-secondary">
-                        {{ render_icon("arrow-left") }}
+                        <i class="bi bi-arrow-left"></i>
                         Back to Categories
                     </a>
                 </div>
@@ -36,7 +35,7 @@
             <div class="card shadow-sm mb-4">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        {{ render_icon("info-circle-fill") }}
+                        <i class="bi bi-info-circle"></i>
                         Category Information
                     </h5>
                 </div>
@@ -75,7 +74,7 @@
 
                         <div class="d-flex justify-content-end">
                             <button type="submit" class="btn btn-primary btn-lg">
-                                {{ render_icon("check-circle-fill") }}
+                                <i class="bi bi-check-circle"></i>
                                 Update Category
                             </button>
                         </div>
@@ -88,7 +87,7 @@
                 <div class="card-header">
                     <div class="d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">
-                            {{ render_icon("code-square") }}
+                            <i class="bi bi-code-square"></i>
                             Skills in this Category
                         </h5>
                         <span class="badge bg-primary">{{ all_skills|length }} Total</span>
@@ -121,9 +120,9 @@
                                 <div class="d-flex justify-content-between align-items-center p-2 border rounded {{ 'bg-warning bg-opacity-10' if skill.is_blacklisted else '' }}">
                                     <div class="d-flex align-items-center">
                                         {% if skill.is_blacklisted %}
-                                            {{ render_icon("x-circle-fill", color='warning') }}
+                                            <i class="bi bi-x-circle-fill text-warning"></i>
                                         {% else %}
-                                            {{ render_icon("code-square", color='success') }}
+                                            <i class="bi bi-code-square text-success"></i>
                                         {% endif %}
                                         <span class="ms-2 fw-bold">{{ skill.name }}</span>
                                         {% if skill.variants %}
@@ -135,7 +134,7 @@
                                            class="btn btn-sm btn-outline-primary"
                                            data-bs-toggle="tooltip" 
                                            title="Edit this skill">
-                                            {{ render_icon("pencil-fill") }}
+                                            <i class="bi bi-pencil-fill"></i>
                                         </a>
                                     </div>
                                 </div>
@@ -145,12 +144,12 @@
                     {% else %}
                         <div class="text-center py-4 text-muted">
                             <div class="mb-3">
-                                {{ render_icon("inbox", size=48, color='muted') }}
+                                <i class="bi bi-inbox" width=48 height=48></i>
                             </div>
                             <h6>No skills in this category yet</h6>
                             <p>Skills can be assigned to this category when creating or editing them.</p>
                             <a href="{{ url_for('skill.create_skill') }}" class="btn btn-outline-primary">
-                                {{ render_icon("plus-circle") }}
+                                <i class="bi bi-plus-circle"></i>
                                 Create New Skill
                             </a>
                         </div>
@@ -165,8 +164,7 @@
             <div class="card shadow-sm mb-4">
                 <div class="card-header">
                     <h6 class="mb-0">
-                        {{ render_icon("bar-chart-fill") }}
-                        Category Statistics
+                        <i class="bi bi-bar-chart-fill"></i> Category Statistics
                     </h6>
                 </div>
                 <div class="card-body">
@@ -191,7 +189,7 @@
             <div class="card shadow-sm mb-4">
                 <div class="card-header">
                     <h6 class="mb-0">
-                        {{ render_icon("lightning-fill") }}
+                        <i class="bi bi-lightning-fill"></i>
                         Quick Actions
                     </h6>
                 </div>
@@ -199,13 +197,13 @@
                     <div class="d-grid gap-2">
                         <a href="{{ url_for('skill.create_skill') }}?category={{ category.id }}" 
                            class="btn btn-outline-primary">
-                            {{ render_icon("plus-circle") }}
+                            <i class="bi bi-plus-circle"></i>
                             Add New Skill to Category
                         </a>
                         
                         <a href="{{ url_for('skill.manage_skills') }}?category={{ category.name }}" 
                            class="btn btn-outline-secondary">
-                            {{ render_icon("filter") }}
+                            <i class="bi bi-filter"></i>
                             Filter Skills by Category
                         </a>
                     </div>
@@ -216,7 +214,7 @@
             <div class="card border-danger shadow-sm">
                 <div class="card-header bg-danger bg-opacity-10 border-danger">
                     <h6 class="mb-0 text-danger">
-                        {{ render_icon("exclamation-triangle-fill") }}
+                        <i class="bi bi-exclamation-triangle"></i>
                         Danger Zone
                     </h6>
                 </div>
@@ -226,7 +224,7 @@
                                 class="btn btn-outline-danger"
                                 data-bs-toggle="modal" 
                                 data-bs-target="#deleteCategoryModal">
-                            {{ render_icon("trash-fill") }}
+                            <i class="bi bi-trash-fill"></i>
                             Delete Category
                         </button>
                     </div>
@@ -250,7 +248,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title text-danger">
-                    {{ render_icon("exclamation-triangle-fill") }}
+                    <i class="bi bi-exclamation-triangle"></i>
                     Delete Category
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -295,7 +293,7 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-danger" id="confirmDeleteBtn" disabled>
-                        {{ render_icon("trash-fill") }}
+                        <i class="bi bi-trash-fill"></i>
                         Delete Category
                         {% if all_skills %}& {{ all_skills|length }} Skill(s){% endif %}
                     </button>

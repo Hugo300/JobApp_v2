@@ -287,7 +287,7 @@
                 {% else %}
                     <div class="text-center py-5">
                         <div class="mb-3">
-                            <i class="bi bi-clipboard2 fa-3x text-muted"></i>
+                            <i class="bi bi-clipboard2 text-muted"></i>
                         </div>
                         <h6 class="text-muted">No activity logs yet</h6>
                         <p class="text-muted mb-3">Start tracking your job application progress by adding your first log entry.</p>
@@ -507,14 +507,14 @@ document.addEventListener('DOMContentLoaded', function() {
     if (collapseElement && toggleIcon && previewElement) {
         // Handle expand/collapse
         collapseElement.addEventListener('show.bs.collapse', function () {
-            toggleIcon.classList.remove('fa-chevron-down');
-            toggleIcon.classList.add('fa-chevron-up');
+            toggleIcon.classList.remove('bi-chevron-down');
+            toggleIcon.classList.add('bi-chevron-up');
             previewElement.classList.remove('show');
         });
 
         collapseElement.addEventListener('hide.bs.collapse', function () {
-            toggleIcon.classList.remove('fa-chevron-up');
-            toggleIcon.classList.add('fa-chevron-down');
+            toggleIcon.classList.remove('bi-chevron-up');
+            toggleIcon.classList.add('bi-chevron-down');
             previewElement.classList.add('show');
         });
 

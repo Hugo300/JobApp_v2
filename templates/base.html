@@ -50,37 +50,32 @@
     <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: var(--navbar-bg);">
         <div class="container">
             <a class="navbar-brand fw-bold" href="{{ url_for('main.dashboard') }}">
-                <i class="fas fa-briefcase me-2"></i>Job App Manager
+                <i class="bi bi-briefcase me-2"></i>Job App Manager
             </a>
             <ul class="navbar-nav me-auto">
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('main.dashboard') }}">
-                        <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                        <i class="bi bi-speedometer2 me-1"></i>Dashboard
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('jobs.new_job') }}">
-                        <i class="fas fa-plus me-1"></i>New Job
+                        <i class="bi bi-plus me-1"></i>New Job
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('user.user_data') }}">
-                        <i class="fas fa-user me-1"></i>Profile
+                        <i class="bi bi-person me-1"></i>Profile
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('templates.landing') }}">
-                        <i class="fas fa-file-alt me-1"></i>Templates
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('skill.manage_skills') }}">
-                        <i class="fas fa-list me-1"></i>Skills
+                        <i class="bi bi-file-earmark me-1"></i>Templates
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('main.analytics_dashboard') }}">
-                        <i class="fas fa-chart-line me-1"></i>Analytics
+                        <i class="bi bi-graph-up me-1"></i>Analytics
                     </a>
                 </li>
             </ul>

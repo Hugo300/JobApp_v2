@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% from 'bootstrap5/utils.html' import render_icon %}
 
 {% block content %}
 <div class="container mt-4">
@@ -15,14 +14,14 @@
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <h1 class="display-6 mb-0">
-                        {{ render_icon("plus-circle-fill", color='success') }}
+                        <i class="bi bi-plus-circle-fill text-success"></i>
                         Create New Skill
                     </h1>
                     <p class="text-muted">Add a new skill to your database</p>
                 </div>
                 <div>
                     <a href="{{ url_for('skill.manage_skills') }}" class="btn btn-secondary">
-                        {{ render_icon("arrow-left") }}
+                        <i class="bi bi-arrow-left"></i>
                         Back to Skills
                     </a>
                 </div>
@@ -36,7 +35,7 @@
             <div class="card shadow-sm">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        {{ render_icon("info-circle-fill") }}
+                        <i class="bi bi-info-circle-fill"></i>
                         Skill Details
                     </h5>
                 </div>
@@ -87,7 +86,7 @@
                                        class="btn btn-outline-primary w-100"
                                        data-bs-toggle="tooltip" 
                                        title="Create a new category">
-                                        {{ render_icon("folder-plus") }}
+                                        <i class="bi bi-folder-plus"></i>
                                     </a>
                                 </div>
                             </div>
@@ -108,7 +107,7 @@
                                         </label>
                                     </div>
                                     <div class="form-text text-warning mt-2">
-                                        {{ render_icon("exclamation-triangle-fill") }}
+                                        <i class="bi bi-exclamation-triangle"></i>
                                         <strong>Blacklisted skills</strong> are excluded from automatic skill extraction processes. 
                                         Only enable this if you want to prevent this skill from being automatically detected 
                                         in job descriptions or resumes.
@@ -127,7 +126,7 @@
                                     Cancel
                                 </a>
                                 <button type="submit" class="btn btn-success btn-lg">
-                                    {{ render_icon("plus-circle-fill") }}
+                                    <i class="bi bi-plus-circle"></i>
                                     Create Skill
                                 </button>
                             </div>
@@ -140,7 +139,7 @@
             <div class="card mt-4 border-info">
                 <div class="card-header bg-info bg-opacity-10">
                     <h6 class="mb-0 text-info">
-                        {{ render_icon("lightbulb-fill") }}
+                        <i class="bi bi-lightbulb-fill"></i>
                         About Skill Variants
                     </h6>
                 </div>
@@ -178,7 +177,7 @@
             <div class="card mt-4" id="duplicateCheckCard" style="display: none;">
                 <div class="card-header bg-warning bg-opacity-10">
                     <h6 class="mb-0 text-warning">
-                        {{ render_icon("exclamation-triangle-fill") }}
+                        <i class="bi bi-exclamation-triangle"></i>
                         Possible Duplicates Found
                     </h6>
                 </div>
@@ -205,7 +204,7 @@
         <div class="modal-content">
             <div class="modal-header bg-success text-white">
                 <h5 class="modal-title">
-                    {{ render_icon("check-circle-fill") }}
+                    <i class="bi bi-check-circle"></i>
                     Skill Created Successfully!
                 </h5>
             </div>
@@ -215,15 +214,15 @@
             </div>
             <div class="modal-footer">
                 <a href="{{ url_for('skill.manage_skills') }}" class="btn btn-secondary">
-                    {{ render_icon("list-ul") }}
+                    <i class="bi bi-list-ul"></i>
                     View All Skills
                 </a>
                 <a href="#" id="editSkillLink" class="btn btn-primary">
-                    {{ render_icon("pencil-fill") }}
+                    <i class="bi bi-pencil-fill"></i>
                     Add Variants & Edit
                 </a>
                 <button type="button" class="btn btn-success" onclick="createAnother()">
-                    {{ render_icon("plus-circle") }}
+                    <i class="bi bi-plus-circle"></i>
                     Create Another Skill
                 </button>
             </div>
