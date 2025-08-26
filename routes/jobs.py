@@ -113,7 +113,8 @@ def job_detail(job_id):
 
         return render_template('jobs/job_detail.html',
                              job=job,
-                             job_skills=job_skills,
+                             job_skills=job_skills['skills'],
+                             total_skills=job_skills['total_skills'],
                              match_score=0,
                              user_data=user_data,
                              templates=templates,
@@ -432,6 +433,8 @@ def edit_job(job_id):
     """Edit an existing job application"""
     try:
         service = JobService()
+        log_service = LogService()
+
         job = service.get_job_by_id(job_id)
 
         if not job:
@@ -479,10 +482,13 @@ def edit_job(job_id):
                 })
 
                 # Create a log entry for the edit
-                JobLog(job_id=job_id, note=f'Job details updated: {old_company} - {old_title} → {company} - {title}')
+                log_service.create_log(
+                    job_id,
+                    note=f'Job details updated: {old_company} - {old_title} → {company} - {title}'
+                )
 
                 # Update the skills
-                result = service.extract_job_skills(job.id, job.description)
+                service.extract_job_skills(job.id, job.description)
 
                 current_app.logger.info(f'Job application updated: {title} at {company}')
                 flash(f'Job application for {title} at {company} updated successfully!', 'success')
