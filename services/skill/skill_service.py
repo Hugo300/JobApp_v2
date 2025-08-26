@@ -65,7 +65,7 @@ class SkillService(BaseService):
                 normalized_skills=normalization_result.normalized_skills,
                 unmatched_skills=normalization_result.unmatched_skills,
                 categorized_skills=categorized_skills,
-                total_skills=len(normalization_result.normalized_skills),
+                total_skills=len(normalization_result.normalized_skills)+len(normalization_result.unmatched_skills),
                 success=True
             )
             
@@ -79,44 +79,6 @@ class SkillService(BaseService):
                 success=False,
                 error=f"Processing failed: {str(e)}"
             )
-    
-    def extract_skills(self, job_description: str) -> dict:
-        """
-        Backward compatibility method that mimics the original interface
-        """
-        result = self.process_job_description(job_description)
-        
-        return {
-            'skills': [skill.name for skill in result.normalized_skills],
-            'total_skills': result.total_skills,
-            'success': result.success,
-            'error': result.error,
-            'unmatched_skills': result.unmatched_skills
-        }
-    
-    def categorize_skills(self, skills_dict: dict) -> Dict[str, List[str]]:
-        """
-        Backward compatibility method for categorization
-        """
-        if not skills_dict.get('success', False):
-            return {}
-        
-        skill_names = skills_dict.get('skills', [])
-        skill_objects = []
-        
-        for name in skill_names:
-            skill = self.get_skill_by_name(name)
-            if skill:
-                skill_objects.append(skill)
-        
-        categorized = self.categorizer.categorize_skills(skill_objects)
-        
-        # Convert to skill names for backward compatibility
-        result = {}
-        for category, skills in categorized.items():
-            result[category] = [skill.name for skill in skills]
-        
-        return result
     
     # =============================================================================
     # CRUD Operations using SQLAlchemy ORM

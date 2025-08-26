@@ -376,6 +376,18 @@ class JobService(BaseService):
         
         return self.update_job(job_id, status=new_status)
     
+    def create_job_skill(self, job_id, skill_id):
+
+        # check if relation exits
+        job_skill = JobSkill.query.filter_by(job_id=job_id, skill_id=skill_id).first()
+
+        # create relation if it does not exist
+        if job_skill == None:
+            return True, self.create(JobSkill, **{
+                'job_id': job_id,
+                'skill_id': skill_id
+            })
+
     def extract_job_skills(self, job_id, job_description):
         """
         Extract skills from the job description and store them in the JobSkill table.
@@ -384,27 +396,25 @@ class JobService(BaseService):
         :param job_description: Description of the job
         """
         # Extract skills
-        extracted_skills = self.skill_service.extract_skills(job_description)
+        extraction_result = self.skill_service.process_job_description(job_description)
 
-        # Fetch or create skills in the database
-        skill_ids = []
-        for skill_name in extracted_skills['skills']:
-            skill = db.session.query(Skill).filter_by(name=skill_name).first()
+        if extraction_result.success:
+            skill_ids = []
+            for skill in extraction_result.normalized_skills:
+                skill_ids.append(skill.id)
 
-            # if skill does not exist then add it to the db
-            if not skill:
-                _, skill, _ = self.skill_service.create_skill(name=skill_name)
+            # create skills that do not yet exist
+            for skill_name in extraction_result.unmatched_skills:
+                skill = self.skill_service.create_skill(skill_name)
+                skill_ids.append(skill.id)
 
-            skill_ids.append(skill.id)
+            # Link skills to the job
+            for skill_id in skill_ids:
+                self.create_job_skill(job_id, skill_id)
 
-        # Link skills to the job
-        for skill_id in skill_ids:
-            self.create(JobSkill, **{
-                'job_id': job_id,
-                'skill_id': skill_id
-            })
-
-        return True, extracted_skills
+            return True, extraction_result.normalized_skills
+        else:
+            return False, None
 
     def get_job_skills(self, job_id):
         query = JobApplication.query
@@ -434,4 +444,7 @@ class JobService(BaseService):
             elif not skill.is_blacklisted:  # Fixed condition
                 skills_by_category[category_name].append(skill.name)
 
-        return dict(skills_by_category)
+        return {
+            'total_skills': len(job.skills),
+            'skills': dict(skills_by_category)
+        }
