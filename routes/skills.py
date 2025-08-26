@@ -6,14 +6,14 @@ from services.skill.skill_service import get_skill_service
 
 skill_bp = Blueprint('skill', __name__)
 
-# Get the skill service instance
-skill_service = get_skill_service()
 
 @skill_bp.route('')
 def manage_skills():
     """Manage skills with blacklist filtering"""
     # Get blacklist filter parameter, default to 'active' (non-blacklisted)
     blacklist_filter = request.args.get('blacklist', 'active')
+    # Get the skill service instance
+    skill_service = get_skill_service()
     
     try:
         # Use SkillService to get skills based on filter
@@ -48,6 +48,9 @@ def manage_skills():
 def toggle_blacklist(skill_id):
     """Toggle blacklist status of a skill"""
     try:
+        # Get the skill service instance
+        skill_service = get_skill_service()
+
         # Get the current skill
         skill = skill_service.get_skill_by_id(skill_id)
         if not skill:
@@ -75,6 +78,9 @@ def toggle_blacklist(skill_id):
 def add_variant(skill_id):
     """Add a new variant to a skill"""
     try:
+        # Get the skill service instance
+        skill_service = get_skill_service()
+
         # Verify skill exists using SkillService
         skill = skill_service.get_skill_by_id(skill_id)
         if not skill:
@@ -118,6 +124,9 @@ def add_variant(skill_id):
 def delete_variant(variant_id):
     """Delete a skill variant"""
     try:
+        # Get the skill service instance
+        skill_service = get_skill_service()
+
         variant = SkillVariant.query.get_or_404(variant_id)
         skill_id = variant.skill_id
         variant_name = variant.variant_name
@@ -145,6 +154,9 @@ def create_skill():
         return render_template('admin/skill/skill_create.html', categories=categories)
     
     try:
+        # Get the skill service instance
+        skill_service = get_skill_service()
+
         name = request.form.get('name', '').strip()
         category_id = request.form.get('category_id')
         is_blacklisted = bool(request.form.get('is_blacklisted'))
@@ -178,6 +190,9 @@ def create_skill():
 def edit_skill(skill_id):
     """Edit an existing skill - comprehensive edit page"""
     try:
+        # Get the skill service instance
+        skill_service = get_skill_service()
+
         skill = skill_service.get_skill_by_id(skill_id)
         if not skill:
             flash('Skill not found', 'error')
@@ -237,6 +252,9 @@ def edit_skill(skill_id):
 def delete_skill(skill_id):
     """Delete a skill"""
     try:
+        # Get the skill service instance
+        skill_service = get_skill_service()
+
         skill = skill_service.get_skill_by_id(skill_id)
         if not skill:
             flash('Skill not found', 'error')
@@ -261,6 +279,9 @@ def delete_skill(skill_id):
 def api_get_variants(skill_id):
     """Get variants for a skill via API"""
     try:
+        # Get the skill service instance
+        skill_service = get_skill_service()
+
         skill = skill_service.get_skill_by_id(skill_id, include_relationships=True)
         if not skill:
             return jsonify({'error': 'Skill not found'}), 404
@@ -275,6 +296,9 @@ def api_get_variants(skill_id):
 def api_search_skills():
     """Search skills via API"""
     try:
+        # Get the skill service instance
+        skill_service = get_skill_service()
+
         query = request.args.get('q', '').strip()
         if len(query) < 2:
             return jsonify([])
@@ -301,6 +325,9 @@ def api_search_skills():
 def api_extract_skills():
     """Extract skills from text via API"""
     try:
+        # Get the skill service instance
+        skill_service = get_skill_service()
+
         data = request.get_json()
         if not data or 'text' not in data:
             return jsonify({'error': 'No text provided'}), 400
@@ -333,6 +360,9 @@ def api_extract_skills():
 def api_audit_skills():
     """Audit existing job skills via API"""
     try:
+        # Get the skill service instance
+        skill_service = get_skill_service()
+        
         audit_result = skill_service.audit_existing_job_skills()
         return jsonify(audit_result)
         

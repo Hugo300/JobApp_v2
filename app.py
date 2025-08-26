@@ -108,8 +108,6 @@ def create_app(config_name=None):
     with app.app_context():
         db.create_all()
 
-
-
     return app
 
 if __name__ == '__main__':

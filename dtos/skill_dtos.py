@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import List, Optional, Dict
 
+from models import Skill
+
 @dataclass
 class ExtractedSkillsResult:
     """Result from skill extraction process"""
@@ -12,7 +14,7 @@ class ExtractedSkillsResult:
 @dataclass
 class NormalizedSkillsResult:
     """Result from skill normalization process"""
-    normalized_skills: List['Skill']  # SQLAlchemy Skill objects
+    normalized_skills: List[Skill]  # SQLAlchemy Skill objects
     unmatched_skills: List[str] 
     success: bool
     error: Optional[str] = None
@@ -21,9 +23,9 @@ class NormalizedSkillsResult:
 class ProcessedSkillsResult:
     """Complete skill processing result"""
     extracted_skills: List[str]
-    normalized_skills: List['Skill']  # SQLAlchemy Skill objects
+    normalized_skills: List[Skill]  # SQLAlchemy Skill objects
     unmatched_skills: List[str]
-    categorized_skills: Dict[str, List['Skill']]
+    categorized_skills: Dict[str, List[Skill]]
     total_skills: int
     success: bool
     error: Optional[str] = None

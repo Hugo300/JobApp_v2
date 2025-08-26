@@ -13,8 +13,8 @@ class SkillLookupService:
         try:
             self._skill_lookup = {}
             
-            # Add canonical skills (active only)
-            skills = Skill.query.filter_by(is_blacklisted=False).all()
+            # Add canonical skills
+            skills = Skill.query.all()
             for skill in skills:
                 self._skill_lookup[skill.name.lower()] = skill
                 # Keep original case for exact matches
@@ -22,9 +22,7 @@ class SkillLookupService:
                     self._skill_lookup[skill.name] = skill
             
             # Add variants
-            variants = SkillVariant.query.join(Skill).filter(
-                Skill.is_blacklisted == False
-            ).all()
+            variants = SkillVariant.query.join(Skill).all()
             for variant in variants:
                 self._skill_lookup[variant.variant_name.lower()] = variant.skill
                 # Keep original case

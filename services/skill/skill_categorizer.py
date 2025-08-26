@@ -1,5 +1,6 @@
 from typing import List, Dict
 from models import SkillCategory, Skill
+from .category_service import CategoryService
 
 from exceptions.skill_exceptions import SkillServiceError
 
@@ -11,20 +12,13 @@ class SkillCategorizer:
         try:
             categorized_skills = {}
             
-            # Get all categories
-            categories = SkillCategory.query.all()
-            
-            # Initialize all categories
-            for category in categories:
-                categorized_skills[category.name] = []
-            
             # Categorize skills
             for skill in skills:
-                if skill.category:
-                    category_name = skill.category.name
-                    if category_name not in categorized_skills:
-                        categorized_skills[category_name] = []
-                    categorized_skills[category_name].append(skill)
+                if skill.category_id:
+                    category = CategoryService().get_category_by_id(skill.category_id)
+                    if category.name not in categorized_skills:
+                        categorized_skills[category.name] = []
+                    categorized_skills[category.name].append(skill)
                 else:
                     # Uncategorized skills
                     if 'Uncategorized' not in categorized_skills:
