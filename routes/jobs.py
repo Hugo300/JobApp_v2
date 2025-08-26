@@ -2,6 +2,8 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 import os
 
 from typing import Tuple, Optional, Dict, Any
+
+import markdown
 from models import JobApplication, ApplicationStatus, UserData, MasterTemplate, Document, TemplateType, JobLog, db
 from datetime import datetime
 from services import JobService, UserService, LogService, TemplateService
@@ -111,8 +113,12 @@ def job_detail(job_id):
         # Get Skills using service
         job_skills = job_service.get_job_skills_by_category(job_id)
 
+        # convert job description into html
+        job_description = markdown.markdown(job.description, extensions=['extra'])
+
         return render_template('jobs/job_detail.html',
                              job=job,
+                             job_description=job_description,
                              job_skills=job_skills['skills'],
                              total_skills=job_skills['total_skills'],
                              match_score=0,

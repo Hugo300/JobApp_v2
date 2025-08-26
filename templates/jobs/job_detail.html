@@ -77,10 +77,7 @@
                 <div class="card-body job-description-preview">
                     {% if job.description %}
                         <div class="job-description-collapsed">
-                            <pre class="job-description-text-preview">{{ job.description[:200] }}{% if job.description|length > 200 %}...{% endif %}</pre>
-                            <div class="text-center mt-2">
-                                <small class="text-muted">Click to expand full description</small>
-                            </div>
+                            {{ job_description[:500] | safe }}{% if job.description|length > 500 %}...{% endif %}
                         </div>
                     {% else %}
                         <p class="text-muted">No description available.</p>
@@ -93,7 +90,7 @@
                 <div class="card-body">
                     {% if job.description %}
                         <div class="job-description">
-                            <pre class="job-description-text">{{ job.description }}</pre>
+                            {{ job_description | safe }}
                         </div>
                     {% else %}
                         <p class="text-muted">No description available.</p>
