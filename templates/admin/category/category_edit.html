@@ -203,14 +203,6 @@
                             Add New Skill to Category
                         </a>
                         
-                        {% if all_skills %}
-                        <a href="{{ url_for('skill_category.view_category_skills', category_id=category.id) }}" 
-                           class="btn btn-outline-info">
-                            {{ render_icon("eye-fill") }}
-                            View All Skills
-                        </a>
-                        {% endif %}
-                        
                         <a href="{{ url_for('skill.manage_skills') }}?category={{ category.name }}" 
                            class="btn btn-outline-secondary">
                             {{ render_icon("filter") }}
@@ -312,4 +304,122 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        // Skills filter functionality
+        const filterInputs = document.querySelectorAll('input[name="skillFilter"]');
+        const skillItems = document.querySelectorAll('.skill-item');
+        
+        filterInputs.forEach(input => {
+            input.addEventListener('change', function() {
+                const filter = this.value;
+                
+                skillItems.forEach(item => {
+                    const status = item.dataset.status;
+                    
+                    if (filter === 'all' || filter === status) {
+                        item.style.display = '';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+        });
+
+        // Character counters
+        addCharacterCounter(document.getElementById('name'), 255);
+        addCharacterCounter(document.getElementById('description'), 500);
+
+        // Enable delete button when checkbox is checked
+        const confirmCheckbox = document.getElementById('confirmDelete');
+        const deleteBtn = document.getElementById('confirmDeleteBtn');
+        
+        if (confirmCheckbox && deleteBtn) {
+            confirmCheckbox.addEventListener('change', function() {
+                deleteBtn.disabled = !this.checked;
+            });
+        }
+    });
+
+    function addCharacterCounter(field, maxLength) {
+        if (!field) return;
+        
+        const counter = document.createElement('div');
+        counter.className = 'form-text text-end';
+        counter.style.fontSize = '0.875rem';
+        
+        field.parentNode.appendChild(counter);
+        
+        function updateCounter() {
+            const remaining = maxLength - field.value.length;
+            counter.textContent = `${field.value.length}/${maxLength} characters`;
+            
+            if (remaining < 20) {
+                counter.className = 'form-text text-end text-warning';
+            } else if (remaining < 0) {
+                counter.className = 'form-text text-end text-danger';
+            } else {
+                counter.className = 'form-text text-end text-muted';
+            }
+        }
+        
+        updateCounter();
+        field.addEventListener('input', updateCounter);
+    }
+
+    // Form validation
+    document.getElementById('editCategoryForm').addEventListener('submit', function(e) {
+        const name = document.getElementById('name').value.trim();
+        
+        if (!name) {
+            e.preventDefault();
+            showAlert('danger', 'Please enter a category name.');
+            document.getElementById('name').focus();
+            return false;
+        }
+        
+        if (name.length > 255) {
+            e.preventDefault();
+            showAlert('danger', 'Category name is too long. Please keep it under 255 characters.');
+            document.getElementById('name').focus();
+            return false;
+        }
+        
+        const description = document.getElementById('description').value.trim();
+        if (description.length > 500) {
+            e.preventDefault();
+            showAlert('danger', 'Description is too long. Please keep it under 500 characters.');
+            document.getElementById('description').focus();
+            return false;
+        }
+    });
+
+    // Utility function to show alerts
+    function showAlert(type, message) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        const container = document.querySelector('.container');
+        container.insertBefore(alertDiv, container.firstChild);
+        
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 5000);
+    }
+</script>
 {% endblock %}
