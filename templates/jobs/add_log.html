@@ -7,13 +7,13 @@
     <div class="col-lg-8">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <h1><i class="fas fa-plus-circle me-2"></i>Add Log Entry</h1>
+                <h1><i class="bi bi-plus-circle me-2"></i>Add Log Entry</h1>
                 <p class="text-muted mb-0">
-                    <i class="fas fa-briefcase me-1"></i>{{ job.title }} at {{ job.company }}
+                    <i class="bi bi-briefcase me-1"></i>{{ job.title }} at {{ job.company }}
                 </p>
             </div>
             <a href="{{ url_for('jobs.job_detail', job_id=job.id) }}" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left me-1"></i>Back to Job
+                <i class="bi bi-arrow-left me-1"></i>Back to Job
             </a>
         </div>
 
@@ -21,39 +21,39 @@
         <div class="card mb-4">
             <div class="card-header">
                 <h6 class="card-title mb-0">
-                    <i class="fas fa-magic me-2"></i>Quick Templates
+                    <i class="bi bi-magic me-2"></i>Quick Templates
                 </h6>
             </div>
             <div class="card-body">
                 <div class="row g-2">
                     <div class="col-md-4">
                         <button type="button" class="btn btn-outline-primary btn-sm w-100" onclick="insertTemplate('applied')">
-                            <i class="fas fa-paper-plane me-1"></i>Applied
+                            <i class="bi bi-send me-1"></i>Applied
                         </button>
                     </div>
                     <div class="col-md-4">
                         <button type="button" class="btn btn-outline-info btn-sm w-100" onclick="insertTemplate('interview')">
-                            <i class="fas fa-user-tie me-1"></i>Interview
+                            <i class="bi bi-person-video me-1"></i>Interview
                         </button>
                     </div>
                     <div class="col-md-4">
                         <button type="button" class="btn btn-outline-success btn-sm w-100" onclick="insertTemplate('followup')">
-                            <i class="fas fa-envelope me-1"></i>Follow-up
+                            <i class="bi bi-envelope me-1"></i>Follow-up
                         </button>
                     </div>
                     <div class="col-md-4">
                         <button type="button" class="btn btn-outline-warning btn-sm w-100" onclick="insertTemplate('research')">
-                            <i class="fas fa-search me-1"></i>Research
+                            <i class="bi bi-search me-1"></i>Research
                         </button>
                     </div>
                     <div class="col-md-4">
                         <button type="button" class="btn btn-outline-secondary btn-sm w-100" onclick="insertTemplate('call')">
-                            <i class="fas fa-phone me-1"></i>Phone Call
+                            <i class="bi bi-telephone-fill me-1"></i>Phone Call
                         </button>
                     </div>
                     <div class="col-md-4">
                         <button type="button" class="btn btn-outline-dark btn-sm w-100" onclick="insertTemplate('meeting')">
-                            <i class="fas fa-calendar me-1"></i>Meeting
+                            <i class="bi bi-calendar-check me-1"></i>Meeting
                         </button>
                     </div>
                 </div>
@@ -63,7 +63,7 @@
         <div class="card">
             <div class="card-header bg-primary text-white">
                 <h5 class="card-title mb-0">
-                    <i class="fas fa-edit me-2"></i>Log Details
+                    <i class="bi bi-pencil-fill me-2"></i>Log Details
                 </h5>
             </div>
             <div class="card-body">
@@ -76,12 +76,12 @@
                         {% if form.note.errors %}
                             <div class="text-danger mt-1">
                                 {% for error in form.note.errors %}
-                                    <small><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</small>
+                                    <small><i class="bi bi-exclamation-circle me-1"></i>{{ error }}</small>
                                 {% endfor %}
                             </div>
                         {% endif %}
                         <div class="form-text">
-                            <i class="fas fa-info-circle me-1"></i>
+                            <i class="bi bi-info-circle me-1"></i>
                             Describe what happened, what you did, or any notes about this job application.
                             <span class="float-end">
                                 <span id="charCount">0</span>/1000 characters
@@ -95,18 +95,18 @@
                         {% if form.status_change.errors %}
                             <div class="text-danger mt-1">
                                 {% for error in form.status_change.errors %}
-                                    <small><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</small>
+                                    <small><i class="bi bi-exclamation-circle me-1"></i>{{ error }}</small>
                                 {% endfor %}
                             </div>
                         {% endif %}
                         <div class="form-text">
-                            <i class="fas fa-info-circle me-1"></i>
+                            <i class="bi bi-info-circle me-1"></i>
                             Optionally update the job status along with this log entry.
                         </div>
                         <div id="statusChangePreview" class="mt-2" style="display: none;">
                             <div class="alert alert-info py-2">
                                 <small>
-                                    <i class="fas fa-arrow-right me-1"></i>
+                                    <i class="bi bi-arrow-right me-1"></i>
                                     Status will change from <strong id="currentStatus">{{ job.status }}</strong> to <strong id="newStatus"></strong>
                                 </small>
                             </div>
@@ -116,7 +116,7 @@
                     <div class="d-flex gap-2 justify-content-between">
                         <div>
                             <button type="button" class="btn btn-outline-secondary" onclick="saveDraft()">
-                                <i class="fas fa-save me-1"></i>Save Draft
+                                <i class="bi bi-floppy me-1"></i>Save Draft
                             </button>
                             <small class="text-muted ms-2" id="draftStatus"></small>
                         </div>
@@ -135,7 +135,7 @@
                 <div class="card">
                     <div class="card-header">
                         <h6 class="card-title mb-0">
-                            <i class="fas fa-info-circle me-2"></i>Current Status
+                            <i class="bi bi-info-circle me-2"></i>Current Status
                         </h6>
                     </div>
                     <div class="card-body">
@@ -154,7 +154,7 @@
                 <div class="card">
                     <div class="card-header">
                         <h6 class="card-title mb-0">
-                            <i class="fas fa-history me-2"></i>Recent Activity
+                            <i class="bi bi-clock-history me-2"></i>Recent Activity
                         </h6>
                     </div>
                     <div class="card-body">
@@ -163,9 +163,9 @@
                                 <div class="d-flex align-items-start mb-2 {% if not loop.last %}border-bottom pb-2{% endif %}">
                                     <div class="flex-shrink-0 me-2">
                                         {% if log.status_change_from and log.status_change_to %}
-                                            <i class="fas fa-exchange-alt text-primary"></i>
+                                            <i class="bi bi-arrow-left-right text-primary"></i>
                                         {% else %}
-                                            <i class="fas fa-sticky-note text-secondary"></i>
+                                            <i class="bi bi-sticky text-secondary"></i>
                                         {% endif %}
                                     </div>
                                     <div class="flex-grow-1">
@@ -176,12 +176,12 @@
                             {% endfor %}
                             <div class="text-center mt-2">
                                 <a href="{{ url_for('jobs.job_detail', job_id=job.id) }}" class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-eye me-1"></i>View All
+                                    <i class="bi bi-eye me-1"></i>View All
                                 </a>
                             </div>
                         {% else %}
                             <p class="text-muted mb-0 text-center">
-                                <i class="fas fa-clipboard-list fa-2x d-block mb-2"></i>
+                                <i class="bi bi-clipboard2 bi-2x d-block mb-2"></i>
                                 No logs yet
                             </p>
                         {% endif %}
@@ -267,7 +267,7 @@ function saveDraft() {
 
     localStorage.setItem('log_draft_{{ job.id }}', JSON.stringify(draft));
 
-    draftStatus.innerHTML = '<i class="fas fa-check text-success me-1"></i>Draft saved';
+    draftStatus.innerHTML = '<i class="bi bi-check-lg text-success me-1"></i>Draft saved';
     setTimeout(() => {
         draftStatus.innerHTML = '';
     }, 3000);
@@ -295,7 +295,7 @@ function loadDraft() {
 
             const draftDate = new Date(draftData.timestamp);
             const draftStatus = document.getElementById('draftStatus');
-            draftStatus.innerHTML = `<i class="fas fa-info-circle text-info me-1"></i>Draft from ${draftDate.toLocaleDateString()}`;
+            draftStatus.innerHTML = `<i class="bi bi-info-circle text-info me-1"></i>Draft from ${draftDate.toLocaleDateString()}`;
         } catch (e) {
             console.error('Error loading draft:', e);
         }

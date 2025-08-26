@@ -9,14 +9,14 @@
             <!-- Header -->
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h2><i class="fas fa-edit me-2"></i>Edit Log Entry</h2>
+                    <h2><i class="bi bi-pencil-fill me-2"></i>Edit Log Entry</h2>
                     <p class="text-muted mb-0">
                         For: <strong>{{ job.title }}</strong> at <strong>{{ job.company }}</strong>
                     </p>
                 </div>
                 <div>
                     <a href="{{ url_for('jobs.job_detail', job_id=job.id) }}" class="btn btn-outline-secondary">
-                        <i class="fas fa-arrow-left me-1"></i>Back to Job
+                        <i class="bi bi-arrow-left me-1"></i>Back to Job
                     </a>
                 </div>
             </div>
@@ -25,7 +25,7 @@
             <div class="card">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-sticky-note me-2"></i>Edit Log Entry
+                        <i class="bi bi-sticky me-2"></i>Edit Log Entry
                     </h5>
                     <small class="text-muted">
                         Created: {{ log.created_at.strftime('%B %d, %Y at %I:%M %p') }}
@@ -47,7 +47,7 @@
                                 </div>
                             {% endif %}
                             <div class="form-text">
-                                <i class="fas fa-info-circle me-1"></i>
+                                <i class="bi bi-info-circle me-1"></i>
                                 Describe what happened, what you did, or any important notes about this job application.
                             </div>
                         </div>
@@ -56,7 +56,7 @@
                         {% if log.status_change_from and log.status_change_to %}
                         <div class="alert alert-info">
                             <h6 class="alert-heading">
-                                <i class="fas fa-exchange-alt me-1"></i>Status Change Log
+                                <i class="bi bi-arrow-left-right me-1"></i>Status Change Log
                             </h6>
                             <p class="mb-0">
                                 This log entry recorded a status change from 
@@ -74,7 +74,7 @@
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-save me-1"></i>Update Log Entry
+                                    <i class="bi bi-floppy me-1"></i>Update Log Entry
                                 </button>
                                 <a href="{{ url_for('jobs.job_detail', job_id=job.id) }}" class="btn btn-outline-secondary ms-2">
                                     Cancel
@@ -82,7 +82,7 @@
                             </div>
                             <div>
                                 <button type="button" class="btn btn-outline-danger" onclick="confirmDeleteLog()">
-                                    <i class="fas fa-trash me-1"></i>Delete Log
+                                    <i class="bi bi-trash-fill me-1"></i>Delete Log
                                 </button>
                             </div>
                         </div>
@@ -94,7 +94,7 @@
             <div class="card mt-4">
                 <div class="card-header">
                     <h6 class="card-title mb-0">
-                        <i class="fas fa-history me-2"></i>Recent Activity
+                        <i class="bi bi-clock-history me-2"></i>Recent Activity
                     </h6>
                 </div>
                 <div class="card-body">
@@ -103,7 +103,7 @@
                         <div class="timeline-item timeline-item-editing">
                             <div class="timeline-marker-container">
                                 <div class="timeline-marker timeline-marker-editing">
-                                    <i class="fas fa-edit"></i>
+                                    <i class="bi bi-pencil-fill"></i>
                                 </div>
                             </div>
                             <div class="timeline-content">

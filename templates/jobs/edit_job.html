@@ -8,11 +8,11 @@
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <h1><i class="fas fa-edit me-2"></i>Edit Job Application</h1>
+                <h1><i class="bi bi-pencil-fill-2"></i>Edit Job Application</h1>
                 <p class="text-muted mb-0">Update details for {{ job.title }} at {{ job.company }}</p>
             </div>
             <a href="{{ url_for('jobs.job_detail', job_id=job.id) }}" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left me-1"></i>Back to Job
+                <i class="bi bi-arrow-left me-1"></i>Back to Job
             </a>
         </div>
     </div>
@@ -117,7 +117,7 @@
                     
                     <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save me-1"></i>Update Application
+                            <i class="bi bi-floppy me-1"></i>Update Application
                         </button>
                         <a href="{{ url_for('jobs.job_detail', job_id=job.id) }}" class="btn btn-secondary">Cancel</a>
                     </div>
@@ -153,17 +153,17 @@
                     <strong>Location & Mode:</strong><br>
                     {% if job.office_location %}
                         <small class="text-muted">
-                            <i class="fas fa-map-marker-alt me-1"></i>{{ job.office_location }}
+                            <i class="bi bi-geo-alt-fill me-1"></i>{{ job.office_location }}
                             {% if job.country %}, {{ job.country }}{% endif %}
                         </small><br>
                     {% elif job.country %}
                         <small class="text-muted">
-                            <i class="fas fa-globe me-1"></i>{{ job.country }}
+                            <i class="bi bi-globe me-1"></i>{{ job.country }}
                         </small><br>
                     {% endif %}
                     {% if job.job_mode %}
                         <small class="text-muted">
-                            <i class="fas fa-laptop-house me-1"></i>{{ job.job_mode }}
+                            <i class="bi bi-laptop me-1"></i>{{ job.job_mode }}
                         </small>
                     {% endif %}
                 </p>
@@ -178,13 +178,13 @@
             <div class="card-body">
                 <div class="d-grid gap-2">
                     <a href="{{ url_for('jobs.job_detail', job_id=job.id) }}" class="btn btn-outline-primary btn-sm">
-                        <i class="fas fa-eye me-1"></i>View Details
+                        <i class="bi bi-eye me-1"></i>View Details
                     </a>
                     <a href="{{ url_for('jobs.add_log', job_id=job.id) }}" class="btn btn-outline-success btn-sm">
-                        <i class="fas fa-plus me-1"></i>Add Log
+                        <i class="bi bi-plus-lg me-1"></i>Add Log
                     </a>
                     <button type="button" class="btn btn-outline-danger btn-sm" onclick="confirmDeleteFromEdit()">
-                        <i class="fas fa-trash me-1"></i>Delete Job
+                        <i class="bi bi-trash-fill me-1"></i>Delete Job
                     </button>
                 </div>
             </div>
@@ -215,7 +215,7 @@ function scrapeJob() {
     // Show loading state
     const scrapeBtn = document.getElementById('scrapeBtn');
     const originalText = scrapeBtn.innerHTML;
-    scrapeBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Updating with Python...';
+    scrapeBtn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i>Updating with Python...';
     scrapeBtn.disabled = true;
 
     // Show progress message
