@@ -10,6 +10,8 @@ from .categories import skill_category_bp
 
 from .user import user_bp
 
+from .analytics import analytics_bp
+
 __all__ = [
     'main_bp',
     'jobs_bp',
@@ -17,4 +19,5 @@ __all__ = [
     'user_bp',
     'skill_bp',
     'skill_category_bp',
+    'analytics_bp',
 ]

@@ -53,21 +53,3 @@ def dashboard():
                              status_filter='',
                              job_mode_filter='',
                              country_filter='')
-
-
-@main_bp.route('/analytics')
-def analytics_dashboard():
-    """Job analytics dashboard"""
-    try:
-        from services.analytics_service import AnalyticsService
-        analytics_service = AnalyticsService()
-
-        # Get comprehensive analytics data
-        analytics_data = analytics_service.get_comprehensive_analytics()
-
-        return render_template('analytics/dashboard.html', **analytics_data)
-
-    except Exception as e:
-        current_app.logger.error(f'Error loading analytics dashboard: {str(e)}')
-        flash('Error loading analytics dashboard', 'danger')
-        return redirect(url_for('main.dashboard'))

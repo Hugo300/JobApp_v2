@@ -16,9 +16,15 @@
                     <button class="btn btn-outline-primary" onclick="refreshAnalytics()">
                         <i class="bi bi-arrow-repeat me-1"></i>Refresh
                     </button>
-                    <button class="btn btn-outline-secondary" onclick="exportAnalytics()">
-                        <i class="bi bi-download me-1"></i>Export
-                    </button>
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-download me-1"></i>Export
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/analytics/api/export?format=json" download>Export as JSON</a></li>
+                            <li><a class="dropdown-item" href="/analytics/api/export?format=csv" download>Export as CSV</a></li>
+                        </ul>
+                    </div>
                     <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
                     </a>
@@ -90,7 +96,7 @@
                             <small class="opacity-75">{{ performance_metrics.offer_rate }}% offer rate</small>
                         </div>
                         <div class="align-self-center">
-                            <i class="bi bi-person-video opacity-75"></i>
+                            <i class="bi bi-person-video bi-2x opacity-75"></i>
                         </div>
                     </div>
                 </div>
@@ -109,7 +115,7 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    <div class="chart-container">
+                    <div class="chart-container" style="height: 300px;">
                         <canvas id="timelineChart"></canvas>
                     </div>
                 </div>
@@ -125,7 +131,7 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    <div class="chart-container">
+                    <div class="chart-container" style="height: 300px;">
                         <canvas id="statusChart"></canvas>
                     </div>
                 </div>
@@ -133,7 +139,7 @@
         </div>
     </div>
 
-    <!-- Companies Row -->
+    <!-- Companies and Skills Row -->
     <div class="row mb-4">        
         <!-- Top Companies -->
         <div class="col-lg-6 mb-4">
@@ -148,21 +154,29 @@
                 </div>
                 <div class="card-body">
                     {% if company_analytics.top_companies %}
-                        {% for company_data in company_analytics.top_companies[:10] %}
-                        <div class="company-item">
-                            <div>
-                                <strong>{{ company_data.company }}</strong>
-                            </div>
-                            <div class="d-flex align-items-center gap-2">
-                                <span class="badge bg-primary">{{ company_data.count }}</span>
-                            </div>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Company</th>
+                                        <th>Applications</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for company_data in company_analytics.top_companies[:10] %}
+                                    <tr>
+                                        <td>{{ company_data.company }}</td>
+                                        <td><span class="badge bg-primary">{{ company_data.count }}</span></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                         </div>
-                        {% endfor %}
                     {% else %}
                         <div class="text-center text-muted py-4">
-                            <i class="bi bi-building mb-3 opacity-50"></i>
-                            <p>No company data available yet</p>
-                            <small>Companies will appear as you add job applications</small>
+                            <i class="bi bi-gear mb-3 opacity-50" style="font-size: 2rem;"></i>
+                            <p>No skill data available yet</p>
+                            <small>Skills will appear as you add job applications</small>
                         </div>
                     {% endif %}
                 </div>
@@ -187,7 +201,7 @@
                                 <span>Collected → Applied</span>
                                 <span>{{ "%.1f"|format(status_analytics.conversion_rates.collected_to_applied) }}%</span>
                             </div>
-                            <div class="progress progress-thin">
+                            <div class="progress progress-thin mb-2">
                                 <div class="progress-bar bg-primary" style="width: {{ status_analytics.conversion_rates.collected_to_applied }}%"></div>
                             </div>
                         </div>
@@ -197,7 +211,7 @@
                                 <span>Applied → Interview</span>
                                 <span>{{ "%.1f"|format(status_analytics.conversion_rates.applied_to_interview) }}%</span>
                             </div>
-                            <div class="progress progress-thin">
+                            <div class="progress progress-thin mb-2">
                                 <div class="progress-bar bg-success" style="width: {{ status_analytics.conversion_rates.applied_to_interview }}%"></div>
                             </div>
                         </div>
@@ -207,13 +221,13 @@
                                 <span>Interview → Offer</span>
                                 <span>{{ "%.1f"|format(status_analytics.conversion_rates.interview_to_offer) }}%</span>
                             </div>
-                            <div class="progress progress-thin">
+                            <div class="progress progress-thin mb-2">
                                 <div class="progress-bar bg-warning" style="width: {{ status_analytics.conversion_rates.interview_to_offer }}%"></div>
                             </div>
                         </div>
                     {% else %}
                         <div class="text-center text-muted py-4">
-                            <i class="bi bi-funnel-fill mb-3 opacity-50"></i>
+                            <i class="bi bi-funnel-fill mb-3 opacity-50" style="font-size: 2rem;"></i>
                             <p>No conversion data available yet</p>
                         </div>
                     {% endif %}
@@ -256,6 +270,82 @@
         </div>
     </div>
 
+    <!-- Skills Success Rate Row -->
+    <div class="row mb-4">
+        <div class="col-lg-6 mb-4">
+            <div class="card analytics-card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-trophy me-2"></i>Skills by Success Rate
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if skill_analytics.skills_by_success %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Skill</th>
+                                        <th>Success Rate</th>
+                                        <th>Jobs</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for skill_data in skill_analytics.skills_by_success %}
+                                    <tr>
+                                        <td>{{ skill_data.skill }}</td>
+                                        <td>
+                                            <span class="badge {% if skill_data.success_rate >= 50 %}bg-success{% elif skill_data.success_rate >= 25 %}bg-warning{% else %}bg-danger{% endif %}">
+                                                {{ skill_data.success_rate }}%
+                                            </span>
+                                        </td>
+                                        <td><small class="text-muted">{{ skill_data.total_jobs }}</small></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-trophy mb-3 opacity-50" style="font-size: 2rem;"></i>
+                            <p>No skill success data available yet</p>
+                            <small>Need at least 3 applications per skill to show success rates</small>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Work Mode Distribution -->
+        <div class="col-lg-6 mb-4">
+            <div class="card analytics-card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-laptop me-2"></i>Work Mode Distribution
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if location_analytics.job_mode_distribution %}
+                        {% for mode, count in location_analytics.job_mode_distribution.items() %}
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <i class="bi {% if mode == 'remote' %}bi-house{% elif mode == 'hybrid' %}bi-hybrid{% else %}bi-building{% endif %} me-2"></i>
+                                <span class="text-capitalize">{{ mode.replace('_', ' ') }}</span>
+                            </div>
+                            <span class="badge bg-primary">{{ count }}</span>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-laptop mb-3 opacity-50" style="font-size: 2rem;"></i>
+                            <p>No work mode data available yet</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Trends Row -->
     <div class="row mb-4">
         <div class="col-12">
@@ -269,8 +359,8 @@
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <div class="text-center">
-                                <div class="metric-value {{ 'trend-positive' if trends.month_over_month_change > 0 else 'trend-negative' if trends.month_over_month_change < 0 else '' }}">
-                                    {{ "%.1f"|format(trends.month_over_month_change) }}%
+                                <div class="metric-value {% if trends.month_over_month_change > 0 %}trend-positive{% elif trends.month_over_month_change < 0 %}trend-negative{% endif %}">
+                                    {% if trends.month_over_month_change > 0 %}+{% endif %}{{ "%.1f"|format(trends.month_over_month_change) }}%
                                 </div>
                                 <div class="metric-label">Month-over-Month Change</div>
                                 <small class="text-muted">{{ trends.current_month_applications }} this month vs {{ trends.previous_month_applications }} last month</small>
@@ -283,12 +373,30 @@
                                 {% for company in trends.trending_companies %}
                                 <div class="d-flex justify-content-between align-items-center mb-1">
                                     <span>{{ company.company }}</span>
-                                    <span class="badge bg-success">+{{ "%.1f"|format(company.trend) }}%</span>
+                                    <span class="badge bg-success">+{{ "%.0f"|format(company.trend) }}%</span>
                                 </div>
                                 {% endfor %}
                             {% else %}
                                 <p class="text-muted small">No trending companies data</p>
                             {% endif %}
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <h6>Quick Stats</h6>
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="text-center">
+                                        <div class="h5 mb-0">{{ overview_stats.total_jobs }}</div>
+                                        <small class="text-muted">Total Apps</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="text-center">
+                                        <div class="h5 mb-0">{{ company_analytics.total_companies }}</div>
+                                        <small class="text-muted">Companies</small>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -319,7 +427,9 @@ function initializeCharts() {
                 borderColor: '#007bff',
                 backgroundColor: 'rgba(0, 123, 255, 0.1)',
                 tension: 0.4,
-                fill: true
+                fill: true,
+                pointRadius: 4,
+                pointHoverRadius: 6
             }]
         },
         options: {
@@ -328,12 +438,33 @@ function initializeCharts() {
             plugins: {
                 legend: {
                     display: false
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false
                 }
             },
             scales: {
+                x: {
+                    display: true,
+                    title: {
+                        display: true,
+                        text: 'Week'
+                    }
+                },
                 y: {
+                    display: true,
+                    title: {
+                        display: true,
+                        text: 'Applications'
+                    },
                     beginAtZero: true
                 }
+            },
+            interaction: {
+                mode: 'nearest',
+                axis: 'x',
+                intersect: false
             }
         }
     });
@@ -341,7 +472,7 @@ function initializeCharts() {
     // Status Distribution Chart
     const statusCtx = document.getElementById('statusChart').getContext('2d');
     const statusData = {{ overview_stats.status_distribution | tojson }};
-    const statusLabels = Object.keys(statusData);
+    const statusLabels = Object.keys(statusData).map(status => status.charAt(0).toUpperCase() + status.slice(1));
     const statusValues = Object.values(statusData);
     
     new Chart(statusCtx, {
@@ -356,7 +487,9 @@ function initializeCharts() {
                     '#ffc107', // interview
                     '#28a745', // offer
                     '#dc3545'  // rejected
-                ]
+                ],
+                borderWidth: 2,
+                borderColor: '#fff'
             }]
         },
         options: {
@@ -364,7 +497,20 @@ function initializeCharts() {
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    position: 'bottom'
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((context.parsed / total) * 100).toFixed(1);
+                            return `${context.label}: ${context.parsed} (${percentage}%)`;
+                        }
+                    }
                 }
             }
         }
@@ -372,12 +518,80 @@ function initializeCharts() {
 }
 
 function refreshAnalytics() {
-    location.reload();
+    // Show loading state
+    const refreshBtn = document.querySelector('[onclick="refreshAnalytics()"]');
+    const originalText = refreshBtn.innerHTML;
+    refreshBtn.innerHTML = '<i class="bi bi-arrow-repeat me-1 spin"></i>Refreshing...';
+    refreshBtn.disabled = true;
+    
+    // Reload page after a brief delay to show loading state
+    setTimeout(() => {
+        location.reload();
+    }, 500);
 }
 
-function exportAnalytics() {
-    // Implement analytics export functionality
-    alert('Export functionality coming soon!');
-}
+// Add CSS for loading animation
+const style = document.createElement('style');
+style.textContent = `
+    .analytics-card {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        border: 1px solid rgba(0, 0, 0, 0.125);
+        transition: all 0.15s ease-in-out;
+    }
+    
+    .analytics-card:hover {
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+    
+    .metric-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        line-height: 1;
+    }
+    
+    .metric-label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    .progress-thin {
+        height: 4px;
+    }
+    
+    .trend-positive {
+        color: #28a745;
+    }
+    
+    .trend-negative {
+        color: #dc3545;
+    }
+    
+    .chart-container {
+        position: relative;
+    }
+    
+    .spin {
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    
+    .table th {
+        border-top: none;
+        font-weight: 600;
+        font-size: 0.875rem;
+        color: #495057;
+    }
+    
+    .table td {
+        vertical-align: middle;
+    }
+`;
+document.head.appendChild(style);
 </script>
 {% endblock %}

@@ -6,11 +6,13 @@ from .template_service import TemplateService
 from .log_service import LogService
 from .job_service import JobService
 from .category_service import CategoryService
+from .analytics_service import AnalyticsService
 
 __all__ = [
     'JobService',
     'UserService',
     'TemplateService',
     'LogService',
-    'CategoryService'
+    'CategoryService',
+    'AnalyticsService',
 ]

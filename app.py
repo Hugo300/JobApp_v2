@@ -64,7 +64,7 @@ def create_app(config_name=None):
         g.start_time = time.time()
 
     # Register blueprints
-    from routes import main_bp, jobs_bp, templates_bp, skill_bp, user_bp, skill_category_bp
+    from routes import main_bp, jobs_bp, templates_bp, skill_bp, user_bp, skill_category_bp, analytics_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(jobs_bp, url_prefix='/job')
@@ -72,6 +72,7 @@ def create_app(config_name=None):
     app.register_blueprint(skill_bp, url_prefix='/admin/skills')
     app.register_blueprint(skill_category_bp, url_prefix='/admin/categories')
     app.register_blueprint(user_bp, url_prefix='/user')
+    app.register_blueprint(analytics_bp, url_prefix='/analytics')
 
     # Add error handlers
     @app.errorhandler(404)
