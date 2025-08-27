@@ -1,5 +1,9 @@
 from typing import Dict, Optional
+import logging
+
 from models import Skill, SkillVariant, db
+
+logger = logging.getLogger(__name__)
 
 class SkillLookupService:
     """Service for skill lookup and caching"""
@@ -7,6 +11,7 @@ class SkillLookupService:
     def __init__(self):
         self._skill_lookup: Dict[str, Skill] = {}
         self._build_lookup()
+        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
     
     def _build_lookup(self):
         """Build lookup dictionary from database"""
@@ -30,7 +35,7 @@ class SkillLookupService:
                     self._skill_lookup[variant.variant_name] = variant.skill
                     
         except Exception as e:
-            print(f"Warning: Failed to build skill lookup: {e}")
+            self.logger.warning(f"Failed to build skill lookup: {str(e)}", exc_info=True)
             self._skill_lookup = {}
     
     def find_skill(self, name: str) -> Optional[Skill]:
