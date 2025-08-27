@@ -188,9 +188,12 @@
                 }
             });
             
-            document.getElementById('resultsCount').textContent = `Showing ${visibleCount} skills`;
+            const resultsEl = document.getElementById('resultsCount');
+            if (resultsEl) {
+                resultsEl.textContent = `Showing ${visibleCount} skills`;
+            }
         }
-
+        
         function clearFilters() {
             const searchInput = document.getElementById('skillSearch');
             const categorySelect = document.getElementById('categoryFilter');

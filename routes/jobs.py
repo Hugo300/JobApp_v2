@@ -1,20 +1,24 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, send_file, current_app, abort
 import os
-
-from typing import Tuple, Optional, Dict, Any
-
-import markdown
-from models import JobApplication, ApplicationStatus, UserData, MasterTemplate, Document, TemplateType, JobLog, db
 from datetime import datetime
+from typing import Tuple, Optional, Dict, Any
+import markdown
+from markupsafe import escape
+import bleach
+
+from models import JobApplication, ApplicationStatus, UserData, MasterTemplate, Document, TemplateType, JobLog, db
+
 from services import JobService, UserService, LogService, TemplateService
 from services.database_service import DatabaseError
+
+from routes.forms import JobForm, LogForm
+
 from utils.latex import compile_latex, compile_latex_template
-from utils.scraper import scrape_job_data
 from utils.responses import success_response, error_response, flash_success, flash_error
 from utils.forms import populate_job_form_choices, populate_log_form_choices, extract_form_data, sanitize_form_data
 from utils.validation import validate_job_data, ValidationError
-from routes.forms import JobForm, LogForm
-from markupsafe import escape
+
+
 
 jobs_bp = Blueprint('jobs', __name__)
 
@@ -114,7 +118,11 @@ def job_detail(job_id):
         job_skills = job_service.get_job_skills_by_category(job_id)
 
         # convert job description into html
+        allowed_tags = ['p', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'blockquote', 'code', 'pre', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'img']
+        allowed_attributes = {'a': ['href', 'title'], 'img': ['src', 'alt']}
+
         job_description = markdown.markdown(job.description, extensions=['extra'])
+        job_description = bleach.clean(job_description, tags=allowed_tags, attributes=allowed_attributes)
 
         return render_template('jobs/job_detail.html',
                              job=job,

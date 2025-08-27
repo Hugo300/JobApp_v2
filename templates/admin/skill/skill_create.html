@@ -395,6 +395,11 @@
                 proceedCheckbox.focus();
                 return false;
             }
+        } else if (duplicateCheckTimeout && !document.getElementById('duplicateCheckCard').style.display === 'none') {
+            // If we're still checking for duplicates, prevent submission
+            e.preventDefault();
+            showAlert('info', 'Please wait while we check for duplicates...');
+            return false;
         }
     });
 

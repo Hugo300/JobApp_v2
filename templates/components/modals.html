@@ -78,7 +78,7 @@
     
     {% set footer_content %}
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary" onclick="copyPreviewContent('{{ content_id }}')">
+        <button type="button" class="btn btn-primary" onclick="copyPreviewContent(this, '{{ content_id }}')">
             <i class="bi bi-copy me-1"></i>Copy
         </button>
     {% endset %}
@@ -222,13 +222,12 @@ function hideModal(modalId) {
     }
 }
 
-function copyPreviewContent(contentId) {
+function copyPreviewContent(button, contentId) {
     const content = document.getElementById(contentId);
     if (content) {
         const text = content.textContent || content.innerText;
         navigator.clipboard.writeText(text).then(function() {
             // Show success feedback
-            const button = event.target;
             const originalText = button.innerHTML;
             button.innerHTML = '<i class="bi bi-check me-1"></i>Copied!';
             button.classList.add('btn-success');

@@ -35,8 +35,7 @@
             <div class="card shadow-sm">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-info-cicle"></i>
-                        Category Details
+                        <i class="bi bi-info-circle"></i> Category Details
                     </h5>
                 </div>
                 <div class="card-body">
@@ -165,11 +164,10 @@
         function updateCounter() {
             const remaining = maxLength - field.value.length;
             counter.textContent = `${field.value.length}/${maxLength} characters`;
-            
-            if (remaining < 20) {
-                counter.className = 'form-text text-end text-warning';
-            } else if (remaining < 0) {
+            if (remaining < 0) {
                 counter.className = 'form-text text-end text-danger';
+            } else if (remaining < 20) {
+                counter.className = 'form-text text-end text-warning';
             } else {
                 counter.className = 'form-text text-end text-muted';
             }

@@ -1,4 +1,6 @@
-from models import SkillCategory, Skill
+from sqlalchemy.orm import joinedload
+
+from models import SkillCategory
 from utils.forms import sanitize_input
 from .base_service import BaseService
 
@@ -26,11 +28,10 @@ class CategoryService(BaseService):
 
             # Eagerly load relationships to prevent N+1 queries
             if include_relationships:
-                from sqlalchemy.orm import joinedload
                 query = query.options(
-                    joinedload(Skill.category),
+                    joinedload(SkillCategory.skills),
                 )
-
+            
             if order_by is None:
                 query = query.order_by(SkillCategory.name.desc())
             else:

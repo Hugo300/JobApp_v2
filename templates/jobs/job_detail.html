@@ -430,29 +430,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // Initialize count
         quickCharCount.textContent = quickNote.value.length;
     }
-
-    // Job description collapse toggle
-    const descriptionCollapse = document.getElementById('jobDescriptionCollapse');
-    const descriptionToggleIcon = document.getElementById('descriptionToggleIcon');
-    const descriptionPreview = document.getElementById('descriptionPreview');
-
-    if (descriptionCollapse && descriptionToggleIcon) {
-        descriptionCollapse.addEventListener('show.bs.collapse', function() {
-            // When expanding
-            descriptionToggleIcon.className = 'bi bi-chevron-up';
-            if (descriptionPreview) {
-                descriptionPreview.classList.remove('show');
-            }
-        });
-
-        descriptionCollapse.addEventListener('hide.bs.collapse', function() {
-            // When collapsing
-            descriptionToggleIcon.className = 'bi bi-chevron-down';
-            if (descriptionPreview) {
-                descriptionPreview.classList.add('show');
-            }
-        });
-    }
 });
 
 

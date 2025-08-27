@@ -29,11 +29,7 @@ class SkillExtractor:
     def _load_skill_ner(self):
         """Load SkillNER extractor"""
         try:
-            return SkillNER(
-                nlp=self.nlp,
-                skills_db=SKILL_DB,
-                phraseMatcher=PhraseMatcher
-            )
+            return SkillNER(self.nlp, SKILL_DB, PhraseMatcher)
         except Exception as e:
             raise ModelNotLoadedError(f"Failed to load SkillNER: {str(e)}")
     

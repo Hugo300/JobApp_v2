@@ -248,7 +248,7 @@ function scrapeJob() {
             showAlert(message, 'success');
 
             // Highlight filled fields
-            highlightFilledFields();
+            highlightUpdatedFields();
         } else {
             showAlert('❌ Scraping failed: ' + (data.error || 'Unknown error'), 'danger');
         }

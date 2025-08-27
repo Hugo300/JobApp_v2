@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from sqlalchemy.orm import joinedload
+from sqlalchemy.exc import IntegrityError
 
 from models import Skill, SkillVariant, SkillCategory, db
 from services.skill.skill_service import get_skill_service
@@ -93,21 +94,20 @@ def add_variant(skill_id):
             flash('Variant name cannot be empty', 'error')
             return redirect(url_for('skill.edit_skill', skill_id=skill_id))
         
-        # Check if variant already exists for this skill
-        existing = SkillVariant.query.filter_by(skill_id=skill_id, variant_name=variant_name).first()
-        if existing:
-            flash('This variant already exists', 'error')
-            return redirect(url_for('skill.edit_skill', skill_id=skill_id))
-        
         # Check if variant exists as a main skill name using SkillService
         if skill_service.get_skill_by_name(variant_name):
             flash('This variant name conflicts with an existing skill', 'error')
             return redirect(url_for('skill.edit_skill', skill_id=skill_id))
-        
-        # Create the variant
-        variant = SkillVariant(skill_id=skill_id, variant_name=variant_name)
-        db.session.add(variant)
-        db.session.commit()
+
+        # Check if variant already exists for this skill
+        try:
+            variant = SkillVariant(skill_id=skill_id, variant_name=variant_name)
+            db.session.add(variant)
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            flash('This variant already exists', 'error')
+            return redirect(url_for('skill.edit_skill', skill_id=skill_id))
         
         # Refresh the skill service cache since we added a variant
         skill_service.refresh_cache()
@@ -201,8 +201,6 @@ def edit_skill(skill_id):
         if request.method == 'GET':
             # Load skill with all relationships for the edit page
             skill = skill_service.get_skill_by_id(skill_id, include_relationships=True)
-            print(skill)
-
             categories = SkillCategory.query.all()
             return render_template('admin/skill/skill_edit.html', 
                                  skill=skill, 
@@ -237,8 +235,6 @@ def edit_skill(skill_id):
         return redirect(url_for('skill.manage_skills'))
     
     # Reload form with categories on error
-    from sqlalchemy.orm import joinedload
-    from models import Skill
     skill_with_relations = Skill.query.options(
         joinedload(Skill.category),
         joinedload(Skill.variants)
@@ -300,15 +296,10 @@ def api_search_skills():
         skill_service = get_skill_service()
 
         query = request.args.get('q', '').strip()
-        if len(query) < 2:
-            return jsonify([])
-        
-        # Get all skills and filter by name
-        all_skills = skill_service.get_all_skills(include_relationships=True)
-        matching_skills = [
-            skill for skill in all_skills 
-            if query.lower() in skill.name.lower()
-        ][:10]  # Limit to 10 results
+        # Query database directly with limit
+        matching_skills = Skill.query.filter(
+            Skill.name.ilike(f'%{query}%')
+        ).options(joinedload(Skill.category)).limit(10).all()
         
         results = [{
             'id': s.id, 

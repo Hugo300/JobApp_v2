@@ -39,6 +39,19 @@ def create_category():
         name = request.form.get('name', '').strip()
         description = request.form.get('description', '').strip()
         
+        # Validate input
+        if not name:
+            flash('Category name is required', 'error')
+            return render_template('admin/category/category_create.html')
+        
+        if len(name) > 255:
+            flash('Category name must be 255 characters or less', 'error')
+            return render_template('admin/category/category_create.html')
+        
+        if description and len(description) > 500:
+            flash('Description must be 500 characters or less', 'error')
+            return render_template('admin/category/category_create.html')
+        
         success, category, error = category_service.create_category(name, description)
         
         if success:
@@ -59,21 +72,23 @@ def edit_category(category_id):
         category = category_service.get_category_by_id(category_id)
         if not category:
             flash('Category not found', 'error')
-            return redirect(url_for('skill_category.manage_categories'))
-        
-        if request.method == 'GET':
-            # Get skills in this category for display
-            all_skills, active_skills, blacklisted_skills = category_service.get_category_skills(category_id)
-            
-            return render_template('admin/category/category_edit.html',
-                                 category=category,
-                                 all_skills=all_skills,
-                                 active_skills=active_skills,
-                                 blacklisted_skills=blacklisted_skills)
         
         # Handle POST request
         name = request.form.get('name', '').strip()
         description = request.form.get('description', '').strip()
+        
+        # Validate input
+        if not name:
+            flash('Category name is required', 'error')
+            return redirect(url_for('skill_category.edit_category', category_id=category_id))
+        
+        if len(name) > 255:
+            flash('Category name must be 255 characters or less', 'error')
+            return redirect(url_for('skill_category.edit_category', category_id=category_id))
+        
+        if description and len(description) > 500:
+            flash('Description must be 500 characters or less', 'error')
+            return redirect(url_for('skill_category.edit_category', category_id=category_id))
         
         success, updated_category, error = category_service.update_category(
             category_id, name=name, description=description
@@ -81,8 +96,6 @@ def edit_category(category_id):
         
         if success:
             flash(f'Category "{updated_category.name}" updated successfully', 'success')
-            return redirect(url_for('skill_category.edit_category', category_id=category_id))
-        else:
             flash(f'Error updating category: {error}', 'error')
             
     except Exception as e:
@@ -97,6 +110,12 @@ def delete_category(category_id):
     """Delete a skill category"""
     try:
         skill_action = request.form.get('skill_action', 'keep')
+
+        # Validate skill_action
+        if skill_action not in ['keep', 'delete', 'cancel']:
+            flash('Invalid action specified', 'error')
+            return redirect(url_for('skill_category.manage_categories'))
+
         success, result_info, error = category_service.delete_category(category_id, skill_action)
         
         if success:
@@ -182,6 +201,16 @@ def api_move_skills(category_id):
             return jsonify({'error': 'No skill IDs provided'}), 400
         
         skill_ids = data['skill_ids']
+
+        # Validate skill_ids
+        if not isinstance(skill_ids, list):
+            return jsonify({'error': 'skill_ids must be a list'}), 400
+        
+        try:
+            skill_ids = [int(sid) for sid in skill_ids]
+        except (TypeError, ValueError):
+            return jsonify({'error': 'All skill IDs must be integers'}), 400
+
         target_category_id = category_id if category_id != 0 else None  # 0 means uncategorized
         
         success, count_moved, error = category_service.move_skills_to_category(skill_ids, target_category_id)

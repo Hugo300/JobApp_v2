@@ -377,16 +377,17 @@ class JobService(BaseService):
         return self.update_job(job_id, status=new_status)
     
     def create_job_skill(self, job_id, skill_id):
-
-        # check if relation exits
+        # check if relation exists
         job_skill = JobSkill.query.filter_by(job_id=job_id, skill_id=skill_id).first()
 
         # create relation if it does not exist
-        if job_skill == None:
-            return True, self.create(JobSkill, **{
+        if job_skill is None:  # Use 'is' for None comparison
+            success, job_skill, error = self.create(JobSkill, **{
                 'job_id': job_id,
                 'skill_id': skill_id
             })
+            return success, job_skill, error
+        return True, job_skill, None
 
     def extract_job_skills(self, job_id, job_description):
         """

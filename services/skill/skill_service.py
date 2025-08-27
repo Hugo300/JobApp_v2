@@ -174,7 +174,7 @@ class SkillService(BaseService):
         try:
             skills = Skill.query.filter(
                 Skill.category_id.is_(None),
-                Skill.is_blacklisted == False
+                Skill.is_blacklisted.is_(False)
             ).all()
             
             return [{'id': skill.id, 'name': skill.name} for skill in skills]

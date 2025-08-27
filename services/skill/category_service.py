@@ -1,6 +1,10 @@
 from typing import List, Tuple, Optional, Dict, Any
+
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload
+
+from flask import current_app
+
 from models import SkillCategory, Skill, db
 
 
@@ -24,7 +28,7 @@ class CategoryService:
             return categories
             
         except Exception as e:
-            print(f"Error getting categories: {str(e)}")
+            current_app.logger.error(f"Error getting categories: {str(e)}")
             return []
     
     def get_category_by_id(self, category_id: int, include_skills: bool = False) -> Optional[SkillCategory]:
@@ -158,6 +162,8 @@ class CategoryService:
                 elif skill_action == 'delete':
                     # Delete all skills in this category
                     for skill in skills_in_category:
+                        if skill.job_skills:
+                            return False, result_info, f"Cannot delete skills that are referenced by jobs"
                         db.session.delete(skill)
                     result_info['message'] = f'{skills_count} skills deleted along with category'
             else:
@@ -263,13 +269,17 @@ class CategoryService:
         self._cache.clear()
         self._cache_valid = False
 
+import threading
 
 # Singleton instance
 _category_service_instance = None
+_lock = threading.Lock()
 
 def get_category_service() -> CategoryService:
     """Get the singleton CategoryService instance"""
     global _category_service_instance
     if _category_service_instance is None:
-        _category_service_instance = CategoryService()
+        with _lock:
+            if _category_service_instance is None:
+                _category_service_instance = CategoryService()
     return _category_service_instance
