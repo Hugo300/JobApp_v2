@@ -72,38 +72,49 @@ def edit_category(category_id):
         category = category_service.get_category_by_id(category_id)
         if not category:
             flash('Category not found', 'error')
-        
-        # Handle POST request
-        name = request.form.get('name', '').strip()
-        description = request.form.get('description', '').strip()
-        
-        # Validate input
-        if not name:
-            flash('Category name is required', 'error')
-            return redirect(url_for('skill_category.edit_category', category_id=category_id))
-        
-        if len(name) > 255:
-            flash('Category name must be 255 characters or less', 'error')
-            return redirect(url_for('skill_category.edit_category', category_id=category_id))
-        
-        if description and len(description) > 500:
-            flash('Description must be 500 characters or less', 'error')
-            return redirect(url_for('skill_category.edit_category', category_id=category_id))
-        
-        success, updated_category, error = category_service.update_category(
-            category_id, name=name, description=description
+
+        if request.method == 'POST':
+            # Handle POST request
+            name = request.form.get('name', '').strip()
+            description = request.form.get('description', '').strip()
+            
+            # Validate input
+            validated = True
+            if not name:
+                flash('Category name is required', 'error')
+                validated = False
+            
+            elif len(name) > 255:
+                flash('Category name must be 255 characters or less', 'error')
+                validated = False
+            
+            elif description and len(description) > 500:
+                flash('Description must be 500 characters or less', 'error')
+                validated = False
+
+            if validated:
+                success, updated_category, error = category_service.update_category(
+                    category_id, **{'name': name, 'description': description}
+                )
+            
+                if success:
+                    flash(f'Category "{updated_category.name}" updated successfully', 'success')
+                else:
+                    flash(f'Error updating category: {error}', 'error')
+
+        all_skills, active_skills, blacklisted_skills = category_service.get_category_skills(category_id)
+
+        return render_template(
+            '/admin/category/category_edit.html',
+            category=category,
+            all_skills=all_skills,
+            active_skills=active_skills,
+            blacklisted_skills=blacklisted_skills
         )
-        
-        if success:
-            flash(f'Category "{updated_category.name}" updated successfully', 'success')
-            flash(f'Error updating category: {error}', 'error')
             
     except Exception as e:
         flash(f'Error editing category: {str(e)}', 'error')
         return redirect(url_for('skill_category.manage_categories'))
-    
-    # Reload page on error
-    return redirect(url_for('skill_category.edit_category', category_id=category_id))
 
 @skill_category_bp.route('/<int:category_id>/delete', methods=['POST'])
 def delete_category(category_id):
