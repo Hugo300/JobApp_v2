@@ -17,9 +17,6 @@ from utils.scraper import scrape_job_data
 from utils.responses import handle_scraping_response
 from utils.forms import sanitize_input
 
-# Configure module logger
-logger = logging.getLogger(__name__)
-
 class JobService(BaseService):
     """Service for job application operations"""
 
@@ -27,7 +24,6 @@ class JobService(BaseService):
         super().__init__()
         # Get the skill service instance
         self.skill_service = get_skill_service()
-        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self.logger.info("JobService initialized")
 
     def get_job_by_id(self, job_id):
@@ -626,8 +622,8 @@ class JobService(BaseService):
             job = JobApplication.query.filter(JobApplication.id == job_id).first()
 
             if not job:
-                    self.logger.warning(f"Job not found when fetching categorized skills: {job_id}")
-                    return {}
+                self.logger.warning(f"Job not found when fetching categorized skills: {job_id}")
+                return {}
 
             skills_by_category = defaultdict(list)
             total_skills = 0

@@ -86,7 +86,7 @@ def add_variant(skill_id):
         skill = skill_service.get_skill_by_id(skill_id)
         if not skill:
             flash('Skill not found', 'error')
-            return redirect(url_for('skill.edit_skill'))
+            return redirect(url_for('skill.manage_skills'))
         
         variant_name = request.form.get('variant_name', '').strip()
         
@@ -123,6 +123,8 @@ def add_variant(skill_id):
 @skill_bp.route('/variants/<int:variant_id>/delete', methods=['POST'])
 def delete_variant(variant_id):
     """Delete a skill variant"""
+    skill_id = None
+
     try:
         # Get the skill service instance
         skill_service = get_skill_service()
@@ -142,7 +144,9 @@ def delete_variant(variant_id):
     except Exception as e:
         db.session.rollback()
         flash(f'Error deleting variant: {str(e)}', 'error')
-        skill_id = request.form.get('skill_id')  # Fallback if we can't get it from variant
+
+        if not skill_id:
+            return redirect(url_for('skill.manage_skills'))
     
     return redirect(url_for('skill.edit_skill', skill_id=skill_id))
 
@@ -233,16 +237,6 @@ def edit_skill(skill_id):
     except Exception as e:
         flash(f'Error editing skill: {str(e)}', 'error')
         return redirect(url_for('skill.manage_skills'))
-    
-    # Reload form with categories on error
-    skill_with_relations = Skill.query.options(
-        joinedload(Skill.category),
-        joinedload(Skill.variants)
-    ).get(skill_id)
-    categories = SkillCategory.query.all()
-    return render_template('admin/skill/skill_edit.html', 
-                         skill=skill_with_relations, 
-                         categories=categories)
 
 @skill_bp.route('/<int:skill_id>/delete', methods=['POST'])
 def delete_skill(skill_id):
@@ -296,6 +290,13 @@ def api_search_skills():
         skill_service = get_skill_service()
 
         query = request.args.get('q', '').strip()
+
+        # validate query length and content
+        if len(query) > 100:
+            return jsonify({'error': 'Query too long'}), 400
+        if not query:
+            return jsonify([])
+
         # Query database directly with limit
         matching_skills = Skill.query.filter(
             Skill.name.ilike(f'%{query}%')

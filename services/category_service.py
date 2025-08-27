@@ -1,6 +1,6 @@
 from sqlalchemy.orm import joinedload
 
-from models import SkillCategory
+from models import SkillCategory, Skill
 from utils.forms import sanitize_input
 from .base_service import BaseService
 

@@ -38,7 +38,7 @@
                 <div class="col-md-6 text-md-end">
                     <i class="bi bi-clock"></i> Updated {{ job.last_update.strftime('%Y-%m-%d') }}
                     {% if job.url %}
-                        <br><a href="{{ job.url }}" target="_blank" class="text-decoration-none">
+                        <br><a href="{{ job.url }}" target="_blank" rel="noopener noreferrer" class="text-decoration-none">
                             <i class="bi bi-link-45deg"></i> View Posting
                         </a>
                     {% endif %}

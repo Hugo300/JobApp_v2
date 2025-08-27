@@ -314,23 +314,31 @@
         if (similarSkills.length > 0) {
             hasDuplicates = true;
             
-            let html = '<div class="list-group list-group-flush">';
+            const lg = document.createElement('div');
+            lg.className='list-group list-group-flush'
             similarSkills.forEach(skill => {
-                html += `
-                    <div class="list-group-item d-flex justify-content-between align-items-center">
-                        <div>
-                            <strong>${skill.name}</strong>
-                            ${skill.category ? `<span class="badge bg-secondary ms-2">${skill.category}</span>` : ''}
-                        </div>
-                        <a href="{{ url_for('skill.edit_skill', skill_id=0) }}".replace('0', ${skill.id}) 
-                           class="btn btn-sm btn-outline-primary">View</a>
-                    </div>
-                `;
+                const item = document.createElement('div');
+                item.className = "list-group-item d-flex justify-content-between align-items-center";
+                const left = document.createElement('div');
+                const strong = document.createElement('strong');
+                strong.textContent = skill.name;
+                left.appendChild(strong);
+
+                if (skill.category) {
+                    const badge = document.createElement('span');
+                    badge.className = 'badge bg-secondary ms-2';
+                    badge.textContent = skill.category;
+                    left.appendChild(badge);
+                }
+
+                const a = document.createElement('a');
+                a.className = 'btn btn-sm btn-outline-primary';
+                a.textContent = 'View';
+                a.href = {{ url_for('skill.edit_skill', skill_id=0)|tojson }}.replace('0', String(skill.id));
+                item.append(left, a);
+                lg.appendChild(item);
             });
-            html += '</div>';
-            
-            duplicatesList.innerHTML = html;
-            duplicateCard.style.display = 'block';
+            duplicatesList.appendChild(lg);
         } else {
             hideDuplicateCheck();
         }
@@ -395,7 +403,7 @@
                 proceedCheckbox.focus();
                 return false;
             }
-        } else if (duplicateCheckTimeout && !document.getElementById('duplicateCheckCard').style.display === 'none') {
+        } else if (document.getElementById('duplicateCheckCard').style.display !== 'none' && !hasDuplicates) {
             // If we're still checking for duplicates, prevent submission
             e.preventDefault();
             showAlert('info', 'Please wait while we check for duplicates...');

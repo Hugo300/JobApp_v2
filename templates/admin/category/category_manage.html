@@ -358,6 +358,15 @@
             });
         });
 
+        // Prevent submit when "cancel" is selected and just close the modal
+        document.getElementById('deleteCategoryForm').addEventListener('submit', function(e) {
+            const selected = document.querySelector('input[name="skill_action"]:checked')?.value;
+            if (selected === 'cancel') {
+                e.preventDefault();
+                bootstrap.Modal.getInstance(document.getElementById('deleteCategoryModal'))?.hide();
+            }
+        });
+
         // Utility function to show alerts
         function showAlert(type, message) {
             const alertDiv = document.createElement('div');

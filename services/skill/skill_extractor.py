@@ -32,6 +32,14 @@ class SkillExtractor:
             return SkillNER(self.nlp, SKILL_DB, PhraseMatcher)
         except Exception as e:
             raise ModelNotLoadedError(f"Failed to load SkillNER: {str(e)}")
+        
+    def _process_match_group(self, matches, extracted_skills):
+        """Process a group of matches and add valid skills to the list"""
+        for match in matches:
+            if 'doc_node_value' in match:
+                skill_name = match['doc_node_value']
+                if skill_name and len(skill_name.strip()) > self.config.MIN_SKILL_LENGTH:
+                    extracted_skills.append(skill_name)
     
     def extract_skills_from_text(self, text: str) -> ExtractedSkillsResult:
         """Extract skills from text using SkillNER"""
@@ -61,19 +69,11 @@ class SkillExtractor:
             
             # Process full matches
             if 'results' in annotations and 'full_matches' in annotations['results']:
-                for match in annotations['results']['full_matches']:
-                    if 'doc_node_value' in match:
-                        skill_name = match['doc_node_value']
-                        if skill_name and len(skill_name.strip()) > self.config.MIN_SKILL_LENGTH:
-                            extracted_skills.append(skill_name)
+                self._process_match_group(annotations['results']['full_matches'], extracted_skills)
             
             # Process ngram matches
             if 'results' in annotations and 'ngram_scored' in annotations['results']:
-                for match in annotations['results']['ngram_scored']:
-                    if 'doc_node_value' in match:
-                        skill_name = match['doc_node_value']
-                        if skill_name and len(skill_name.strip()) > self.config.MIN_SKILL_LENGTH:
-                            extracted_skills.append(skill_name)
+                self._process_match_group(annotations['results']['ngram_scored'], extracted_skills)
             
             return ExtractedSkillsResult(
                 skills=extracted_skills,

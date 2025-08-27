@@ -63,7 +63,7 @@ class LoggingManager:
         log_file = os.path.join(log_folder, 'job_app.log')
         file_handler = RotatingFileHandler(
             log_file,
-            maxBytes=self.app.config.get('LOG_MAX_BYTES', 10240),
+            maxBytes=self.app.config.get('LOG_MAX_BYTES', 10485760),  # 10MB default
             backupCount=self.app.config.get('LOG_BACKUP_COUNT', 10)
         )
         

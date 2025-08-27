@@ -502,7 +502,9 @@ def edit_job(job_id):
                 )
 
                 # Update the skills
-                service.extract_job_skills(job.id, job.description)
+                extracted_skills = service.extract_job_skills(job.id, job.description)
+                if not extracted_skills:
+                   current_app.logger.warning(f'No skills extracted for job {job.id}')
 
                 current_app.logger.info(f'Job application updated: {title} at {company}')
                 flash(f'Job application for {title} at {company} updated successfully!', 'success')
