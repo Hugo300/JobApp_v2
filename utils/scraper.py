@@ -97,6 +97,19 @@ def scrape_job_data(url: str) -> dict[str, str]:
         if 'jobs/collections' in url: # convert the collections job page for the view page allowing sellenium to actually get information 
             job_id = url.split('=')[-1]
             url = f'http://{domain}/jobs/view/{job_id}'
+        if 'jobs/search' in url:
+            match = re.search(r'\?(currentJobId)\=(.*?)\&', url)
+            
+            if match:
+                job_id = match.group(0) \
+                    .split('=')[1] \
+                    .replace('&', '') \
+                    .strip()
+                
+                url = f'http://{domain}/jobs/view/{job_id}'
+            else:
+                raise ValueError('Could not find job id in "job/search" url')
+
 
     try:
         # Add delay to avoid rate limiting
