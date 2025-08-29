@@ -149,7 +149,6 @@
                         <h5 class="card-title mb-0">
                             <i class="bi bi-building me-2"></i>Top Companies
                         </h5>
-                        <span class="badge bg-primary">{{ company_analytics.total_companies }} total</span>
                     </div>
                 </div>
                 <div class="card-body">
@@ -167,6 +166,47 @@
                                     <tr>
                                         <td>{{ company_data.company }}</td>
                                         <td><span class="badge bg-primary">{{ company_data.count }}</span></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-gear mb-3 opacity-50" style="font-size: 2rem;"></i>
+                            <p>No company data available yet</p>
+                            <small>Companies will appear as you add job applications</small>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Skills -->
+        <div class="col-lg-6 mb-4">
+            <div class="card analytics-card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-building me-2"></i>Top Skills
+                        </h5>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if skill_analytics.top_skills %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Skill</th>
+                                        <th>Applications</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for skill_data in skill_analytics.top_skills[:10] %}
+                                    <tr>
+                                        <td>{{ skill_data.skill }}</td>
+                                        <td><span class="badge bg-primary">{{ skill_data.count }}</span></td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
