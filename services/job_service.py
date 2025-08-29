@@ -464,6 +464,8 @@ class JobService(BaseService):
                 self.logger.debug(f"Scraped data keys: {list(response.get('data', {}).keys())}")
             else:
                 self.logger.warning(f"Job scraping failed for {url}: {response.get('error', 'Unknown error')}")
+
+            return response
         
         except Exception as e:
             self.logger.error(f"Error scraping job data from {url}: {str(e)}", exc_info=True)
@@ -562,9 +564,14 @@ class JobService(BaseService):
                 # create skills that do not yet exist
                 new_skills = []
                 for skill_name in extraction_result.unmatched_skills:
-                    skill = self.skill_service.create_skill(skill_name)
-                    skill_ids.append(skill.id)
-                    new_skills.append(skill_name)
+                    success, skill, error = self.skill_service.create_skill(skill_name)
+
+                    if success:
+                        self.logger.info(f"Created new skill wiht name {skill_name}")
+                        skill_ids.append(skill.id)
+                        new_skills.append(skill_name)
+                    else:
+                        self.logger.error(f"Error creating skill {skill_name}: {error}")
 
                 if new_skills:
                     self.logger.info(f"Created new skills for job {job_id}: {new_skills}")
