@@ -23,6 +23,13 @@ def dashboard():
         # Get filtered jobs using service
         jobs = job_service.filter_jobs(search_query, status_filter, job_mode_filter, country_filter)
 
+        # create short blurb for each job
+        character_limit = 150
+        for job in jobs:
+            job.description_short = job.description[:150]
+            if len(job.description) > character_limit:
+                job.description_short += '...'
+
         # Get summary statistics using service
         summary = job_service.get_job_statistics()
 

@@ -74,10 +74,10 @@
 
             <!-- Collapsed preview (shown when collapsed) -->
             <div class="collapse show" id="jobDescriptionCollapse">
-                <div class="card-body job-description-preview">
+                <div class="card-body">
                     {% if job.description %}
                         <div class="job-description-collapsed">
-                            {{ job_description[:500] | safe }}{% if job.description|length > 500 %}...{% endif %}
+                            {{ job_description_short | markdown }}
                         </div>
                     {% else %}
                         <p class="text-muted">No description available.</p>
@@ -89,8 +89,8 @@
             <div class="collapse" id="jobDescriptionCollapse">
                 <div class="card-body">
                     {% if job.description %}
-                        <div class="job-description-collapsed">
-                            {{ job_description | safe }}
+                        <div>
+                            {{ job_description | markdown }}
                         </div>
                     {% else %}
                         <p class="text-muted">No description available.</p>
@@ -270,7 +270,7 @@
                         {% endfor %}
                     </div>
                     {% if total_logs > 10 %}
-                        <div class="text-center py-3 border-top bg-light">
+                        <div class="text-center py-3 border-top">
                             <small class="text-muted">
                                 <i class="bi bi-info-circle me-1"></i>
                                 {% if request.args.get('show_all') == 'true' %}

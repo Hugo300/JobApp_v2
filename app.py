@@ -1,7 +1,5 @@
 import os
-import logging
 import time
-from logging.handlers import RotatingFileHandler
 from flask import Flask, request, g, render_template
 from flask_wtf.csrf import CSRFProtect
 from flask_bootstrap import Bootstrap5
@@ -9,6 +7,8 @@ from config import config
 from models import db
 
 from logging_manager import logging_manager
+
+from utils.markdown import markdown_filter
 
 def create_app(config_name=None):
     """Application factory pattern"""
@@ -94,6 +94,9 @@ def create_app(config_name=None):
         logging_manager.log_security_event('FILE_TOO_LARGE', f'Large file upload attempt: {request.url}', request)
         return render_template('errors/413.html'), 413
     
+    # register markdown filter for jinja
+    app.jinja_env.filters['markdown'] = markdown_filter
+
     with app.app_context():
         db.create_all()
 

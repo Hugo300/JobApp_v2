@@ -22,7 +22,7 @@
             
             {% if job.description %}
                 <p class="card-text text-muted small">
-                    {{ job.description[:150] | safe }}{% if job.description|length > 150 %}...{% endif %}
+                    {% if job.description %} {{ job.description_short | markdown }} {% endif %}
                 </p>
             {% endif %}
             

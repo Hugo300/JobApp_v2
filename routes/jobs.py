@@ -117,18 +117,16 @@ def job_detail(job_id):
         # Get Skills using service
         job_skills = job_service.get_job_skills_by_category(job_id)
 
-        # convert job description into html
-        allowed_tags = ['p', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'blockquote', 'code', 'pre', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'img']
-        allowed_attributes = {'a': ['href', 'title'], 'img': ['src', 'alt']}
-
-        job_description = markdown.markdown(job.description, extensions=['extra'])
-        job_description = bleach.clean(job_description, tags=allowed_tags, attributes=allowed_attributes)
+        job_description = job.description
+        job_description_short = job.description[:500]
+        job_description_short += '...' if len(job_description) > 500 else ''
 
         return render_template('jobs/job_detail.html',
                              job=job,
                              job_description=job_description,
+                             job_description_short=job_description_short,
                              job_skills=job_skills['skills'],
-                             total_skills=job_skills['total_skills'],
+                             total_skills=job_skills['active_skills'],
                              match_score=0,
                              user_data=user_data,
                              templates=templates,
@@ -163,8 +161,9 @@ def scrape_new_job():
 
         if result['success']:
             current_app.logger.info(f'Scraping completed successfully')
+
             return success_response(result.get('message', 'Job details scraped successfully!'), {
-                'data': result.get('data'),
+                'data': result['data'],
             })
         else:
             return error_response(result.get('error', 'Failed to scrape job details'))
