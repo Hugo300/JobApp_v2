@@ -73,7 +73,7 @@
             </div>
 
             <!-- Collapsed preview (shown when collapsed) -->
-            <div class="collapse show" id="jobDescriptionPreview">
+            <div class="collapse show" id="jobDescriptionCollapse">
                 <div class="card-body job-description-preview">
                     {% if job.description %}
                         <div class="job-description-collapsed">
@@ -89,7 +89,7 @@
             <div class="collapse" id="jobDescriptionCollapse">
                 <div class="card-body">
                     {% if job.description %}
-                        <div class="job-description">
+                        <div class="job-description-collapsed">
                             {{ job_description | safe }}
                         </div>
                     {% else %}
@@ -432,8 +432,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-
-
 function loadTemplateContent() {
     const templateSelect = document.getElementById('template');
     const templateId = templateSelect.value;
@@ -471,38 +469,6 @@ function loadTemplateContent() {
             templateInfo.textContent = 'Error loading template content.';
         });
 }
-
-// Toggle description collapse icon and preview/full view
-document.addEventListener('DOMContentLoaded', function() {
-    const collapseElement = document.getElementById('jobDescriptionCollapse');
-    const previewElement = document.getElementById('jobDescriptionPreview');
-    const toggleIcon = document.getElementById('descriptionToggleIcon');
-
-    if (collapseElement && toggleIcon && previewElement) {
-        // Handle expand/collapse
-        collapseElement.addEventListener('show.bs.collapse', function () {
-            toggleIcon.classList.remove('bi-chevron-down');
-            toggleIcon.classList.add('bi-chevron-up');
-            previewElement.classList.remove('show');
-        });
-
-        collapseElement.addEventListener('hide.bs.collapse', function () {
-            toggleIcon.classList.remove('bi-chevron-up');
-            toggleIcon.classList.add('bi-chevron-down');
-            previewElement.classList.add('show');
-        });
-
-        // Make preview clickable to expand
-        const previewCard = document.querySelector('.job-description-preview');
-        if (previewCard) {
-            previewCard.addEventListener('click', function() {
-                const collapse = new bootstrap.Collapse(collapseElement, {
-                    show: true
-                });
-            });
-        }
-    }
-});
 
 // Delete confirmation functionality
 function confirmDelete() {
