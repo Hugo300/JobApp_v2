@@ -652,7 +652,7 @@ class JobService(BaseService):
                     skills_by_category[category_name].append(skill.name)
 
             result = {
-                'total_skills': len(job.skills),
+                'active_skills': total_skills - blacklisted_count,
                 'skills': dict(skills_by_category)
             }
         
