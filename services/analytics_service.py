@@ -173,6 +173,7 @@ class AnalyticsService(BaseService):
         # Calculate conversion rates
         collected_count = status_dict.get(ApplicationStatus.COLLECTED.value, 0)
         applied_count = status_dict.get(ApplicationStatus.APPLIED.value, 0)
+        process_count = status_dict.get(ApplicationStatus.PROCESS.value, 0)
         interview_count = status_dict.get(ApplicationStatus.WAITING_DECISION.value, 0)
         offer_count = status_dict.get(ApplicationStatus.OFFER.value, 0)
         
@@ -180,14 +181,16 @@ class AnalyticsService(BaseService):
         
         # Conversion rates
         collected_to_applied = (total_progressed / (collected_count + total_progressed) * 100) if (collected_count + total_progressed) > 0 else 0
-        applied_to_interview = ((interview_count + offer_count) / (applied_count + interview_count + offer_count) * 100) if (applied_count + interview_count + offer_count) > 0 else 0
+        applied_to_process = ((process_count + offer_count + interview_count) / (applied_count + process_count + interview_count + offer_count) * 100) if (applied_count + process_count + interview_count + offer_count) > 0 else 0
+        process_to_interview = ((interview_count + offer_count) / (process_count + interview_count + offer_count) * 100) if (process_count + interview_count + offer_count) > 0 else 0
         interview_to_offer = (offer_count / (interview_count + offer_count) * 100) if (interview_count + offer_count) > 0 else 0
         
         return {
             'status_distribution': status_dict,
             'conversion_rates': {
                 'collected_to_applied': round(collected_to_applied, 1),
-                'applied_to_interview': round(applied_to_interview, 1),
+                'applied_to_process': round(applied_to_process, 1),
+                'process_to_interview': round(process_to_interview, 1),
                 'interview_to_offer': round(interview_to_offer, 1)
             }
         }
@@ -288,6 +291,7 @@ class AnalyticsService(BaseService):
             Skill.name,
             func.count(JobSkill.id).label('count')
         ).join(JobSkill, Skill.id == JobSkill.skill_id
+        ).filter(Skill.is_blacklisted==False
         ).group_by(Skill.name).order_by(
             func.count(JobSkill.id).desc()
         ).limit(10).all()
@@ -309,6 +313,7 @@ class AnalyticsService(BaseService):
             ).label('successful_jobs')
         ).join(JobSkill, Skill.id == JobSkill.skill_id
         ).join(JobApplication, JobSkill.job_id == JobApplication.id
+        ).filter(Skill.is_blacklisted==False
         ).group_by(Skill.name).having(
             func.count(JobSkill.id) >= 3  # Only skills with at least 3 job applications
         ).all()

@@ -245,14 +245,24 @@
                                 <div class="progress-bar bg-primary" style="width: {{ status_analytics.conversion_rates.collected_to_applied }}%"></div>
                             </div>
                         </div>
+
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>Applied → Process</span>
+                                <span>{{ "%.1f"|format(status_analytics.conversion_rates.applied_to_process) }}%</span>
+                            </div>
+                            <div class="progress progress-thin mb-2">
+                                <div class="progress-bar bg-success" style="width: {{ status_analytics.conversion_rates.applied_to_process }}%"></div>
+                            </div>
+                        </div>
                         
                         <div class="mb-3">
                             <div class="d-flex justify-content-between mb-1">
-                                <span>Applied → Interview</span>
-                                <span>{{ "%.1f"|format(status_analytics.conversion_rates.applied_to_interview) }}%</span>
+                                <span>Process → Interview</span>
+                                <span>{{ "%.1f"|format(status_analytics.conversion_rates.process_to_interview) }}%</span>
                             </div>
                             <div class="progress progress-thin mb-2">
-                                <div class="progress-bar bg-success" style="width: {{ status_analytics.conversion_rates.applied_to_interview }}%"></div>
+                                <div class="progress-bar bg-success" style="width: {{ status_analytics.conversion_rates.process_to_interview }}%"></div>
                             </div>
                         </div>
                         
