@@ -62,7 +62,7 @@
         </thead>
         <tbody id="skillsTableBody">
             {% for skill in skills %}
-            <tr class="skill-row {{ 'table-warning' if skill.is_blacklisted else '' }}" 
+            <tr class="skill-row {{ 'table-danger' if skill.is_blacklisted else '' }}" 
                 data-skill-name="{{ skill.name.lower() }}" 
                 data-category="{{ skill.category.name.lower() if skill.category else 'uncategorized' }}"
                 data-blacklisted="{{ 'true' if skill.is_blacklisted else 'false' }}">

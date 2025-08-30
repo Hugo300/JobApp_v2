@@ -619,6 +619,28 @@ class JobService(BaseService):
         except Exception as e:
             self.logger.error(f"Error fetching skills for job {job_id}: {str(e)}", exc_info=True)
             return []
+        
+    def calculate_skill_match(self, job_skills, user_skills):
+        """Calculate skill match between job requirements and user skills"""
+        if not job_skills or not user_skills:
+            return 0, 0, 0, []
+        
+        # Get skill names for comparison (case-insensitive)
+        job_skill_names = {skill.name.lower() for skill in job_skills}
+        user_skill_names = {skill.name.lower() for skill in user_skills}
+        
+        # Find matches
+        matched_skills = job_skill_names.intersection(user_skill_names)
+        missing_skills = job_skill_names - user_skill_names
+        
+        # Calculate percentages
+        total_job_skills = len(job_skill_names)
+        matched_count = len(matched_skills)
+        missing_count = len(missing_skills)
+        match_percentage = int((matched_count / total_job_skills) * 100) if total_job_skills > 0 else 0
+        
+        return match_percentage, matched_count, missing_count
+    
     
     def get_job_skills_by_category(self, job_id, get_blacklisted=False):
         """Get job skills organized by category"""
@@ -626,7 +648,7 @@ class JobService(BaseService):
                         f"(include_blacklisted: {get_blacklisted})")
         
         try:
-            job = JobApplication.query.filter(JobApplication.id == job_id).first()
+            job = self.get_job_by_id(job_id)
 
             if not job:
                 self.logger.warning(f"Job not found when fetching categorized skills: {job_id}")
@@ -647,9 +669,9 @@ class JobService(BaseService):
                     blacklisted_count += 1
 
                 if get_blacklisted:
-                    skills_by_category[category_name].append(skill.name)
+                    skills_by_category[category_name].append(skill)
                 elif not skill.is_blacklisted:  # Fixed condition
-                    skills_by_category[category_name].append(skill.name)
+                    skills_by_category[category_name].append(skill)
 
             result = {
                 'active_skills': total_skills - blacklisted_count,
@@ -663,7 +685,35 @@ class JobService(BaseService):
                 for category, skills in skills_by_category.items():
                     self.logger.debug(f"Category '{category}': {len(skills)} skills")
 
-            return result
+            return {'success': True, 'data': result, 'error': None}
         except Exception as e:
             self.logger.error(f"Error fetching categorized skills for job {job_id}: {str(e)}", exc_info=True)
-            return {}
+            return {'success': False, 'data': None, 'error': e}
+        
+    def get_skills_by_user_category(self, job_skills_by_category, user_skills):
+        """Get missing skills organized by category"""
+        if not user_skills:
+            return job_skills_by_category
+        
+        user_skill_names = {skill.name.lower() for skill in user_skills}
+        missing_skills_by_category = {}
+        matched_skills_by_category = {}
+        
+        for category, skills in job_skills_by_category.items():
+            missing_skills = []
+            matched_skills = []
+            for skill in skills:
+                skill_name = skill.name if hasattr(skill, 'name') else skill
+
+                if skill_name.lower() in user_skill_names:
+                    matched_skills.append(skill)
+                else:
+                    missing_skills.append(skill)
+            
+            if missing_skills:
+                missing_skills_by_category[category] = missing_skills
+            
+            if matched_skills:
+                matched_skills_by_category[category] = matched_skills
+        
+        return matched_skills_by_category, missing_skills_by_category

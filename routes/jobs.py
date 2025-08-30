@@ -114,8 +114,31 @@ def job_detail(job_id):
         else:
             recent_logs = all_logs[:10]  # Limit to 10
 
-        # Get Skills using service
-        job_skills = job_service.get_job_skills_by_category(job_id)
+        # Get user data and skills
+        user_data = UserService().get_user_data()
+        user_skills = []
+        if user_data:
+            user_skills = UserService().get_user_skills(user_data.id)
+    
+        # Get job skills (assuming you have a method to get job skills by category)
+        job_skills_by_category = job_service.get_job_skills_by_category(job.id)
+        
+        if job_skills_by_category['error']:
+            print(job_skills_by_category['error'])
+
+        total_skills = job_skills_by_category['data']['active_skills']
+
+        match_score, matched_skills_count, missing_skills_count = job_service.calculate_skill_match(
+            job_service.get_job_skills(job_id), user_skills
+        )
+
+        # get skills by category and matching
+        matched_skills_by_category, missing_skills_by_category = job_service.get_skills_by_user_category(job_skills_by_category['data']['skills'], user_skills)
+        print('------------------------------------------------------------', flush=True)
+        print(total_skills)
+        print(match_score)
+        print(matched_skills_by_category)
+        print(missing_skills_by_category)
 
         job_description = job.description
         job_description_short = job.description[:500]
@@ -125,9 +148,13 @@ def job_detail(job_id):
                              job=job,
                              job_description=job_description,
                              job_description_short=job_description_short,
-                             job_skills=job_skills['skills'],
-                             total_skills=job_skills['active_skills'],
-                             match_score=0,
+                             job_skills=job_skills_by_category['data']['skills'],
+                             matched_skills_by_category=matched_skills_by_category,
+                             missing_skills_by_category=missing_skills_by_category,
+                             total_skills=total_skills,
+                             match_score=match_score,
+                             matched_skills_count=matched_skills_count,
+                             missing_skills_count=missing_skills_count,
                              user_data=user_data,
                              templates=templates,
                              status_options=ApplicationStatus,

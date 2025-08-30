@@ -14,10 +14,13 @@
     <div class="col-lg-8">
         <div class="card">
             <div class="card-header">
-                <h5 class="card-title mb-0">Personal Information</h5>
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-person-fill"></i> Personal Information
+                </h5>
+                <small class="text-muted">Add and manage your basic information</small>
             </div>
             <div class="card-body">
-                <form method="POST">
+                <form method="POST" action="{{ url_for('user.user_data') }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <div class="row">
                         <div class="col-md-6 mb-3">
@@ -53,19 +56,115 @@
                                placeholder="https://github.com/yourusername">
                     </div>
                     
-                    <div class="mb-3">
-                        <label for="skills" class="form-label">Skills (comma-separated)</label>
-                        <textarea class="form-control" id="skills" name="skills" rows="4" 
-                                  placeholder="e.g., Python, JavaScript, React, SQL, Docker">{{ user_skills if user_skills else '' }}</textarea>
-                        <div class="form-text">Enter your skills separated by commas. These will be used to match against job descriptions.</div>
-                    </div>
-                    
                     <div class="d-grid">
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-floppy me-1"></i>Save Profile
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <!-- Skills Management Section -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-gear-fill me-2"></i>Your Skills
+                            {% if user_skills %}
+                                <span class="badge bg-primary ms-2">{{ user_skills|length }}</span>
+                            {% endif %}
+                        </h5>
+                        <small class="text-muted">Add and manage your technical and professional skills</small>
+                    </div>
+                    <button class="btn btn-sm btn-success" type="button" data-bs-toggle="collapse" data-bs-target="#addSkillForm" aria-expanded="false">
+                        <i class="bi bi-plus-circle me-1"></i> Add Skill
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Add Skill Form (Collapsible) -->
+            <div class="collapse" id="addSkillForm">
+                <div class="card-body border-bottom">
+                    <form method="POST" action="{{ url_for('user.add_user_skill') }}" id="addSkillFormElement">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <div class="row align-items-end">
+                            <div class="col-md-6">
+                                <label for="skillName" class="form-label fw-bold">Skill Name</label>
+                                <input type="text" name="skill_name" id="skillName" class="form-control" 
+                                       placeholder="e.g., Python, JavaScript, Project Management..." required>
+                                <div class="form-text">Enter the skill name as you want it to appear</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="skillCategory" class="form-label fw-bold">Category</label>
+                                <select name="category_id" id="skillCategory" class="form-select">
+                                    <option value="">Select category...</option>
+                                    {% for category in skill_categories %}
+                                        <option value="{{ category.id }}">{{ category.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="d-flex gap-1">
+                                    <button type="submit" class="btn btn-success btn-sm">
+                                        <i class="bi bi-plus-circle me-1"></i> Add
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="collapse" data-bs-target="#addSkillForm">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card-body">
+                {% if user_skills_by_category %}
+                    <div class="skills-container">
+                        {% for category, skills in user_skills_by_category.items() %}
+                            <div class="skill-category mb-3">
+                                <div class="skill-category-title">
+                                    {{ category }}
+                                    <span class="skill-count">{{ skills|length }}</span>
+                                </div>
+                                <div class="skill-category-items">
+                                    {% for skill in skills %}
+                                        <span class="badge me-2 mb-2 skill-badge bg-primary text-white position-relative">
+                                            {{ skill.name }}
+                                            <button type="button" class="btn-close btn-close-white ms-1" 
+                                                    onclick="removeUserSkill({{ skill.id }}, '{{ skill.name|e }}')" 
+                                                    aria-label="Remove skill" 
+                                                    style="font-size: 0.6em; padding: 0.1em;">
+                                            </button>
+                                        </span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <div class="mb-3">
+                            <i class="bi bi-gear text-muted" style="font-size: 3rem;"></i>
+                        </div>
+                        <h6 class="text-muted">No skills added yet</h6>
+                        <p class="text-muted mb-3">Add your skills to see how well you match with job requirements.</p>
+                        <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#addSkillForm">
+                            <i class="bi bi-plus-circle me-1"></i>Add Your First Skill
+                        </button>
+                    </div>
+                {% endif %}
+                
+                {% if user_skills %}
+                    <div class="mt-3 pt-3 border-top">
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Skills are used to calculate match percentages with job requirements
+                        </small>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -87,15 +186,45 @@
                     </li>
                     <li class="mb-2">
                         <i class="bi bi-check-circle text-success me-2"></i>
-                        Use a professional email address
+                        Add all your relevant skills for better job matching
                     </li>
                     <li class="mb-2">
                         <i class="bi bi-check-circle text-success me-2"></i>
-                        Update regularly as your information changes
+                        Organize skills by categories for clarity
                     </li>
                 </ul>
             </div>
         </div>
+
+        {% if user_skills %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Skills Summary</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="border rounded p-2">
+                            <div class="h4 text-primary mb-0">{{ user_skills|length }}</div>
+                            <small class="text-muted">Total Skills</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="border rounded p-2">
+                            <div class="h4 text-info mb-0">{{ user_skills_by_category|length }}</div>
+                            <small class="text-muted">Categories</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <small class="text-muted">
+                        <i class="bi bi-lightbulb me-1"></i>
+                        The more skills you add, the better job matching becomes!
+                    </small>
+                </div>
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

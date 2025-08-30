@@ -43,3 +43,13 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
+
+.progress {
+    border-radius: 1rem;
+    overflow: hidden;
+}
+
+.progress-bar {
+    border-radius: 1rem;
+    transition: width 1s ease-in-out;
+}

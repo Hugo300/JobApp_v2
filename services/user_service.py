@@ -19,7 +19,7 @@ class UserService(BaseService):
         # Get the skill service instance
         self.skill_service = get_skill_service()
     
-    def get_user_data(self):
+    def get_user_data(self) -> UserData|None:
         """Get the first (and typically only) user data record"""
         try:
             return UserData.query.first()

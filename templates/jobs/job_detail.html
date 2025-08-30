@@ -99,52 +99,157 @@
             </div>
         </div>
 
-        <!-- Extracted Skills -->
         {% if job_skills %}
         <div class="card mb-4">
             <div class="card-header">
                 <div class="d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0">
-                        <i class="bi bi-gear-fill me-2"></i>Extracted Skills
+                        <i class="bi bi-gear-fill me-2"></i>Required Skills
                         <span class="badge bg-primary ms-2">{{ total_skills }}</span>
                     </h5>
-                    <div class="d-flex align-items-center gap-2">
+                    <div class="d-flex align-items-center gap-3">
                         {% if user_data and user_data.skills %}
+                            <div class="skill-match-summary d-flex gap-2">
+                                <span class="badge bg-success fs-6">
+                                    <i class="bi bi-check-circle me-1"></i>{{ matched_skills_count }} Matched
+                                </span>
+                                <span class="badge bg-danger fs-6">
+                                    <i class="bi bi-x-circle me-1"></i>{{ missing_skills_count }} Missing
+                                </span>
+                            </div>
                             <div class="skill-match-score">
-                                <span class="badge bg-{% if match_score >= 80 %}success{% elif match_score >= 60 %}warning{% else %}danger{% endif %} fs-6">
+                                <span class="badge bg-{% if match_score >= 80 %}success{% elif match_score >= 60 %}warning{% else %}danger{% endif %} fs-5">
                                     <i class="bi bi-graph-up me-1"></i>{{ match_score }}% Match
                                 </span>
+                            </div>
+                        {% else %}
+                            <div class="text-muted">
+                                <small>
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    <a href="{{ url_for('user.user_data') }}">Add your skills</a> to see match percentage
+                                </small>
                             </div>
                         {% endif %}
                     </div>
                 </div>
             </div>
+
             <div class="card-body">
-                <div class="skills-container">
+                <div>
                 {% for category, skills in job_skills.items() %}
-                    <div class="skill-category mb-3">
-                        <div class="skill-category-title">
-                            {{ category }}
-                            <span class="skill-count">{{ skills|length }}</span>
+                    <div class=mb-3">
+                        <div>
+                            <div>
+                                {{ category }}
+                            </div>
+                            {% if user_data and user_data.skills %}
+                            {% set category_skills_matched = matched_skills_by_category[category] | length %}
+                            <div class="badge bg-secondary d-flex">{{ category_skills_matched }} / {{ skills | length }}</div>
+                            {% else %}
+                            <div class="badge bg-secondary d-flex">{{ skills|length }}</div>
+                            {% endif %}
                         </div>
-                        <div class="skill-category-items">
+                        <div>
+                            {% set skills_matched = matched_skills_by_category[category] | map(attribute='id') | list %}
                             {% for skill in skills %}
-                                <span class="badge me-2 mb-2 skill-badge bg-success text-white skill-matched">
-                                    <i class="bi bi-check-circle me-1"></i>{{ skill }}
-                                </span>
+                                {% if user_data and user_data.skills %}
+                                    {% if skill.id in skills_matched %}
+                                        <span class="badge me-2 mb-2 bg-success text-white" 
+                                            title="You have this skill!">
+                                            <i class="bi bi-check-circle me-1"></i>{{ skill.name }}
+                                        </span>
+                                    {% else %}
+                                        <span class="badge me-2 mb-2 skill-badge bg-danger text-white" 
+                                            title="Consider learning this skill">
+                                            <i class="bi bi-x-circle me-1"></i>{{ skill.name }}
+                                        </span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="badge me-2 mb-2 skill-badge bg-secondary text-white">
+                                        {{ skill.name }}
+                                    </span>
+                                {% endif %}
                             {% endfor %}
                         </div>
                     </div>
                 {% endfor %}
                 </div>
+                
+                {% if user_data and user_data.skills %}
+                    <div class="mt-4 pt-3 border-top">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h6 class="text-muted mb-2">Skills Analysis</h6>
+                                <div class="progress mb-2" style="height: 8px;">
+                                    <div class="progress-bar bg-success" role="progressbar" 
+                                        style="width: {{ (matched_skills_count / total_skills * 100) if total_skills > 0 else 0 }}%"
+                                        aria-valuenow="{{ matched_skills_count }}" 
+                                        aria-valuemin="0" 
+                                        aria-valuemax="{{ total_skills }}">
+                                    </div>
+                                </div>
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    {% if match_score >= 80 %}
+                                        Excellent match! You have most required skills.
+                                    {% elif match_score >= 60 %}
+                                        Good match! Consider learning the missing skills.
+                                    {% elif match_score >= 40 %}
+                                        Moderate match. Focus on key missing skills.
+                                    {% else %}
+                                        Low match. This role may require significant skill development.
+                                    {% endif %}
+                                </small>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-end">
+                                    {% if missing_skills_count > 0 %}
+                                        <a href="{{ url_for('user.user_data') }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-plus-circle me-1"></i>Add Missing Skills
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+                
                 <div class="mt-3">
                     <small class="text-muted">
-                        <i class="bi bi-info-circle me-1"></i>
+                        <i class="bi bi-robot me-1"></i>
                         Skills automatically extracted from job description using AI
                     </small>
                 </div>
             </div>
         </div>
+
+        {% if user_data and user_data.skills and missing_skills %}
+        <!-- Missing Skills Recommendations -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-lightbulb me-2 text-warning"></i>Skills to Develop
+                </h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">Consider learning these skills to improve your match for this role:</p>
+                <div class="skills-container">
+                    {% for category, skills in missing_skills_by_category.items() %}
+                        <div class="skill-category mb-2">
+                            <div class="skill-category-title-small">{{ category }}</div>
+                            <div class="skill-category-items">
+                                {% for skill in skills %}
+                                    <span class="badge me-2 mb-1 skill-badge-small bg-outline-danger text-danger border border-danger">
+                                        <i class="bi bi-plus-circle me-1"></i>{{ skill.name }}
+                                    </span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
         {% endif %}
 
         <!-- Job Logs -->
