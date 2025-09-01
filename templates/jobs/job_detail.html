@@ -138,15 +138,21 @@
                 <div>
                 {% for category, skills in job_skills.items() %}
                     <div class=mb-3">
-                        <div>
-                            <div>
-                                {{ category }}
-                            </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div> {{ category }} </div>
+
                             {% if user_data and user_data.skills %}
                             {% set category_skills_matched = matched_skills_by_category[category] | length %}
-                            <div class="badge bg-secondary d-flex">{{ category_skills_matched }} / {{ skills | length }}</div>
+                            {% set category_skills = skills | length %}
+                                {% if category_skills_matched == category_skills %}
+                                <div class="badge bg-success d-flex ">
+                                {% else %}
+                                <div class="badge bg-secondary d-flex ">
+                                {% endif %}
+                                    {{ category_skills_matched }} / {{ skills | length }}
+                                </div>
                             {% else %}
-                            <div class="badge bg-secondary d-flex">{{ skills|length }}</div>
+                            <div class="badge bg-secondary d-flex ml-2">{{ skills|length }}</div>
                             {% endif %}
                         </div>
                         <div>
@@ -159,7 +165,7 @@
                                             <i class="bi bi-check-circle me-1"></i>{{ skill.name }}
                                         </span>
                                     {% else %}
-                                        <span class="badge me-2 mb-2 skill-badge bg-danger text-white" 
+                                        <span class="badge me-2 mb-2 skill-badge bg-secondary text-white" 
                                             title="Consider learning this skill">
                                             <i class="bi bi-x-circle me-1"></i>{{ skill.name }}
                                         </span>
