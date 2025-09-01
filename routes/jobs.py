@@ -134,12 +134,7 @@ def job_detail(job_id):
 
         # get skills by category and matching
         matched_skills_by_category, missing_skills_by_category = job_service.get_skills_by_user_category(job_skills_by_category['data']['skills'], user_skills)
-        print('------------------------------------------------------------', flush=True)
-        print(total_skills)
-        print(match_score)
-        print(matched_skills_by_category)
-        print(missing_skills_by_category)
-
+        
         job_description = job.description
         job_description_short = job.description[:500]
         job_description_short += '...' if len(job_description) > 500 else ''
