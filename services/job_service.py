@@ -599,7 +599,7 @@ class JobService(BaseService):
             self.logger.error(f"Error extracting skills for job {job_id}: {str(e)}", exc_info=True)
             return False, None
 
-    def get_job_skills(self, job_id):
+    def get_job_skills(self, job_id, get_blacklisted=False):
         """Get skills for a specific job"""
         self.logger.debug(f"Fetching skills for job ID: {job_id}")
 
@@ -612,7 +612,10 @@ class JobService(BaseService):
                 self.logger.warning(f"Job not found when fetching skills: {job_id}")
                 return []
 
-            skills = list(job.skills)
+            if get_blacklisted:
+                skills = list(job.skills)
+            else:
+                skills = [skill for skill in job.skills if skill.is_blacklisted == False]
             self.logger.debug(f"Retrieved {len(skills)} skills for job {job_id}")
 
             return skills
