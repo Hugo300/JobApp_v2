@@ -11,7 +11,15 @@
                     <h6 class="card-subtitle text-muted mb-2">{{ job.company }}</h6>
                 </div>
                 <div class="text-end">
-                    <span class="badge bg-{{ 'success' if job.status == 'Completed' else 'primary' if job.status == 'Applied' else 'warning' if job.status == 'Process' else 'secondary' }}">
+                    <span class="badge {{
+                        'badge--status-completed' if job.status == 'Completed'
+                        else 'badge--status-process' if job.status == 'Process'
+                        else 'badge--status-applied' if job.status == 'Applied'
+                        else 'badge--status-waiting' if job.status == 'Waiting Decision'
+                        else 'badge--status-collected' if job.status == 'Collected'
+                        else 'badge--status-rejected' if job.status == 'Rejected'
+                        else 'primary'
+                    }}">
                         {{ job.status }}
                     </span>
                     {% if job.job_mode %}
