@@ -11,6 +11,7 @@ __pycache__/
 *.pyzwzw
 
 _pycache_/
+.pytest_cache/
 
 *.tex
 *.aux
@@ -27,3 +28,4 @@ _pycache_/
 docs/
 logs/
 .investigations/
+.vscode/
