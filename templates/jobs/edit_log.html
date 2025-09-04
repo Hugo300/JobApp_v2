@@ -70,6 +70,30 @@
                         </div>
                         {% endif %}
 
+                        <div class="mb-4">
+                            {{ form.status_change.label(class="form-label fw-bold") }}
+                            {{ form.status_change(class="form-select", id="statusSelect") }}
+                            {% if form.status_change.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.status_change.errors %}
+                                    <small><i class="bi bi-exclamation-circle me-1"></i>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Optionally update the job status along with this log entry.
+                            </div>
+                            <div id="statusChangePreview" class="mt-2" style="display: none;">
+                                <div class="alert alert-info py-2">
+                                    <small>
+                                        <i class="bi bi-arrow-right me-1"></i>
+                                        Status will change from <strong id="currentStatus">{{ job.status }}</strong> to <strong id="newStatus"></strong>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Form Actions -->
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
@@ -149,6 +173,20 @@ function confirmDeleteLog() {
     }
 }
 
+// Status change preview
+function updateStatusPreview() {
+    const statusSelect = document.getElementById('statusSelect');
+    const preview = document.getElementById('statusChangePreview');
+    const newStatusSpan = document.getElementById('newStatus');
+
+    if (statusSelect.value && statusSelect.value !== '') {
+        newStatusSpan.textContent = statusSelect.value;
+        preview.style.display = 'block';
+    } else {
+        preview.style.display = 'none';
+    }
+}
+
 // Auto-resize textarea
 document.addEventListener('DOMContentLoaded', function() {
     const textarea = document.getElementById('note');
@@ -162,6 +200,9 @@ document.addEventListener('DOMContentLoaded', function() {
         textarea.style.height = 'auto';
         textarea.style.height = textarea.scrollHeight + 'px';
     }
+
+    const statusSelect = document.getElementById('statusSelect');
+    statusSelect.addEventListener('change', updateStatusPreview);
 });
 </script>
 {% endblock %}
