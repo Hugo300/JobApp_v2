@@ -35,7 +35,7 @@ class LogService(BaseService):
         """Get log entry by ID"""
         return self.get_by_id(JobLog, log_id)
     
-    def create_log(self, job_id, note, status_change=None, user_id=None):
+    def create_log(self, job_id, note, status_change=None):
         """
         Create a new job log entry
         
@@ -82,7 +82,7 @@ class LogService(BaseService):
         
         return self.safe_execute(_create_log)
 
-    def update_log(self, log_id, note):
+    def update_log(self, log_id, note, status_change=None, job_id=None):
         """
         Update an existing log entry
 
@@ -93,53 +93,34 @@ class LogService(BaseService):
         Returns:
             tuple: (success: bool, log: JobLog, error: str)
         """
-        log = db.session.get(JobLog, log_id)
-        if not log:
-            return False, None, "Log entry not found"
-
-        def _update_log():
-            log.note = note
-            log.updated_at = datetime.utcnow()  # Add this field if needed
-            return log
-
-        return self.safe_execute(_update_log)
-
-    def delete_log(self, log_id):
-        """
-        Delete a log entry
-
-        Args:
-            log_id: ID of the log entry to delete
-
-        Returns:
-            tuple: (success: bool, log: None, error: str)
-        """
-        log = db.session.get(JobLog, log_id)
-        if not log:
-            return False, None, "Log entry not found"
-
-        def _delete_log():
-            db.session.delete(log)
-            return None
-
-        return self.safe_execute(_delete_log)
-    
-    def update_log(self, log_id, note):
-        """
-        Update a log entry
-        
-        Args:
-            log_id: Log ID
-            note: New note content
-            
-        Returns:
-            tuple: (success: bool, log: JobLog, error: str)
-        """
         log = self.get_log_by_id(log_id)
         if not log:
-            return False, None, "Log not found"
+            return False, None, "Log entry not found"
         
-        return self.update(log, note=note)
+        data = {'note': note}
+        
+        # Handle status change
+        if status_change:
+            # Validate status
+            valid_statuses = [status.value for status in ApplicationStatus]
+            if status_change not in valid_statuses:
+                raise ValueError("Invalid status")
+            
+            job = db.session.get(JobApplication, job_id)
+            if not job:
+                return False, None, "Job not found"
+            
+            old_status = job.status
+            job.status = status_change
+            job.last_update = datetime.now(timezone.utc)
+
+            # Update log data to include status change
+            data['status_change_from'] = old_status
+            data['status_change_to'] = status_change
+        
+        data['updated_at'] = datetime.now(timezone.utc)
+        
+        return self.update(log, **data)
     
     def delete_log(self, log_id):
         """
