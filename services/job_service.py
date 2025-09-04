@@ -626,7 +626,7 @@ class JobService(BaseService):
     def calculate_skill_match(self, job_skills, user_skills):
         """Calculate skill match between job requirements and user skills"""
         if not job_skills or not user_skills:
-            return 0, 0, 0, []
+            return 0, 0, 0
         
         # Get skill names for comparison (case-insensitive)
         job_skill_names = {skill.name.lower() for skill in job_skills}
