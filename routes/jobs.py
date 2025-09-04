@@ -4,7 +4,6 @@ from datetime import datetime
 from typing import Tuple, Optional, Dict, Any
 import markdown
 from markupsafe import escape
-import bleach
 
 from models import JobApplication, ApplicationStatus, UserData, MasterTemplate, Document, TemplateType, JobLog, db
 
@@ -610,13 +609,14 @@ def edit_log(job_id, log_id):
             try:
                 # Sanitize input
                 note = escape(form.note.data.strip())
+                status_change = form.status_change.data.strip() if form.status_change.data else None
 
                 if not note:
                     flash_error('Log note cannot be empty.')
                     return render_template('jobs/edit_log.html', job=job, log=log_entry, form=form)
 
                 # Update the log entry
-                success, updated_log, error = log_service.update_log(log_id, note)
+                success, updated_log, error = log_service.update_log(log_id, note, status_change, job_id)
 
                 if success:
                     current_app.logger.info(f'Log entry {log_id} updated for job {job_id}')
