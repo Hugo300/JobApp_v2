@@ -2,7 +2,7 @@
 User service for handling user data business logic
 """
 from collections import defaultdict
-from typing import List
+from typing import List, Any
 from models import UserData, UserSkill, Skill, db
 
 from .skill.skill_service import get_skill_service
@@ -14,7 +14,7 @@ from utils.forms import validate_user_data_form
 class UserService(BaseService):
     """Service for user data operations"""
 
-    def __init__(self):
+    def __init__(self)  -> None:
         super().__init__()
         # Get the skill service instance
         self.skill_service = get_skill_service()
@@ -27,8 +27,8 @@ class UserService(BaseService):
             self.logger.error(f"Error getting user data: {str(e)}")
             return None
     
-    def create_or_update_user(self, name, email, phone=None, linkedin=None,
-                             github=None, skills=[]):
+    def create_or_update_user(self, name: str, email: str, phone: str|None = None, linkedin: str|None = None,
+                             github: str|None = None, skills: List = []) -> UserData:
         """
         Create or update user data
 
@@ -70,9 +70,8 @@ class UserService(BaseService):
             # Create new user
             return self.create(UserData, **data)
     
-
-    
-    def validate_user_data(self, data):
+ 
+    def validate_user_data(self, data: dict[str, Any]):
         """
         Validate user data
         

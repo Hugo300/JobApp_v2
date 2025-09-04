@@ -85,5 +85,5 @@ class MasterTemplate(db.Model):
                 logging.getLogger(__name__).error(f"Error saving template content: {str(e)}")
                 return False
 
-    def __repr__(self):
+    def __repr__(self)  -> str:
         return f'<MasterTemplate {self.name}>'
