@@ -363,9 +363,27 @@
                                     </div>
                                     {% if log.status_change_from and log.status_change_to %}
                                         <div class="status-change-badges mt-1">
-                                            <span class="badge bg-secondary">{{ log.status_change_from }}</span>
+                                            <span class="badge {{
+                                                'badge--status-completed' if log.status_change_from == 'Completed'
+                                                else 'badge--status-process' if log.status_change_from == 'Process'
+                                                else 'badge--status-process' if log.status_change_from == 'Interview'
+                                                else 'badge--status-applied' if log.status_change_from == 'Applied'
+                                                else 'badge--status-waiting' if log.status_change_from == 'Waiting Decision'
+                                                else 'badge--status-collected' if log.status_change_from == 'Collected'
+                                                else 'badge--status-rejected' if log.status_change_from == 'Rejected'
+                                                else 'primary'
+                                            }}">{{ log.status_change_from }}</span>
                                             <i class="bi bi-arrow-right mx-1 text-muted"></i>
-                                            <span class="badge bg-success">{{ log.status_change_to }}</span>
+                                            <span class="badge {{
+                                                'badge--status-completed' if log.status_change_to == 'Completed'
+                                                else 'badge--status-process' if log.status_change_to == 'Process'
+                                                else 'badge--status-process' if log.status_change_to == 'Interview'
+                                                else 'badge--status-applied' if log.status_change_to == 'Applied'
+                                                else 'badge--status-waiting' if log.status_change_to == 'Waiting Decision'
+                                                else 'badge--status-collected' if log.status_change_to == 'Collected'
+                                                else 'badge--status-rejected' if log.status_change_to == 'Rejected'
+                                                else 'primary'
+                                            }}">{{ log.status_change_to }}</span>
                                         </div>
                                     {% endif %}
                                 </div>
