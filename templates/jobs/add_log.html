@@ -52,8 +52,8 @@
                         </button>
                     </div>
                     <div class="col-md-4">
-                        <button type="button" class="btn btn-outline-dark btn-sm w-100" onclick="insertTemplate('meeting')">
-                            <i class="bi bi-calendar-check me-1"></i>Meeting
+                        <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="insertTemplate('rejection')">
+                            <i class="bi bi-trash-fill me-1"></i>Rejection
                         </button>
                     </div>
                 </div>
@@ -202,7 +202,8 @@ const templates = {
     followup: "Sent follow-up email to [contact person] regarding application status. [Add any response received or next planned follow-up].",
     research: "Researched company background, recent news, and key personnel. [Add specific findings that could be useful for interview preparation].",
     call: "Phone call with [contact person/recruiter]. Discussed [topics]. Next steps: [action items].",
-    meeting: "Meeting/call scheduled for [date/time] with [person/team]. Purpose: [interview/discussion topic]. Preparation needed: [items]."
+    meeting: "Meeting/call scheduled for [date/time] with [person/team]. Purpose: [interview/discussion topic]. Preparation needed: [items].",
+    rejection: "Received email about rejection of the application. [given reason??]."
 };
 
 function insertTemplate(templateType) {
