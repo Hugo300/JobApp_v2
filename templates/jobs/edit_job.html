@@ -134,13 +134,15 @@
             <div class="card-body">
                 <p class="mb-2">
                     <strong>Status:</strong> 
-                    <span class="badge bg-{{ 
-                        'success' if job.status == 'Completed' 
-                        else 'info' if job.status == 'Process' 
-                        else 'warning' if job.status in ['Applied', 'Waiting Decision'] 
-                        else 'secondary' if job.status == 'Collected'
-                        else 'danger' if job.status == 'Rejected'
-                        else 'primary' 
+                    <span class="badge {{
+                        'badge--status-completed' if job.status == 'Completed'
+                        else 'badge--status-process' if job.status == 'Process'
+                        else 'badge--status-process' if job.status == 'Interview'
+                        else 'badge--status-applied' if job.status == 'Applied'
+                        else 'badge--status-waiting' if job.status == 'Waiting Decision'
+                        else 'badge--status-collected' if job.status == 'Collected'
+                        else 'badge--status-rejected' if job.status == 'Rejected'
+                        else 'primary'
                     }}">{{ job.status }}</span>
                 </p>
                 <p class="mb-2">
