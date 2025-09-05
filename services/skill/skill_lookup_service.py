@@ -1,5 +1,6 @@
 from typing import Dict, Optional
 import logging
+from flask import current_app
 from sqlalchemy.exc import SQLAlchemyError
 from types import MappingProxyType
 
@@ -18,27 +19,31 @@ class SkillLookupService:
     def _build_lookup(self):
         """Build lookup dictionary from database"""
         try:
-            self._skill_lookup = {}
+            new_lookup: Dict[str, Skill] = {}
 
-            with db.session.begin_nested():            
+            # Read-only ops; avoid nested transactions  
+            with db.session.no_autoflush:           
                 # Add canonical skills
                 skills = Skill.query.all()
                 for skill in skills:
-                    self._skill_lookup[skill.name.lower()] = skill
+                    new_lookup[skill.name.lower()] = skill
                     # Keep original case for exact matches
                     if skill.name.lower() != skill.name:
-                        self._skill_lookup[skill.name] = skill
+                        new_lookup[skill.name] = skill  
                 
                 # Add variants
                 variants = SkillVariant.query.join(Skill).all()
                 for variant in variants:
-                    self._skill_lookup[variant.variant_name.lower()] = variant.skill
+                    new_lookup[variant.variant_name.lower()] = variant.skill 
                     # Keep original case
                     if variant.variant_name.lower() != variant.variant_name:
-                        self._skill_lookup[variant.variant_name] = variant.skill
-                    
-        except Exception as e:
-            self.logger.warning(f"Failed to build skill lookup: {str(e)}", exc_info=True)
+                        new_lookup[variant.variant_name] = variant.skill
+
+            # Atomic swap  
+            self._skill_lookup = new_lookup
+
+        except SQLAlchemyError as e:  
+            current_app.logger.warning("Failed to build skill lookup: %s", e, exc_info=True)  
             self._skill_lookup = {}
     
     def find_skill(self, name: str) -> Optional[Skill]:
