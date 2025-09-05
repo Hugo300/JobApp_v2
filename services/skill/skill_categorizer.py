@@ -11,11 +11,18 @@ class SkillCategorizer:
         """Categorize skills by their categories"""
         try:
             categorized_skills = {}
+
+            category_service = CategoryService()
+            all_categories = {cat.id: cat for cat in category_service.get_all_categories()}
             
             # Categorize skills
             for skill in skills:
                 if skill.category_id:
-                    category = CategoryService().get_category_by_id(skill.category_id)
+                    category = all_categories.get(skill.category_id)
+                
+                    if not category:
+                        continue
+
                     if category.name not in categorized_skills:
                         categorized_skills[category.name] = []
                     categorized_skills[category.name].append(skill)

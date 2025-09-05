@@ -36,9 +36,14 @@ class SkillNormalizer:
                 if TextProcessor.is_noise_skill(skill, self.config.NOISE_PATTERNS, self.config.COMMON_WORDS):
                     continue
                 
-                # Normalize to title case
-                skill = skill.title()
+                # Normalize casing - preserve known patterns or use title case
+                # This could be improved with a dictionary of known skill casings
+                if skill.upper() in ['IOS', 'SQL', 'HTML', 'CSS', 'XML', 'JSON', 'API', 'REST', 'MYSQL', 'NOSQL']:
+                    skill = skill.upper()
+                elif not any(c.isupper() for c in skill[1:]):  # If not mixed case
+                    skill = skill.title()
                 
+                # else preserve existing casing for things like "JavaScript", "TypeScript", etc.                
                 # Try to match with canonical skills
                 canonical_skill = self.lookup_service.find_skill(skill)
                 if canonical_skill:

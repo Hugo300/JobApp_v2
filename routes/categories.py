@@ -72,6 +72,7 @@ def edit_category(category_id):
         category = category_service.get_category_by_id(category_id)
         if not category:
             flash('Category not found', 'error')
+            return redirect(url_for('skill_category.manage_categories'))
 
         if request.method == 'POST':
             # Handle POST request

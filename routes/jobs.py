@@ -122,21 +122,20 @@ def job_detail(job_id):
         # Get job skills (assuming you have a method to get job skills by category)
         job_skills_by_category = job_service.get_job_skills_by_category(job.id)
         
-        if job_skills_by_category['error']:
-            print(job_skills_by_category['error'])
+        if job_skills_by_category.get('error'):
+            current_app.logger.error(f"job_skills_by_category error: {job_skills_by_category['error']}")
 
         total_skills = job_skills_by_category['data']['active_skills']
 
         match_score, matched_skills_count, missing_skills_count = job_service.calculate_skill_match(
-            job_service.get_job_skills(job_id), user_skills
+            job_service.get_job_skills(job_id) or [], user_skills
         )
 
         # get skills by category and matching
-        matched_skills_by_category, missing_skills_by_category = job_service.get_skills_by_user_category(job_skills_by_category['data']['skills'], user_skills)
+        matched_skills_by_category, missing_skills_by_category = job_service.get_skills_by_user_category(job_skills_by_category.get('data', {}).get('skills', []), user_skills)
         
-        job_description = job.description
-        job_description_short = job.description[:500]
-        job_description_short += '...' if len(job_description) > 500 else ''
+        job_description = job.description or ''
+        job_description_short = job.description[:500] + ('...' if len(job_description) > 500 else '')
 
         return render_template('jobs/job_detail.html',
                              job=job,
@@ -522,7 +521,7 @@ def edit_job(job_id):
                 )
 
                 # Update the skills
-                extracted_skills = service.extract_job_skills(job.id, job.description)
+                extracted_skills = service.extract_job_skills(job.id, description)
                 if not extracted_skills:
                    current_app.logger.warning(f'No skills extracted for job {job.id}')
 

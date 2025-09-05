@@ -1,9 +1,9 @@
 """
 Analytics routes for job application insights
 """
-from datetime import datetime
+from datetime import datetime, timezone
 
-from flask import Blueprint, render_template, jsonify, request
+from flask import Blueprint, render_template, jsonify, request, current_app
 from services import AnalyticsService
 
 analytics_bp = Blueprint('analytics', __name__)
@@ -21,7 +21,7 @@ def dashboard():
         )
     except Exception as e:
         # In production, you might want to log this error
-        print(f"Error in analytics dashboard: {e}")
+        current_app.logger.error(f"Error in analytics dashboard: {e}", exc_info=True)
         
         # Return empty data structure to prevent template errors
         empty_data = {
@@ -206,7 +206,7 @@ def api_refresh():
         return jsonify({
             'status': 'success',
             'message': 'Analytics data refreshed',
-            'timestamp': datetime.utcnow().isoformat(),
+            'timestamp': datetime.now(timezone.utc).isoformat(),
             'summary': {
                 'total_jobs': data['overview_stats']['total_jobs'],
                 'success_rate': data['overview_stats']['success_rate']

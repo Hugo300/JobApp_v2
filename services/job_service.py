@@ -567,7 +567,7 @@ class JobService(BaseService):
                     success, skill, error = self.skill_service.create_skill(skill_name)
 
                     if success:
-                        self.logger.info(f"Created new skill wiht name {skill_name}")
+                        self.logger.info(f"Created new skill with name {skill_name}")
                         skill_ids.append(skill.id)
                         new_skills.append(skill_name)
                     else:
@@ -615,7 +615,7 @@ class JobService(BaseService):
             if get_blacklisted:
                 skills = list(job.skills)
             else:
-                skills = [skill for skill in job.skills if skill.is_blacklisted == False]
+                skills = [skill for skill in job.skills if not skill.is_blacklisted]
             self.logger.debug(f"Retrieved {len(skills)} skills for job {job_id}")
 
             return skills
@@ -706,7 +706,7 @@ class JobService(BaseService):
             missing_skills = []
             matched_skills = []
             for skill in skills:
-                skill_name = skill.name if hasattr(skill, 'name') else skill
+                skill_name = skill.name
 
                 if skill_name.lower() in user_skill_names:
                     matched_skills.append(skill)

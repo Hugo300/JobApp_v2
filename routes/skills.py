@@ -298,6 +298,7 @@ def api_search_skills():
             return jsonify([])
 
         # Query database directly with limit
+        query = query.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
         matching_skills = Skill.query.filter(
             Skill.name.ilike(f'%{query}%')
         ).options(joinedload(Skill.category)).limit(10).all()

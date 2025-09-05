@@ -18,6 +18,7 @@ class CategoryService(BaseService):
     def __init__(self):
         super().__init__()
         self._cache_valid = False
+        self._cache = {}
         self.logger.info("CategoryService initialized")
     
     def get_all_categories(self, include_counts: bool = False) -> List[SkillCategory]:
@@ -104,7 +105,6 @@ class CategoryService(BaseService):
                 return False, None, "A category with this name already exists"
     
         except Exception as e:
-            db.session.rollback()
             self.logger.error(f"Error validating category data for {name}: {str(e)}", exc_info=True)
             return False, None, f"Validation error: {str(e)}"
         
@@ -189,7 +189,11 @@ class CategoryService(BaseService):
                     if skill.job_skills:
                         self.logger.warning(f"Delete failed: Cannot delete skill referenced by jobs")
                         return False, None, f"Cannot delete skills that are referenced by jobs"
+                
+                # Safe to delete all skills
+                for skill in skills_in_category:
                     self.delete(skill)
+
                 self.logger.info(f"Skills have been deleted")
 
         success, result, error = self.delete(category)
@@ -274,8 +278,8 @@ class CategoryService(BaseService):
             num_skills = 0
             for skill in skills:
                 num_skills += 1
-                skill.update(Skill, **{'category_id': target_category_id})
-            
+                self.update(skill, category_id=target_category_id)
+                       
             self._invalidate_cache()
 
             self.logger.info(f"Moved {num_skills} skills to category ID {target_category_id}")

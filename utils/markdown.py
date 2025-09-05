@@ -24,11 +24,18 @@ def markdown_filter(text):
         'tbody', 'tr', 'th', 'td', 'hr'
     ]
     allowed_attributes = {
-        'a': ['href', 'title'],
+        'a': ['href', 'title', 'rel'],
         'table': ['class'],
         'th': ['align'],
         'td': ['align']
     }
     
-    clean_html = bleach.clean(html, tags=allowed_tags, attributes=allowed_attributes)
+    clean_html = bleach.clean(
+        html,
+        tags=allowed_tags,
+        attributes=allowed_attributes,
+        protocols=['http', 'https', 'mailto'],
+        strip=True
+    )
+    clean_html = clean_html.replace('<a ', '<a rel="nofollow noopener noreferrer" ')
     return Markup(clean_html)

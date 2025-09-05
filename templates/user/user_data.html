@@ -133,9 +133,10 @@
                                     {% for skill in skills %}
                                         <span class="badge me-2 mb-2 skill-badge bg-primary text-white position-relative">
                                             {{ skill.name }}
-                                            <button type="button" class="btn-close btn-close-white ms-1" 
-                                                    onclick="removeUserSkill({{ skill.id }}, '{{ skill.name|e }}')" 
-                                                    aria-label="Remove skill" 
+                                            <button type="button" class="btn-close btn-close-white ms-1"
+                                                    onclick="removeUserSkill({{ skill.id }})"
+                                                    data-skill-name="{{ skill.name|e }}"
+                                                    aria-label="Remove skill"
                                                     style="font-size: 0.6em; padding: 0.1em;">
                                             </button>
                                         </span>

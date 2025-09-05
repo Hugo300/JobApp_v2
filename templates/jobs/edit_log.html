@@ -202,7 +202,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     const statusSelect = document.getElementById('statusSelect');
-    statusSelect.addEventListener('change', updateStatusPreview);
+    if (statusSelect) {
+        statusSelect.addEventListener('change', updateStatusPreview);
+    }
 });
 </script>
 {% endblock %}

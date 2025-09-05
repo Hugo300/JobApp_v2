@@ -11,6 +11,8 @@ class ApplicationStatus(Enum):
     WAITING_DECISION = "Waiting Decision"
     OFFER = "Offer"
     ACCEPTED = "Completed"
+    # Back-compat alias for older code paths
+    COMPLETED = ACCEPTED
     REJECTED = "Rejected"
 
 

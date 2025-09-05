@@ -27,7 +27,7 @@ def user_data():
         github = request.form.get('github')
         
         # Get or create user data
-        user_service.create_or_update_user(
+        success, user, error = user_service.create_or_update_user(
             name=name,
             email=email,
             phone=phone,
@@ -35,7 +35,11 @@ def user_data():
             github=github
         )
 
-        flash_success('Profile updated successfully!', 'success')
+        if success:
+            flash_success('Profile updated successfully!')
+        else:
+            flash_error(f'Failed to update profile: {error}')
+        
         return redirect(url_for('user.user_data'))
     
     # GET request - display the form

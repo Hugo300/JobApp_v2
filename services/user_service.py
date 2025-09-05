@@ -2,7 +2,7 @@
 User service for handling user data business logic
 """
 from collections import defaultdict
-from typing import List, Any
+from typing import List, Any, Tuple
 from models import UserData, UserSkill, Skill, db
 
 from .skill.skill_service import get_skill_service
@@ -28,7 +28,7 @@ class UserService(BaseService):
             return None
     
     def create_or_update_user(self, name: str, email: str, phone: str|None = None, linkedin: str|None = None,
-                             github: str|None = None, skills: List = []) -> UserData:
+                             github: str|None = None, skills: List = []) -> Tuple[bool, UserData|None, str|None]:
         """
         Create or update user data
 

@@ -46,6 +46,11 @@
                 </button>
             </div>
         </div>
+        <div class="row mt-2">
+            <div class="col">
+                <small id="resultsCount" class="text-muted">Showing {{ skills|length }} skills</small>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -123,7 +128,7 @@
                                         class="btn btn-sm btn-outline-success"
                                         data-bs-toggle="tooltip" 
                                         title="Remove from blacklist"
-                                        onclick="return confirm('Remove {{ skill.name }} from blacklist?')">
+                                        onclick="return confirm('Remove {{ skill.name|e }} from blacklist?')">
                                     <i class="bi bi-check-circle"></i>
                                     Unblacklist
                                 </button>
@@ -132,7 +137,7 @@
                                         class="btn btn-sm btn-outline-warning"
                                         data-bs-toggle="tooltip" 
                                         title="Add to blacklist"
-                                        onclick="return confirm('Add {{ skill.name }} to blacklist? This will exclude it from skill extraction.')">
+                                        onclick="return confirm('Add {{ skill.name|e }} to blacklist? This will exclude it from skill extraction.')">
                                     <i class="bi bi-x-circle"></i>
                                     Blacklist
                                 </button>
@@ -202,14 +207,6 @@
             if (categorySelect) categorySelect.value = '';
             
             filterTable();
-        }
-
-        function filterByBlacklist() {
-            const selectedFilter = document.getElementById('blacklistFilter').value;
-            // Redirect to the same page with the blacklist filter parameter
-            const currentUrl = new URL(window.location);
-            currentUrl.searchParams.set('blacklist', selectedFilter);
-            window.location.href = currentUrl.toString();
         }
 
         // Event listeners with null checks

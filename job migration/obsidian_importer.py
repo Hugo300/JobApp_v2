@@ -391,7 +391,6 @@ class ObsidianJobImporter:
                                 'job_id': job_id
                             }
                             created_jobs.append(job_info)
-                            print(f"✓ Successfully created: {job_data.get('title')} at {job_data.get('company')}")
                             
                             # Create job logs if they exist in the original data
                             if job_id and '_metadata' in job_data and job_data['_metadata']['logs']:
@@ -518,8 +517,8 @@ class ObsidianJobImporter:
             response = self.session.get(form_url)
             if response.status_code == 200:
                 return self._extract_csrf_token(response.text)
-        except:
-            pass
+        except (requests.RequestException, Exception) as e:
+            print(f"Failed to get fresh CSRF token: {str(e)}")
         return None
 
     def import_jobs(self, source_path: str, status_filter: Optional[List[str]] = None, debug: bool = False) -> Dict:
