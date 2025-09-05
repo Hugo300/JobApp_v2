@@ -18,7 +18,8 @@ class SkillNormalizer:
             return NormalizedSkillsResult(
                 normalized_skills=[],
                 unmatched_skills=[],
-                success=True
+                success=False,
+                error="Skill list is empty"
             )
         
         try:

@@ -114,7 +114,12 @@ class LoggingManager:
     def cleanup(self):
         """Clean up handlers"""
         for handler in self._handlers:
-            handler.close()
+            try:  
+                handler.close()  
+                if self.app:  
+                    self.app.logger.removeHandler(handler)  
+            except Exception:  
+                pass
         self._handlers.clear()
 
 

@@ -4,7 +4,7 @@ Job service for handling job application business logic
 from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any, Tuple
 from collections import defaultdict
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload  
 from flask_sqlalchemy.pagination import Pagination
 import logging
 
@@ -98,10 +98,10 @@ class JobService(BaseService):
             self.logger.debug(f"Filters - Search: {search_query}, Status: {status_filter}, "
                             f"Mode: {job_mode_filter}, Country: {country_filter}")
 
-            query = JobApplication.query.options(
-                joinedload(JobApplication.documents),
-                joinedload(JobApplication.logs).limit(5)  # Only load recent logs
-            )
+            query = JobApplication.query.options(  
+                selectinload(JobApplication.documents),  
+                selectinload(JobApplication.logs)  
+            ) 
 
             # Apply filters
             filters_applied = []
@@ -246,7 +246,25 @@ class JobService(BaseService):
         """
         self.logger.info(f"Updating job application ID: {job_id}")
         self.logger.debug(f"Update fields: {list(kwargs.keys())}")
+        
+        try:  
+            str_fields = {'company','title','description','url','office_location','country','status','job_mode'}  
+            for key, value in list(kwargs.items()):  
+                if key in str_fields and isinstance(value, str):  
+                    kwargs[key] = sanitize_input(value)  
 
+            if 'job_mode' in kwargs and kwargs['job_mode'] not in [m.value for m in JobMode]:  
+                self.logger.warning(f"Invalid job_mode '{kwargs['job_mode']}' in update for job {job_id}; defaulting to ON_SITE")  
+                kwargs['job_mode'] = JobMode.ON_SITE.value  
+
+            if 'status' in kwargs and kwargs['status'] not in [s.value for s in ApplicationStatus]:  
+                self.logger.warning(f"Invalid status '{kwargs['status']}' in update for job {job_id}")  
+                return False, None, "Invalid status" 
+ 
+        except Exception as e:  
+            self.logger.error(f"Error validating update payload for job {job_id}: {e!s}", exc_info=True)  
+            return False, None, f"Validation error: {e!s}"  
+  
         job = self.get_job_by_id(job_id)
         if not job:
             self.logger.warning(f"Update failed: Job not found with ID: {job_id}")
@@ -543,7 +561,7 @@ class JobService(BaseService):
         """
         if not job_description:
             self.logger.debug(f"No job description provided for job {job_id}, skipping skill extraction")
-            return True, []
+            return False, []
         
         self.logger.info(f"Extracting skills from job description for job ID: {job_id}")
 
@@ -691,7 +709,7 @@ class JobService(BaseService):
             return {'success': True, 'data': result, 'error': None}
         except Exception as e:
             self.logger.error(f"Error fetching categorized skills for job {job_id}: {str(e)}", exc_info=True)
-            return {'success': False, 'data': None, 'error': e}
+            return {'success': False, 'data': None, 'error': str(e)}
         
     def get_skills_by_user_category(self, job_skills_by_category, user_skills):
         """Get missing skills organized by category"""

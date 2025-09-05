@@ -37,8 +37,8 @@ class BaseService:
         
         except SQLAlchemyError as e:
             db.session.rollback()
-            error_msg = f"Database error: {str(e)}"
-            self.logger.error(error_msg)
+            error_msg = f"Database error: {e!s}"
+            self.logger.exception(error_msg)
             return False, None, error_msg
         
         except Exception as e:

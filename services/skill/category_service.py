@@ -186,7 +186,7 @@ class CategoryService(BaseService):
             elif skill_action == 'delete':
                 # Delete all skills in this category
                 for skill in skills_in_category:
-                    if skill.job_skills:
+                    if skill.skill_jobs:
                         self.logger.warning(f"Delete failed: Cannot delete skill referenced by jobs")
                         return False, None, f"Cannot delete skills that are referenced by jobs"
                 
@@ -196,14 +196,21 @@ class CategoryService(BaseService):
 
                 self.logger.info(f"Skills have been deleted")
 
-        success, result, error = self.delete(category)
+        success, _result, error = self.delete(category)
 
         if success:
             self.logger.info(f"Category {category_id} deleted successfully")
+            result_info = {  
+                "category_name": category.name,  
+                "message": (  
+                    f"Moved {skills_count} skills to uncategorized"  
+                    if skills_count > 0 and skill_action == "keep" else None  
+                ),  
+            }  
+            return True, result_info, None  
         else:
             self.logger.error(f"Failed to delete category {category_id}: {error}")
-            
-        return success, result, error
+            return False, None, error
     
     def get_category_skills(self, category_id: int) -> Tuple[List[Skill], List[Skill], List[Skill]]:
         """

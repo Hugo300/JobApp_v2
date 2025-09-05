@@ -194,8 +194,8 @@ class LogService(BaseService):
             List of JobLog instances that contain status changes
         """
         try:
-            query = JobLog.query.filter(
-                JobLog.note.like('%Status changed from%')
+            query = JobLog.query.filter(  
+                (JobLog.status_change_from.isnot(None)) | (JobLog.status_change_to.isnot(None))  
             )
             
             if job_id:
@@ -222,8 +222,8 @@ class LogService(BaseService):
                 query = query.filter(JobLog.job_id == job_id)
             
             total_logs = query.count()
-            status_change_logs = query.filter(
-                JobLog.note.like('%Status changed from%')
+            status_change_logs = query.filter(  
+                (JobLog.status_change_from.isnot(None)) | (JobLog.status_change_to.isnot(None))  
             ).count()
             
             # Get logs by month for the last 6 months

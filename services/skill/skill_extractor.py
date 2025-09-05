@@ -38,6 +38,17 @@ class SkillExtractor:
         for match in matches:
             if 'doc_node_value' in match:
                 skill_name = match['doc_node_value']
+                if not skill_name:
+                    continue
+                
+                skill_clean = skill_name.strip()
+                if TextProcessor.is_noise_skill(  
+                    skill_clean,  
+                    noise_patterns=self.config.NOISE_PATTERNS,  
+                    common_words=self.config.COMMON_WORDS,  
+                ):
+                    continue
+
                 if skill_name and (
                     len(skill_name.strip()) > self.config.MIN_SKILL_LENGTH
                     or skill_name in self.config.ALLOWED_SHORT_SKILLS
@@ -69,15 +80,11 @@ class SkillExtractor:
             # Extract skills using SkillNER
             annotations = self.skill_extractor.annotate(cleaned_text)
             extracted_skills = []
-            
-            # Process full matches
-            if 'results' in annotations and 'full_matches' in annotations['results']:
-                self._process_match_group(annotations['results']['full_matches'], extracted_skills)
-            
-            # Process ngram matches
-            if 'results' in annotations and 'ngram_scored' in annotations['results']:
-                self._process_match_group(annotations['results']['ngram_scored'], extracted_skills)
-            
+            results = annotations.get('results') or {}
+
+            self._process_match_group(results.get('full_matches'), extracted_skills)
+
+            self._process_match_group(results.get('ngram_scored'), extracted_skills)
             return ExtractedSkillsResult(
                 skills=extracted_skills,
                 total_skills=len(extracted_skills),

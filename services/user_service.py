@@ -19,16 +19,16 @@ class UserService(BaseService):
         # Get the skill service instance
         self.skill_service = get_skill_service()
     
-    def get_user_data(self) -> UserData|None:
+    def get_user_data(self) -> UserData | None:
         """Get the first (and typically only) user data record"""
         try:
             return UserData.query.first()
         except Exception as e:
-            self.logger.error(f"Error getting user data: {str(e)}")
+            self.logger.exception(f"Error getting user data: {str(e)}")
             return None
     
     def create_or_update_user(self, name: str, email: str, phone: str|None = None, linkedin: str|None = None,
-                             github: str|None = None, skills: List = []) -> Tuple[bool, UserData|None, str|None]:
+                             github: str|None = None, skills: str|None = None) -> Tuple[bool, UserData|None, str|None]:
         """
         Create or update user data
 

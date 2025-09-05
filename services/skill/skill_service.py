@@ -87,16 +87,13 @@ class SkillService(BaseService):
     def get_skill_by_id(self, skill_id: int, include_relationships: bool = False) -> Optional[Skill]:
         """Get skill by ID"""
         try:
-            query = Skill.query
+            opts = ()  
+            if include_relationships:  
+                opts = (joinedload(Skill.category), joinedload(Skill.variants))  
+            return db.session.get(Skill, skill_id, options=opts)
 
-            if include_relationships:
-                query = query.options(
-                    joinedload(Skill.category),
-                    joinedload(Skill.variants))
-
-            return query.get(skill_id)
         except SQLAlchemyError as e:
-            print(f"Database error getting skill by ID {skill_id}: {e}")
+            self.logger.error("Database error getting skill by ID %s: %s", skill_id, e, exc_info=True)  
             return None
     
     def get_skill_by_name(self, skill_name: str) -> Optional[Skill]:
@@ -122,7 +119,7 @@ class SkillService(BaseService):
             return query.all()
             
         except SQLAlchemyError as e:
-            print(f"Database error getting all skills: {e}")
+            self.logger.error("Database error getting all skills: %s", e, exc_info=True)  
             return []
 
     def get_all_active_skills(self, order_by=None, include_relationships: bool = False) -> List[Skill]:
@@ -143,7 +140,7 @@ class SkillService(BaseService):
             return query.all()
             
         except SQLAlchemyError as e:
-            print(f"Database error getting all skills: {e}")
+            self.logger.error("Database error getting all active skills: %s", e, exc_info=True) 
             return []
     
     def get_all_skills_and_category(self) -> List[dict]:
@@ -166,7 +163,7 @@ class SkillService(BaseService):
             return skills_list
             
         except SQLAlchemyError as e:
-            print(f"Database error getting skills with categories: {e}")
+            self.logger.error(f"Database error getting skills with categories: {e}", exc_info=True)
             return []
     
     def get_uncategorized_skills(self) -> List[dict]:
@@ -180,7 +177,7 @@ class SkillService(BaseService):
             return [{'id': skill.id, 'name': skill.name} for skill in skills]
             
         except SQLAlchemyError as e:
-            print(f"Database error getting uncategorized skills: {e}")
+            self.logger.error(f"Database error getting uncategorized skills: {e}", exc_info=True)
             return []
     
     def get_blacklist_skills(self, order_by=None) -> List[Skill]:
@@ -196,7 +193,7 @@ class SkillService(BaseService):
             return query.all()
             
         except SQLAlchemyError as e:
-            print(f"Database error getting blacklisted skills: {e}")
+            self.logger.error("Database error getting blacklisted skills: %s", e, exc_info=True)
             return []
     
     def create_skill(self, name: str, category: Optional[int] = None, is_blacklisted: bool = False) -> Tuple[bool, Optional[Skill], Optional[str]]:
@@ -242,11 +239,21 @@ class SkillService(BaseService):
             if not skill:
                 return False, None, "Skill not found"
             
+            proposed_name = kwargs.get('name')  
+            if proposed_name:  
+                proposed_name = sanitize_input(proposed_name)
+                dupe = Skill.query.filter(  
+                    Skill.id != skill_id,  
+                    Skill.name.ilike(proposed_name)  
+                ).first()
+                if dupe:  
+                    return False, None, f"Skill '{proposed_name}' already exists"
+            
             # Update attributes
-            for key, value in kwargs.items():
+            for key, value in kwargs.items():                    
                 if hasattr(skill, key):
-                    if key == 'name' and value:
-                        value = sanitize_input(value)
+                    if key == 'name' and value:  
+                        value = proposed_name
                     setattr(skill, key, value)
             
             db.session.commit()
@@ -258,9 +265,11 @@ class SkillService(BaseService):
             
         except SQLAlchemyError as e:
             db.session.rollback()
+            self.logger.error(f"Database error during skill update: {e}", exc_info=True)
             return False, None, f"Database error: {str(e)}"
         except Exception as e:
             db.session.rollback()
+            self.logger.error(f"Error during skill update: {e}", exc_info=True)
             return False, None, f"Update error: {str(e)}"
     
     def delete_skill(self, skill_id: int) -> Tuple[bool, bool, Optional[str]]:

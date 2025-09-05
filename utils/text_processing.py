@@ -1,6 +1,8 @@
 import re
 from typing import Set, List
 
+from configurations.skill_config import SkillExtractionConfig
+
 class TextProcessor:
     """Utilities for text cleaning and preprocessing"""
     
@@ -24,10 +26,12 @@ class TextProcessor:
     @staticmethod
     def is_noise_skill(skill: str, noise_patterns: List[str], common_words: Set[str]) -> bool:
         """Check if a skill is likely noise/not a real skill"""
-        skill_lower = skill.lower().strip()
+        skill_lower = skill.lower().strip() if skill else ""  
+        if not skill_lower:  
+            return True
         
         # Check minimum length
-        if len(skill_lower) <= 2:
+        if len(skill_lower) <= 2 and skill not in SkillExtractionConfig.ALLOWED_SHORT_SKILLS:
             return True
             
         # Check if it's just numbers
@@ -35,12 +39,13 @@ class TextProcessor:
             return True
         
         # Check for exact matches with noise patterns
-        if skill_lower in noise_patterns:
+        noise_set = set(noise_patterns) 
+        if skill_lower in noise_set:
             return True
         
         # Check for patterns within the skill
         for pattern in noise_patterns:
-            if pattern in skill_lower or skill_lower in pattern:
+            if re.search(rf"\b{re.escape(pattern)}\b", skill_lower):  
                 return True
         
         # Check for skills with too many common words

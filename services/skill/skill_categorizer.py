@@ -21,6 +21,7 @@ class SkillCategorizer:
                     category = all_categories.get(skill.category_id)
                 
                     if not category:
+                        categorized_skills.setdefault("Uncategorized", []).append(skill)
                         continue
 
                     if category.name not in categorized_skills:

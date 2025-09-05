@@ -1,5 +1,7 @@
 from typing import Dict, Optional
 import logging
+from sqlalchemy.exc import SQLAlchemyError
+from types import MappingProxyType
 
 from models import Skill, SkillVariant, db
 
@@ -10,8 +12,8 @@ class SkillLookupService:
     
     def __init__(self):
         self._skill_lookup: Dict[str, Skill] = {}
-        self._build_lookup()
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self._build_lookup()
     
     def _build_lookup(self):
         """Build lookup dictionary from database"""
@@ -41,12 +43,16 @@ class SkillLookupService:
     def find_skill(self, name: str) -> Optional[Skill]:
         """Find a skill by name (case-insensitive)"""
         # Try exact match first
+        if not name:
+            return None
+
         if name in self._skill_lookup:
             return self._skill_lookup[name]
         
         # Try case-insensitive
-        if name.lower() in self._skill_lookup:
-            return self._skill_lookup[name.lower()]
+        key = name.lower()
+        if key in self._skill_lookup:
+            return self._skill_lookup[key]
         
         return None
     
