@@ -11,7 +11,7 @@ import requests
 from bs4 import BeautifulSoup
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from urllib.parse import urljoin
 
 from scraper import _clean_and_enhance_markdown
@@ -463,7 +463,7 @@ class ObsidianJobImporter:
             data={
                 'csrf_token': csrf_token,
                 'note': 'Imported job from obsidian note',
-                'created_at': datetime.now(),
+                'created_at': datetime.now(timezone.utc).strftime('%Y-%m-%d'),
             },
             allow_redirects=False,
             headers={
@@ -648,7 +648,8 @@ def main():
                     print(f"  - {job.get('title', 'Unknown')} at {job.get('company', 'Unknown')}")
 
                     if args.debug:
-                        print(job['_metadata']['logs'])
+                        if '_metadata' in job and 'logs' in job['_metadata']:
+                            print(job['_metadata']['logs'])
             
         else:
             # Run the full import

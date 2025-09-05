@@ -35,6 +35,9 @@ class SkillExtractor:
         
     def _process_match_group(self, matches, extracted_skills):
         """Process a group of matches and add valid skills to the list"""
+        if not matches:
+            return
+         
         for match in matches:
             if 'doc_node_value' in match:
                 skill_name = match['doc_node_value']
@@ -49,11 +52,11 @@ class SkillExtractor:
                 ):
                     continue
 
-                if skill_name and (
-                    len(skill_name.strip()) > self.config.MIN_SKILL_LENGTH
-                    or skill_name in self.config.ALLOWED_SHORT_SKILLS
+                if skill_clean and (
+                    len(skill_clean) > self.config.MIN_SKILL_LENGTH
+                    or skill_clean in self.config.ALLOWED_SHORT_SKILLS
                 ):
-                    extracted_skills.append(skill_name)
+                    extracted_skills.append(skill_clean)
     
     def extract_skills_from_text(self, text: str) -> ExtractedSkillsResult:
         """Extract skills from text using SkillNER"""
@@ -82,9 +85,14 @@ class SkillExtractor:
             extracted_skills = []
             results = annotations.get('results') or {}
 
-            self._process_match_group(results.get('full_matches'), extracted_skills)
+            full_matches = results.get('full_matches', [])
+            if full_matches:
+                self._process_match_group(full_matches, extracted_skills)
 
-            self._process_match_group(results.get('ngram_scored'), extracted_skills)
+            ngram_scored = results.get('ngram_scored', [])
+            if ngram_scored:
+                self._process_match_group(ngram_scored, extracted_skills)
+
             return ExtractedSkillsResult(
                 skills=extracted_skills,
                 total_skills=len(extracted_skills),

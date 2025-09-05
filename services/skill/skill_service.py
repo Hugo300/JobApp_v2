@@ -1,6 +1,9 @@
 from typing import List, Optional, Tuple, Dict
+from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import SQLAlchemyError
+import threading
+
 from models import Skill, SkillCategory, SkillVariant, JobSkill, db
 from utils.forms import sanitize_input
 
@@ -244,7 +247,7 @@ class SkillService(BaseService):
                 proposed_name = sanitize_input(proposed_name)
                 dupe = Skill.query.filter(  
                     Skill.id != skill_id,  
-                    Skill.name.ilike(proposed_name)  
+                    func.lower(Skill.name) == func.lower(proposed_name)
                 ).first()
                 if dupe:  
                     return False, None, f"Skill '{proposed_name}' already exists"
@@ -355,10 +358,13 @@ class SkillService(BaseService):
 # =============================================================================
 # Singleton instance if you need global access
 _skill_service_instance = None
+_lock = threading.Lock()
 
 def get_skill_service() -> SkillService:
     """Get or create the singleton SkillService instance"""
     global _skill_service_instance
     if _skill_service_instance is None:
-        _skill_service_instance = SkillService()
+        with _lock:
+            if _skill_service_instance is None:
+                _skill_service_instance = SkillService()
     return _skill_service_instance

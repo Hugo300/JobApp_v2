@@ -235,6 +235,9 @@
 <script>
     let duplicateCheckTimeout;
     let hasDuplicates = false;
+    let checkingDuplicates = false;
+    let duplicateController = null;
+    let lastQuery = '';
 
     document.addEventListener('DOMContentLoaded', function() {
         // Initialize tooltips
@@ -283,19 +286,37 @@
         duplicatesList.innerHTML = '<div class="text-center"><div class="spinner-border spinner-border-sm" role="status"></div> Checking for duplicates...</div>';
         duplicateCard.style.display = 'block';
 
+        // Abort any in-flight request and start a new one
+        if (duplicateController) duplicateController.abort();
+        duplicateController = new AbortController();
+        const { signal } = duplicateController;
+        checkingDuplicates = true;
+        lastQuery = skillName;
+
         // Check for similar skills via API
-        fetch(`{{ url_for('skill.api_search_skills') }}?q=${encodeURIComponent(skillName)}`)
-            .then(response => response.json())
+        fetch(`{{ url_for('skill.api_search_skills') }}?q=${encodeURIComponent(skillName)}`, { signal })
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return response.json();
+            })
             .then(data => {
-                if (data.length > 0) {
+                // Ignore stale responses
+                if (skillName !== lastQuery) return;
+
+                if (Array.isArray(data) && data.length > 0) {
                     showDuplicates(data, skillName);
                 } else {
                     hideDuplicateCheck();
                 }
             })
             .catch(error => {
-                console.error('Error checking duplicates:', error);
-                hideDuplicateCheck();
+                if (error.name !== 'AbortError') {
+                    console.error('Error checking duplicates:', error);
+                    hideDuplicateCheck();
+                }
+            })
+            .finally(() => {
+                if (skillName === lastQuery) checkingDuplicates = false;
             });
     }
 

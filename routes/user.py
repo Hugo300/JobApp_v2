@@ -123,10 +123,10 @@ def add_user_skill():
     
     try:
         db.session.commit()
-        flash_success(f'Successfully added "{skill_name}" to your skills!', 'success')
+        flash_success(f'Successfully added "{skill_name}" to your skills!')
     except SQLAlchemyError:
         db.session.rollback()
-        current_app.logger.exception("Error adding user skill")
+        current_app.logger.exception("Error adding user skill",exc_info=True)
         flash_error('Error adding skill. Please try again.')
     
     return redirect(url_for('user.user_data'))
@@ -146,7 +146,7 @@ def remove_user_skill(skill_id):
     ).first()
     
     if not user_skill:
-        flash_error('Skill not found in your profile!', 'error')
+        flash_error('Skill not found in your profile!')
         return redirect(url_for('user.user_data'))
     
     # Get skill name for flash message
@@ -156,7 +156,7 @@ def remove_user_skill(skill_id):
     try:
         db.session.delete(user_skill)
         db.session.commit()
-        flash_success(f'Successfully removed "{skill_name}" from your skills!', 'success')
+        flash_success(f'Successfully removed "{skill_name}" from your skills!')
     except Exception as e:
         db.session.rollback()
         current_app.logger.exception("Error removing user skill")  

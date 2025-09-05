@@ -1,7 +1,7 @@
 """
 Analytics service layer for job application insights
 """
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy import case, func, and_, extract
 from collections import defaultdict, Counter
 
@@ -122,7 +122,7 @@ class AnalyticsService(BaseService):
         # If no data, create empty structure
         if not weekly_applications:
             # Create empty weeks for the last 12 weeks
-            current_date = datetime.utcnow()
+            current_date = datetime.now(timezone.utc)
             for i in range(12):
                 week_date = current_date - timedelta(weeks=i)
                 days_since_monday = week_date.weekday()
@@ -177,7 +177,7 @@ class AnalyticsService(BaseService):
         interview_count = status_dict.get(ApplicationStatus.WAITING_DECISION.value, 0)
         offer_count = status_dict.get(ApplicationStatus.OFFER.value, 0)
         
-        total_progressed = applied_count + interview_count + offer_count
+        total_progressed = applied_count + interview_count + offer_count + process_count
         
         # Conversion rates
         collected_to_applied = (total_progressed / (collected_count + total_progressed) * 100) if (collected_count + total_progressed) > 0 else 0

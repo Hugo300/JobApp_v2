@@ -36,14 +36,20 @@ class JobApplication(db.Model):
         return ApplicationStatus(self.status)
     
     @status_enum.setter
-    def status_enum(self, value: ApplicationStatus) -> None:
+    def status_enum(self, value: ApplicationStatus|str) -> None:
         """Set the status from an enum"""
         if isinstance(value, ApplicationStatus):
             self.status = value.value
         elif isinstance(value, str) and value in {s.value for s in ApplicationStatus}:  
             self.status = value 
+        elif isinstance(value, str):
+            # Try to convert string to enum
+            try:
+                self.status = ApplicationStatus(value).value
+            except ValueError:
+                self.status = value  # Let database constraint handle invalid values
         else:
-            self.status = value
+            raise TypeError(f"Expected ApplicationStatus or str, got {type(value).__name__}")
 
     @property
     def job_mode_enum(self) -> JobMode:
@@ -54,12 +60,23 @@ class JobApplication(db.Model):
             return JobMode.ON_SITE  # Default fallback
 
     @job_mode_enum.setter
-    def job_mode_enum(self, value: JobMode) -> None:
+    def job_mode_enum(self, value: JobMode|str) -> None:
         """Set the job mode from an enum"""
         if isinstance(value, JobMode):
             self.job_mode = value.value
+
+        elif isinstance(value, str):
+            # Validate string value
+            if value in {m.value for m in JobMode}:
+                self.job_mode = value
+            else:
+                # Try to convert string to enum
+                try:
+                    self.job_mode = JobMode(value).value
+                except ValueError:
+                    self.job_mode = value  # Let database constraint handle invalid values
         else:
-            self.job_mode = value
+            raise TypeError(f"Expected JobMode or str, got {type(value).__name__}")
 
     def __repr__(self) -> str:
         return f'<JobApplication {self.company} - {self.title}>'
@@ -82,7 +99,7 @@ class JobLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     job_id = db.Column(db.Integer, db.ForeignKey('job_application.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
-    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
     note = db.Column(db.Text, nullable=False)
     status_change_from = db.Column(db.String(50))  # Previous status if this log represents a status change
     status_change_to = db.Column(db.String(50))    # New status if this log represents a status change

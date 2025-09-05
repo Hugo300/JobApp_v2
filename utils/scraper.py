@@ -98,10 +98,10 @@ def scrape_job_data(url: str) -> dict[str, str]:
             job_id = url.split('=')[-1]
             url = f'https://{domain}/jobs/view/{job_id}'
         if 'jobs/search' in url:
-            match = re.search(r'\?(currentJobId)\=(.*?)\&', url)
+            match = re.search(r'currentJobId=([^&]+)', url)
             
             if match:
-                job_id = match.group(0).split('=')[1].replace('&', '').strip()
+                job_id = match.group(1).strip()
                 url = f'https://{domain}/jobs/view/{job_id}'
             else:
                 raise ValueError('Could not find job id in "job/search" url')
@@ -247,6 +247,10 @@ def preprocess_html_structure(soup):
 def create_proper_list(list_items):
     """Convert a group of div elements into a proper HTML list."""
     if not list_items:
+        return
+    
+    parent = list_items[0].parent
+    if not parent:
         return
     
     # Determine if it's ordered or unordered

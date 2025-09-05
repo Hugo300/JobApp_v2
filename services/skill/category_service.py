@@ -82,7 +82,7 @@ class CategoryService(BaseService):
             self.logger.error(f"Error fetching category by Name {name}: {str(e)}", exc_info=True)
             return None
     
-    def create_category(self, name: str, description: str = None) -> Tuple[bool, Optional[SkillCategory], str|None]:
+    def create_category(self, name: str, description: Optional[str] = None) -> Tuple[bool, Optional[SkillCategory], Optional[str]]:
         """
         Create a new skill category
         Returns: (success, category, error_message)
@@ -123,7 +123,7 @@ class CategoryService(BaseService):
 
         return success, category, error
     
-    def update_category(self, category_id: int, **kwargs) -> Tuple[bool, Optional[SkillCategory], str|None]:
+    def update_category(self, category_id: int, **kwargs) -> Tuple[bool, Optional[SkillCategory], Optional[str]]:
         """
         Update an existing skill category
         Returns: (success, category, error_message)
@@ -155,7 +155,7 @@ class CategoryService(BaseService):
 
         return success, updated_category, error
     
-    def delete_category(self, category_id: int, skill_action: str = 'keep') -> Tuple[bool, Dict[str, Any]|None, str|None]:
+    def delete_category(self, category_id: int, skill_action: str = 'keep') -> Tuple[bool, Optional[Dict[str, Any]], Optional[str]]:
         """
         Delete a skill category
         skill_action: 'keep' (move to uncategorized), 'delete' (delete skills), 'cancel' (don't delete if has skills)
@@ -185,10 +185,11 @@ class CategoryService(BaseService):
                 self.logger.info(f"Skills moved to uncategorized: count {skills_count}")
             elif skill_action == 'delete':
                 # Delete all skills in this category
-                for skill in skills_in_category:
-                    if skill.skill_jobs:
-                        self.logger.warning(f"Delete failed: Cannot delete skill referenced by jobs")
-                        return False, None, f"Cannot delete skills that are referenced by jobs"
+                skills_with_jobs = [s for s in skills_in_category if s.skill_jobs]
+                if skills_with_jobs:
+                    skill_names = ', '.join([s.name for s in skills_with_jobs[:3]])
+                    self.logger.warning(f"Delete failed: Cannot delete skills referenced by jobs: {skill_names}")
+                    return False, None, f"Cannot delete category - {len(skills_with_jobs)} skills are referenced by jobs"
                 
                 # Safe to delete all skills
                 for skill in skills_in_category:
@@ -285,7 +286,8 @@ class CategoryService(BaseService):
             num_skills = 0
             for skill in skills:
                 num_skills += 1
-                self.update(skill, category_id=target_category_id)
+                skill.category_id = target_category_id
+            db.session.commit()
                        
             self._invalidate_cache()
 

@@ -537,7 +537,10 @@ document.addEventListener('DOMContentLoaded', function() {
     if (full && preview) {  
       full.addEventListener('show.bs.collapse', () => preview.classList.add('d-none'));  
       full.addEventListener('hidden.bs.collapse', () => preview.classList.remove('d-none'));  
-    } 
+    }
+    else {
+        console.warn('Job description elements not found for collapse sync');
+    }
 
     const relativeTimeElements = document.querySelectorAll('.relative-time');
     relativeTimeElements.forEach(element => {

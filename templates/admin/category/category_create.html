@@ -40,7 +40,7 @@
                 </div>
                 <div class="card-body">
                     <form method="POST" action="{{ url_for('skill_category.create_category') }}">
-                        {{ csrf_token() }}
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         <div class="mb-4">
                             <label for="name" class="form-label">
                                 <strong>Category Name *</strong>

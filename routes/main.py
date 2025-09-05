@@ -26,9 +26,9 @@ def dashboard():
         # create short blurb for each job
         character_limit = 150
         for job in jobs:
-            desc = job.getattr(job, 'description', '')
+            desc = job.description or ''
             short = desc[:character_limit].rstrip()
-            job.description_short = f"{short}..." if len(desc) > character_limit else short
+            job.description = f"{short}..." if len(desc) > character_limit else short
 
         # Get summary statistics using service
         summary = job_service.get_job_statistics()

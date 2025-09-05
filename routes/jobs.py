@@ -114,7 +114,6 @@ def job_detail(job_id):
             recent_logs = all_logs[:10]  # Limit to 10
 
         # Get user data and skills
-        user_data = user_service.get_user_data()
         user_skills = []
         if user_data:
             user_skills = user_service.get_user_skills(user_data.id)

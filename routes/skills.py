@@ -4,6 +4,7 @@ from sqlalchemy.exc import IntegrityError
 
 from models import Skill, SkillVariant, SkillCategory, db
 from services.skill.skill_service import get_skill_service
+from utils.responses import flash_error, flash_success
 
 skill_bp = Blueprint('skill', __name__)
 
@@ -64,12 +65,13 @@ def toggle_blacklist(skill_id):
         
         if success:
             action = "blacklisted" if new_status else "removed from blacklist"
-            flash(f'Skill "{updated_skill.name}" has been {action}', 'success')
+            flash_success(f'Skill "{updated_skill.name}" has been {action}')
         else:
-            flash(f'Error updating skill: {error}', 'error')
+            flash_error(f'Error updating skill: {error}')
         
     except Exception as e:
-        flash(f'Error toggling blacklist: {str(e)}', 'error')
+        db.session.rollback()
+        flash_error(f'Error toggling blacklist: {str(e)}')
     
     # Redirect back to the same page with current filters
     blacklist_filter = request.form.get('current_filter', 'active')
@@ -168,6 +170,14 @@ def create_skill():
         name = request.form.get('name', '').strip()
         category_id = request.form.get('category_id')
         is_blacklisted = bool(request.form.get('is_blacklisted'))
+
+        if not name:
+            flash_error('Name cannot be empty')
+            return redirect(url_for('skill.create_skill'))
+        
+        if len(name) > 255:
+            flash_error('Name must be 255 characters or less')
+            return redirect(url_for('skill.create_skill'))
         
         if category_id:
             category_id = int(category_id)
@@ -181,18 +191,18 @@ def create_skill():
         )
         
         if success:
-            flash(f'Skill "{skill.name}" created successfully', 'success')
+            flash_success(f'Skill "{skill.name}" created successfully')
             return redirect(url_for('skill.manage_skills'))
         else:
-            flash(f'Error creating skill: {error}', 'error')
+            flash_error(f'Error creating skill: {error}')
             
     except Exception as e:
-        flash(f'Error creating skill: {str(e)}', 'error')
+        flash_error(f'Error creating skill: {str(e)}')
     
     # Reload form with categories on error
     categories = SkillCategory.query.all()
     return render_template('admin/skill/skill_create.html', categories=categories)
-# Utility functions for skill extraction/matching
+
 
 @skill_bp.route('/<int:skill_id>/edit', methods=['GET', 'POST'])
 def edit_skill(skill_id):
@@ -203,7 +213,7 @@ def edit_skill(skill_id):
 
         skill = skill_service.get_skill_by_id(skill_id)
         if not skill:
-            flash('Skill not found', 'error')
+            flash_error('Skill not found')
             return redirect(url_for('skill.manage_skills'))
         
         if request.method == 'GET':
@@ -232,14 +242,14 @@ def edit_skill(skill_id):
         )
         
         if success:
-            flash(f'Skill "{updated_skill.name}" updated successfully', 'success')
+            flash_success(f'Skill "{updated_skill.name}" updated successfully')
             # Stay on the edit page to continue editing
             return redirect(url_for('skill.edit_skill', skill_id=skill_id))
         else:
-            flash(f'Error updating skill: {error}', 'error')
+            flash_error(f'Error updating skill: {error}')
             
     except Exception as e:
-        flash(f'Error editing skill: {str(e)}', 'error')
+        flash_error(f'Error editing skill: {str(e)}')
         return redirect(url_for('skill.manage_skills'))
 
 @skill_bp.route('/<int:skill_id>/delete', methods=['POST'])
@@ -255,7 +265,7 @@ def delete_skill(skill_id):
             return redirect(url_for('skill.manage_skills'))
         
         skill_name = skill.name
-        success, deleted, error = skill_service.delete_skill(skill_id)
+        success, _, error = skill_service.delete_skill(skill_id)
         
         if success:
             flash(f'Skill "{skill_name}" deleted successfully', 'success')
@@ -263,6 +273,7 @@ def delete_skill(skill_id):
             flash(f'Error deleting skill: {error}', 'error')
             
     except Exception as e:
+        db.session.rollback()
         flash(f'Error deleting skill: {str(e)}', 'error')
     
     return redirect(url_for('skill.manage_skills'))
@@ -285,7 +296,7 @@ def api_get_variants(skill_id):
         
     except Exception as e:
         current_app.logger.exception("api_get_variants failed")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Internal server error'}), 500
 
 @skill_bp.route('/api/skills/search')
 def api_search_skills():
@@ -318,7 +329,7 @@ def api_search_skills():
         
     except Exception as e:
         current_app.logger.exception("api_search_skills failed")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Internal server error'}), 500
 
 @skill_bp.route('/api/skills/extract', methods=['POST'])
 def api_extract_skills():
@@ -332,6 +343,9 @@ def api_extract_skills():
             return jsonify({'error': 'No text provided'}), 400
         
         text = data['text']
+        if not isinstance(text, str):
+            return jsonify({'error': 'text must be a string'}), 400
+
         result = skill_service.process_job_description(text)
         
         if result.success:
@@ -354,7 +368,7 @@ def api_extract_skills():
             
     except Exception as e:
         current_app.logger.exception("api_extract_skills failed")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Internal server error'}), 500
 
 @skill_bp.route('/api/skills/audit', methods=['POST'])
 def api_audit_skills():
@@ -368,4 +382,4 @@ def api_audit_skills():
         
     except Exception as e:
         current_app.logger.exception("api_sufit_skills failed")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Internal server error'}), 500

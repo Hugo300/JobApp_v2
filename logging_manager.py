@@ -81,7 +81,7 @@ class LoggingManager:
         error_file = os.path.join(log_folder, 'errors.log')
         error_handler = RotatingFileHandler(
             error_file,
-            maxBytes=self.app.config.get('LOG_MAX_BYTES', 10240),
+            maxBytes=self.app.config.get('LOG_MAX_BYTES', 10485760),
             backupCount=self.app.config.get('LOG_BACKUP_COUNT', 5)
         )
         error_handler.setLevel(logging.ERROR)

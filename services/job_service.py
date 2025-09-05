@@ -333,7 +333,7 @@ class JobService(BaseService):
         return success, result, error
     
     def filter_jobs(self, search_query=None, status_filter=None, 
-                   job_mode_filter=None, country_filter=None):
+                   job_mode_filter=None, country_filter=None) -> List[JobApplication]:
         """
         Filter job applications based on criteria
         
@@ -535,7 +535,7 @@ class JobService(BaseService):
         job_skill = JobSkill.query.filter_by(job_id=job_id, skill_id=skill_id).first()
 
         # create relation if it does not exist
-        if job_skill is None:  # Use 'is' for None comparison
+        if job_skill is None:
             success, job_skill, error = self.create(JobSkill, **{
                 'job_id': job_id,
                 'skill_id': skill_id

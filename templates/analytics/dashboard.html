@@ -455,6 +455,7 @@
     </div>
 </div>
 
+{% block scripts %}
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -584,69 +585,72 @@ function refreshAnalytics() {
         location.reload();
     }, 500);
 }
+</script>
+{% endblock %}
 
 // Add CSS for loading animation
-const style = document.createElement('style');
-style.textContent = `
+{% block styles %}
+{{ super() }}
+<style>
     .analytics-card {
         box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
         border: 1px solid rgba(0, 0, 0, 0.125);
         transition: all 0.15s ease-in-out;
     }
-    
+
     .analytics-card:hover {
         box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
     }
-    
+
     .metric-value {
         font-size: 2.5rem;
         font-weight: 700;
         line-height: 1;
     }
-    
+
     .metric-label {
         font-size: 0.875rem;
         font-weight: 500;
         text-transform: uppercase;
         letter-spacing: 0.05em;
     }
-    
+
     .progress-thin {
         height: 4px;
     }
-    
+
     .trend-positive {
         color: #28a745;
     }
-    
+
     .trend-negative {
         color: #dc3545;
     }
-    
+
     .chart-container {
         position: relative;
     }
-    
+
     .spin {
         animation: spin 1s linear infinite;
     }
-    
+
     @keyframes spin {
         from { transform: rotate(0deg); }
         to { transform: rotate(360deg); }
     }
-    
+
     .table th {
         border-top: none;
         font-weight: 600;
         font-size: 0.875rem;
         color: #495057;
     }
-    
+
     .table td {
         vertical-align: middle;
     }
-`;
-document.head.appendChild(style);
+</style>
+{% endblock %}
 </script>
 {% endblock %}

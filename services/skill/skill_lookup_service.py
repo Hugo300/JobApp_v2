@@ -19,22 +19,23 @@ class SkillLookupService:
         """Build lookup dictionary from database"""
         try:
             self._skill_lookup = {}
-            
-            # Add canonical skills
-            skills = Skill.query.all()
-            for skill in skills:
-                self._skill_lookup[skill.name.lower()] = skill
-                # Keep original case for exact matches
-                if skill.name.lower() != skill.name:
-                    self._skill_lookup[skill.name] = skill
-            
-            # Add variants
-            variants = SkillVariant.query.join(Skill).all()
-            for variant in variants:
-                self._skill_lookup[variant.variant_name.lower()] = variant.skill
-                # Keep original case
-                if variant.variant_name.lower() != variant.variant_name:
-                    self._skill_lookup[variant.variant_name] = variant.skill
+
+            with db.session.begin_nested():            
+                # Add canonical skills
+                skills = Skill.query.all()
+                for skill in skills:
+                    self._skill_lookup[skill.name.lower()] = skill
+                    # Keep original case for exact matches
+                    if skill.name.lower() != skill.name:
+                        self._skill_lookup[skill.name] = skill
+                
+                # Add variants
+                variants = SkillVariant.query.join(Skill).all()
+                for variant in variants:
+                    self._skill_lookup[variant.variant_name.lower()] = variant.skill
+                    # Keep original case
+                    if variant.variant_name.lower() != variant.variant_name:
+                        self._skill_lookup[variant.variant_name] = variant.skill
                     
         except Exception as e:
             self.logger.warning(f"Failed to build skill lookup: {str(e)}", exc_info=True)
