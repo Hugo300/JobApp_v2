@@ -1,11 +1,17 @@
+from typing import ClassVar, Tuple, FrozenSet
+
 class SkillExtractionConfig:
     """Configuration for skill extraction and processing"""
     
-    SPACY_MODEL = "en_core_web_lg"
-    MIN_SKILL_LENGTH = 2
+    SPACY_MODEL: ClassVar[str] = "en_core_web_lg"
+    MIN_SKILL_LENGTH: ClassVar[int] = 2
+
+    ALLOWED_SHORT_SKILLS: ClassVar[FrozenSet[str]] = frozenset({
+        'R', 'C', 'C#', 'Go', 'BI', 'ML', 'AI', 'QA',
+    })
     
     # Noise patterns for filtering out non-skills
-    NOISE_PATTERNS = [
+    NOISE_PATTERNS: ClassVar[Tuple[str, ...]] = (
         # Generic phrases
         'related industry', 'relevant experience', 'similar role', 'comparable position',
         'equivalent experience', 'related field', 'similar background', 'relevant background',
@@ -34,6 +40,6 @@ class SkillExtractionConfig:
         # Vague descriptors
         'good understanding', 'basic knowledge', 'working knowledge', 'familiarity with',
         'exposure to', 'some experience', 'hands on experience'
-    ]
+    )
     
-    COMMON_WORDS = {'the', 'and', 'or', 'of', 'in', 'to', 'for', 'with', 'on', 'at', 'by', 'from'}
+    COMMON_WORDS: ClassVar[FrozenSet[str]] = frozenset({'the', 'and', 'or', 'of', 'in', 'to', 'for', 'with', 'on', 'at', 'by', 'from'})

@@ -38,7 +38,10 @@ class SkillExtractor:
         for match in matches:
             if 'doc_node_value' in match:
                 skill_name = match['doc_node_value']
-                if skill_name and len(skill_name.strip()) > self.config.MIN_SKILL_LENGTH:
+                if skill_name and (
+                    len(skill_name.strip()) > self.config.MIN_SKILL_LENGTH
+                    or skill_name in self.config.ALLOWED_SHORT_SKILLS
+                ):
                     extracted_skills.append(skill_name)
     
     def extract_skills_from_text(self, text: str) -> ExtractedSkillsResult:
