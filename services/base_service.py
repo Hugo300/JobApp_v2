@@ -10,12 +10,14 @@ from datetime import datetime, timezone
 
 import logging
 
+# Configure module logger
+logger = logging.getLogger(__name__)
 
 class BaseService:
     """Base service class with common database operations"""
     
     def __init__(self):
-        self.logger = current_app.logger if current_app else logging.getLogger(__name__)
+        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
     
     def safe_execute(self, operation, *args, **kwargs):
         """
@@ -32,11 +34,13 @@ class BaseService:
             result = operation(*args, **kwargs)
             db.session.commit()
             return True, result, None
+        
         except SQLAlchemyError as e:
             db.session.rollback()
-            error_msg = f"Database error: {str(e)}"
-            self.logger.error(error_msg)
+            error_msg = f"Database error: {e!s}"
+            self.logger.exception(error_msg)
             return False, None, error_msg
+        
         except Exception as e:
             db.session.rollback()
             error_msg = f"Unexpected error: {str(e)}"

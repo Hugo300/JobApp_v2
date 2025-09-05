@@ -5,14 +5,14 @@ from .user_service import UserService
 from .template_service import TemplateService
 from .log_service import LogService
 from .job_service import JobService
-from .skill_service import SkillService
 from .category_service import CategoryService
+from .analytics_service import AnalyticsService
 
 __all__ = [
     'JobService',
     'UserService',
     'TemplateService',
     'LogService',
-    'SkillService',
-    'CategoryService'
+    'CategoryService',
+    'AnalyticsService',
 ]

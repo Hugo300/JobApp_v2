@@ -19,7 +19,7 @@ class UserData(db.Model):
     # Association proxy for direct access to skills
     skills = association_proxy('user_skills', 'skills')
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'<UserData {self.name} ({self.email})>'
 
 
@@ -29,5 +29,5 @@ class UserSkill(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user_data.id'), nullable=False)  # Corrected foreign key
     skill_id = db.Column(db.Integer, db.ForeignKey('skills.id'), nullable=False)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<UserSkill(user_id={self.user_id}, skill_id={self.skill_id})>"

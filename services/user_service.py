@@ -2,10 +2,10 @@
 User service for handling user data business logic
 """
 from collections import defaultdict
-from typing import List
+from typing import List, Any, Tuple, Optional
 from models import UserData, UserSkill, Skill, db
 
-from .skill_service import SkillService
+from .skill.skill_service import get_skill_service
 from .base_service import BaseService
 
 from utils.forms import validate_user_data_form
@@ -14,20 +14,21 @@ from utils.forms import validate_user_data_form
 class UserService(BaseService):
     """Service for user data operations"""
 
-    def __init__(self):
+    def __init__(self)  -> None:
         super().__init__()
-        self.skill_service = SkillService()
+        # Get the skill service instance
+        self.skill_service = get_skill_service()
     
-    def get_user_data(self):
+    def get_user_data(self) -> UserData | None:
         """Get the first (and typically only) user data record"""
         try:
             return UserData.query.first()
         except Exception as e:
-            self.logger.error(f"Error getting user data: {str(e)}")
+            self.logger.exception(f"Error getting user data: {str(e)}")
             return None
     
-    def create_or_update_user(self, name, email, phone=None, linkedin=None,
-                             github=None, skills=[]):
+    def create_or_update_user(self, name: str, email: str, phone: Optional[str] = None, linkedin: Optional[str] = None,
+                             github: Optional[str] = None, skills: Optional[str] = None) -> Tuple[bool, UserData|None, Optional[str]]:
         """
         Create or update user data
 
@@ -69,9 +70,8 @@ class UserService(BaseService):
             # Create new user
             return self.create(UserData, **data)
     
-
-    
-    def validate_user_data(self, data):
+ 
+    def validate_user_data(self, data: dict[str, Any]):
         """
         Validate user data
         

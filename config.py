@@ -35,24 +35,11 @@ class Config:
     # Security settings
     SEND_FILE_MAX_AGE_DEFAULT = timedelta(hours=1)
 
-    # Logging configuration
+    ## Logging configuration (centralized)
     LOG_FOLDER = os.path.join(os.getcwd(), 'logs')
-    if not os.path.exists(LOG_FOLDER):
-        os.makedirs(LOG_FOLDER)
-
-    LOG_FILE = os.path.join(LOG_FOLDER, 'app.log')
     LOG_LEVEL = logging.INFO
-
-    @staticmethod
-    def configure_logging():
-        handler = RotatingFileHandler(Config.LOG_FILE, maxBytes=10240, backupCount=5, delay=True)
-        handler.setLevel(Config.LOG_LEVEL)
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        handler.setFormatter(formatter)
-
-        app_logger = logging.getLogger()
-        app_logger.setLevel(Config.LOG_LEVEL)
-        app_logger.addHandler(handler)
+    LOG_MAX_BYTES = 10 * 1024 * 1024  # 10MB
+    LOG_BACKUP_COUNT = 10
 
     @staticmethod
     def validate_config():
@@ -67,6 +54,9 @@ class DevelopmentConfig(Config):
     """Development configuration"""
     DEBUG = True
     SQLALCHEMY_ECHO = False  # Set to True to see SQL queries
+
+    # Development-specific logging
+    LOG_LEVEL = logging.DEBUG
 
 class ProductionConfig(Config):
     """Production configuration"""
@@ -83,6 +73,11 @@ class ProductionConfig(Config):
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
                               os.environ.get('POSTGRES_URL') or \
                               'sqlite:///job_app.db'
+    
+    # Production-specific logging
+    LOG_LEVEL = logging.INFO
+    LOG_MAX_BYTES = 50 * 1024 * 1024  # 50MB for production
+    LOG_BACKUP_COUNT = 20
 
     @staticmethod
     def validate_config():
@@ -98,6 +93,9 @@ class TestingConfig(Config):
     TESTING = True
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
     WTF_CSRF_ENABLED = False  # Disable CSRF for testing
+
+    # Testing-specific logging
+    LOG_LEVEL = logging.WARNING  # Reduce log noise in tests
 
 # Configuration dictionary
 config = {

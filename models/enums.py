@@ -9,7 +9,10 @@ class ApplicationStatus(Enum):
     APPLIED = "Applied"
     PROCESS = "Process"
     WAITING_DECISION = "Waiting Decision"
-    COMPLETED = "Completed"
+    OFFER = "Offer"
+    ACCEPTED = "Completed"
+    # Back-compat alias for older code paths
+    COMPLETED = ACCEPTED
     REJECTED = "Rejected"
 
 

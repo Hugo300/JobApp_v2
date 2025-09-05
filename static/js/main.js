@@ -58,10 +58,10 @@ window.JobApp = {
         if (!themeIcon || !themeToggle) return;
         
         if (theme === 'dark') {
-            themeIcon.className = 'fas fa-sun';
+            themeIcon.className = 'bi bi-brightness-high-fill';
             themeToggle.title = 'Switch to light mode';
         } else {
-            themeIcon.className = 'fas fa-moon';
+            themeIcon.className = 'bi bi-moon-stars-fill';
             themeToggle.title = 'Switch to dark mode';
         }
     },

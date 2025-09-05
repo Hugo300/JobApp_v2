@@ -23,6 +23,13 @@ def dashboard():
         # Get filtered jobs using service
         jobs = job_service.filter_jobs(search_query, status_filter, job_mode_filter, country_filter)
 
+        # create short blurb for each job
+        character_limit = 150
+        for job in jobs:
+            desc = job.description or ''
+            short = desc[:character_limit].rstrip()
+            job.description_short = f"{short}..." if len(desc) > character_limit else short
+
         # Get summary statistics using service
         summary = job_service.get_job_statistics()
 
@@ -53,21 +60,3 @@ def dashboard():
                              status_filter='',
                              job_mode_filter='',
                              country_filter='')
-
-
-@main_bp.route('/analytics')
-def analytics_dashboard():
-    """Job analytics dashboard"""
-    try:
-        from services.analytics_service import AnalyticsService
-        analytics_service = AnalyticsService()
-
-        # Get comprehensive analytics data
-        analytics_data = analytics_service.get_comprehensive_analytics()
-
-        return render_template('analytics/dashboard.html', **analytics_data)
-
-    except Exception as e:
-        current_app.logger.error(f'Error loading analytics dashboard: {str(e)}')
-        flash('Error loading analytics dashboard', 'danger')
-        return redirect(url_for('main.dashboard'))

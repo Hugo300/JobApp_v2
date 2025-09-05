@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('skill_category.manage_categories') }}">Categories</a></li>
+                    <li class="breadcrumb-item active">Create Category</li>
+                </ol>
+            </nav>
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-6 mb-0">
+                        <i class="bi bi-folder-plus text-success"></i>
+                        Create New Category
+                    </h1>
+                    <p class="text-muted">Add a new category to organize your skills</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('skill_category.manage_categories') }}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i>
+                        Back to Categories
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Create Category Form -->
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle"></i> Category Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('skill_category.create_category') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <div class="mb-4">
+                            <label for="name" class="form-label">
+                                <strong>Category Name *</strong>
+                            </label>
+                            <input type="text" 
+                                   class="form-control form-control-lg" 
+                                   id="name" 
+                                   name="name" 
+                                   required
+                                   maxlength="255"
+                                   placeholder="e.g., Programming Languages, Web Development, Databases">
+                            <div class="form-text">
+                                Choose a clear, descriptive name for this category. This will help organize related skills.
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="description" class="form-label">
+                                <strong>Description</strong>
+                                <span class="text-muted">(Optional)</span>
+                            </label>
+                            <textarea class="form-control" 
+                                      id="description" 
+                                      name="description" 
+                                      rows="4"
+                                      maxlength="500"
+                                      placeholder="Provide additional context about what skills belong in this category..."></textarea>
+                            <div class="form-text">
+                                Add a brief description to help others understand what types of skills belong in this category.
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="text-muted">
+                                <small>* Required fields</small>
+                            </div>
+                            <div>
+                                <a href="{{ url_for('skill_category.manage_categories') }}" class="btn btn-secondary me-2">
+                                    Cancel
+                                </a>
+                                <button type="submit" class="btn btn-success btn-lg">
+                                    <i class="bi bi-plus-circle"></i>
+                                    Create Category
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Help Card -->
+            <div class="card mt-4 border-info">
+                <div class="card-header bg-info bg-opacity-10">
+                    <h6 class="mb-0 text-info">
+                        <i class="bi bi-lightbulb-fill"></i>
+                        Category Ideas
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">Here are some common category examples to inspire you:</p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">Technical Skills</h6>
+                            <ul class="list-unstyled text-muted small">
+                                <li>• Programming Languages</li>
+                                <li>• Web Development</li>
+                                <li>• Database Management</li>
+                                <li>• Cloud Platforms</li>
+                                <li>• DevOps & Infrastructure</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-primary">Business Skills</h6>
+                            <ul class="list-unstyled text-muted small">
+                                <li>• Project Management</li>
+                                <li>• Data Analysis</li>
+                                <li>• Marketing & Sales</li>
+                                <li>• Design & Creative</li>
+                                <li>• Communication</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="alert alert-light mt-3">
+                        <strong>Tip:</strong> Keep category names clear and specific. You can always reorganize skills later!
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-focus on name field
+        document.getElementById('name').focus();
+        
+        // Character counters for fields with limits
+        const nameField = document.getElementById('name');
+        const descriptionField = document.getElementById('description');
+        
+        // Add character counter for name field
+        addCharacterCounter(nameField, 255);
+        addCharacterCounter(descriptionField, 500);
+    });
+
+    function addCharacterCounter(field, maxLength) {
+        if (!field) return;
+        
+        // Create counter element
+        const counter = document.createElement('div');
+        counter.className = 'form-text text-end';
+        counter.style.fontSize = '0.875rem';
+        
+        // Insert after the field
+        field.parentNode.appendChild(counter);
+        
+        // Update counter function
+        function updateCounter() {
+            const remaining = maxLength - field.value.length;
+            counter.textContent = `${field.value.length}/${maxLength} characters`;
+            if (remaining < 0) {
+                counter.className = 'form-text text-end text-danger';
+            } else if (remaining < 20) {
+                counter.className = 'form-text text-end text-warning';
+            } else {
+                counter.className = 'form-text text-end text-muted';
+            }
+        }
+        
+        // Initial update
+        updateCounter();
+        
+        // Update on input
+        field.addEventListener('input', updateCounter);
+    }
+
+    // Form validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const name = document.getElementById('name').value.trim();
+        
+        if (!name) {
+            e.preventDefault();
+            showAlert('danger', 'Please enter a category name.');
+            document.getElementById('name').focus();
+            return false;
+        }
+        
+        if (name.length > 255) {
+            e.preventDefault();
+            showAlert('danger', 'Category name is too long. Please keep it under 255 characters.');
+            document.getElementById('name').focus();
+            return false;
+        }
+        
+        const description = document.getElementById('description').value.trim();
+        if (description.length > 500) {
+            e.preventDefault();
+            showAlert('danger', 'Description is too long. Please keep it under 500 characters.');
+            document.getElementById('description').focus();
+            return false;
+        }
+    });
+
+    // Utility function to show alerts
+    function showAlert(type, message) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        const container = document.querySelector('.container');
+        container.insertBefore(alertDiv, container.firstChild);
+        
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 5000);
+    }
+</script>
+{% endblock %}

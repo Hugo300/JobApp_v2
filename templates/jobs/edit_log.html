@@ -9,14 +9,14 @@
             <!-- Header -->
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h2><i class="fas fa-edit me-2"></i>Edit Log Entry</h2>
+                    <h2><i class="bi bi-pencil-fill me-2"></i>Edit Log Entry</h2>
                     <p class="text-muted mb-0">
                         For: <strong>{{ job.title }}</strong> at <strong>{{ job.company }}</strong>
                     </p>
                 </div>
                 <div>
                     <a href="{{ url_for('jobs.job_detail', job_id=job.id) }}" class="btn btn-outline-secondary">
-                        <i class="fas fa-arrow-left me-1"></i>Back to Job
+                        <i class="bi bi-arrow-left me-1"></i>Back to Job
                     </a>
                 </div>
             </div>
@@ -25,7 +25,7 @@
             <div class="card">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-sticky-note me-2"></i>Edit Log Entry
+                        <i class="bi bi-sticky me-2"></i>Edit Log Entry
                     </h5>
                     <small class="text-muted">
                         Created: {{ log.created_at.strftime('%B %d, %Y at %I:%M %p') }}
@@ -47,7 +47,7 @@
                                 </div>
                             {% endif %}
                             <div class="form-text">
-                                <i class="fas fa-info-circle me-1"></i>
+                                <i class="bi bi-info-circle me-1"></i>
                                 Describe what happened, what you did, or any important notes about this job application.
                             </div>
                         </div>
@@ -56,7 +56,7 @@
                         {% if log.status_change_from and log.status_change_to %}
                         <div class="alert alert-info">
                             <h6 class="alert-heading">
-                                <i class="fas fa-exchange-alt me-1"></i>Status Change Log
+                                <i class="bi bi-arrow-left-right me-1"></i>Status Change Log
                             </h6>
                             <p class="mb-0">
                                 This log entry recorded a status change from 
@@ -70,11 +70,35 @@
                         </div>
                         {% endif %}
 
+                        <div class="mb-4">
+                            {{ form.status_change.label(class="form-label fw-bold") }}
+                            {{ form.status_change(class="form-select", id="statusSelect") }}
+                            {% if form.status_change.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.status_change.errors %}
+                                    <small><i class="bi bi-exclamation-circle me-1"></i>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Optionally update the job status along with this log entry.
+                            </div>
+                            <div id="statusChangePreview" class="mt-2" style="display: none;">
+                                <div class="alert alert-info py-2">
+                                    <small>
+                                        <i class="bi bi-arrow-right me-1"></i>
+                                        Status will change from <strong id="currentStatus">{{ job.status }}</strong> to <strong id="newStatus"></strong>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Form Actions -->
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-save me-1"></i>Update Log Entry
+                                    <i class="bi bi-floppy me-1"></i>Update Log Entry
                                 </button>
                                 <a href="{{ url_for('jobs.job_detail', job_id=job.id) }}" class="btn btn-outline-secondary ms-2">
                                     Cancel
@@ -82,7 +106,7 @@
                             </div>
                             <div>
                                 <button type="button" class="btn btn-outline-danger" onclick="confirmDeleteLog()">
-                                    <i class="fas fa-trash me-1"></i>Delete Log
+                                    <i class="bi bi-trash-fill me-1"></i>Delete Log
                                 </button>
                             </div>
                         </div>
@@ -94,7 +118,7 @@
             <div class="card mt-4">
                 <div class="card-header">
                     <h6 class="card-title mb-0">
-                        <i class="fas fa-history me-2"></i>Recent Activity
+                        <i class="bi bi-clock-history me-2"></i>Recent Activity
                     </h6>
                 </div>
                 <div class="card-body">
@@ -103,7 +127,7 @@
                         <div class="timeline-item timeline-item-editing">
                             <div class="timeline-marker-container">
                                 <div class="timeline-marker timeline-marker-editing">
-                                    <i class="fas fa-edit"></i>
+                                    <i class="bi bi-pencil-fill"></i>
                                 </div>
                             </div>
                             <div class="timeline-content">
@@ -149,6 +173,23 @@ function confirmDeleteLog() {
     }
 }
 
+// Status change preview
+function updateStatusPreview() {
+    const statusSelect = document.getElementById('statusSelect');
+    const preview = document.getElementById('statusChangePreview');
+    const newStatusSpan = document.getElementById('newStatus');
+
+    if (!statusSelect) return;
+        const selectedText = statusSelect.options[statusSelect.selectedIndex]?.text?.trim() || '';
+        const currentText = document.getElementById('currentStatus')?.textContent?.trim() || '';
+        if (selectedText && selectedText !== currentText) {
+            newStatusSpan.textContent = selectedText;
+            preview.style.display = 'block';
+        } else {
+            preview.style.display = 'none';
+    }
+}
+
 // Auto-resize textarea
 document.addEventListener('DOMContentLoaded', function() {
     const textarea = document.getElementById('note');
@@ -161,6 +202,11 @@ document.addEventListener('DOMContentLoaded', function() {
         // Initial resize
         textarea.style.height = 'auto';
         textarea.style.height = textarea.scrollHeight + 'px';
+    }
+
+    const statusSelect = document.getElementById('statusSelect');
+    if (statusSelect) {
+        statusSelect.addEventListener('change', updateStatusPreview);
     }
 });
 </script>

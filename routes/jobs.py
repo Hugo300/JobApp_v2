@@ -1,18 +1,23 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, send_file, current_app, abort
 import os
-
-from typing import Tuple, Optional, Dict, Any
-from models import JobApplication, ApplicationStatus, UserData, MasterTemplate, Document, TemplateType, JobLog, db
 from datetime import datetime
+from typing import Tuple, Optional, Dict, Any
+import markdown
+from markupsafe import escape
+
+from models import JobApplication, ApplicationStatus, UserData, MasterTemplate, Document, TemplateType, JobLog, db
+
 from services import JobService, UserService, LogService, TemplateService
 from services.database_service import DatabaseError
+
+from routes.forms import JobForm, LogForm
+
 from utils.latex import compile_latex, compile_latex_template
-from utils.scraper import scrape_job_data
 from utils.responses import success_response, error_response, flash_success, flash_error
 from utils.forms import populate_job_form_choices, populate_log_form_choices, extract_form_data, sanitize_form_data
 from utils.validation import validate_job_data, ValidationError
-from routes.forms import JobForm, LogForm
-from markupsafe import escape
+
+
 
 jobs_bp = Blueprint('jobs', __name__)
 
@@ -108,13 +113,44 @@ def job_detail(job_id):
         else:
             recent_logs = all_logs[:10]  # Limit to 10
 
-        # Get Skills using service
-        job_skills = job_service.get_job_skills_by_category(job_id)
+        # Get user data and skills
+        user_skills = []
+        if user_data:
+            user_skills = user_service.get_user_skills(user_data.id)
+    
+        # Get job skills (assuming you have a method to get job skills by category)
+        job_skills_result  = job_service.get_job_skills_by_category(job.id)
+
+        if not job_skills_result.get('success') or not job_skills_result.get('data'):  
+            current_app.logger.error(f"get_job_skills_by_category failed for job {job.id}: {job_skills_result.get('error')}")  
+            total_skills = 0  
+            categorized_skills = {} 
+        else:  
+            total_skills = job_skills_result['data']['active_skills']  
+            categorized_skills = job_skills_result['data']['skills'] 
+
+        match_score, matched_skills_count, missing_skills_count = job_service.calculate_skill_match(
+            job_service.get_job_skills(job_id) or [], user_skills
+        )
+
+        # get skills by category and matching
+        matched_skills_by_category, missing_skills_by_category = job_service.get_skills_by_user_category(
+            categorized_skills, user_skills)
+        
+        job_description = job.description or ''
+        job_description_short = job_description[:500] + ('...' if len(job_description) > 500 else '')
 
         return render_template('jobs/job_detail.html',
                              job=job,
-                             job_skills=job_skills,
-                             match_score=0,
+                             job_description=job_description,
+                             job_description_short=job_description_short,
+                             job_skills=categorized_skills,
+                             matched_skills_by_category=matched_skills_by_category,
+                             missing_skills_by_category=missing_skills_by_category,
+                             total_skills=total_skills,
+                             match_score=match_score,
+                             matched_skills_count=matched_skills_count,
+                             missing_skills_count=missing_skills_count,
                              user_data=user_data,
                              templates=templates,
                              status_options=ApplicationStatus,
@@ -148,8 +184,9 @@ def scrape_new_job():
 
         if result['success']:
             current_app.logger.info(f'Scraping completed successfully')
+
             return success_response(result.get('message', 'Job details scraped successfully!'), {
-                'data': result.get('data'),
+                'data': result.get('data', {}),
             })
         else:
             return error_response(result.get('error', 'Failed to scrape job details'))
@@ -432,6 +469,8 @@ def edit_job(job_id):
     """Edit an existing job application"""
     try:
         service = JobService()
+        log_service = LogService()
+
         job = service.get_job_by_id(job_id)
 
         if not job:
@@ -479,10 +518,16 @@ def edit_job(job_id):
                 })
 
                 # Create a log entry for the edit
-                JobLog(job_id=job_id, note=f'Job details updated: {old_company} - {old_title} → {company} - {title}')
+                log_service.create_log(
+                    job_id,
+                    note=f'Job details updated: {old_company} - {old_title} → {company} - {title}'
+                )
 
                 # Update the skills
-                result = service.extract_job_skills(job.id, job.description)
+                raw_description = form.description.data.strip() if form.description.data else None
+                extracted_skills = service.extract_job_skills(job.id, raw_description)
+                if not extracted_skills:
+                   current_app.logger.warning(f'No skills extracted for job {job.id}')
 
                 current_app.logger.info(f'Job application updated: {title} at {company}')
                 flash(f'Job application for {title} at {company} updated successfully!', 'success')
@@ -567,13 +612,14 @@ def edit_log(job_id, log_id):
             try:
                 # Sanitize input
                 note = escape(form.note.data.strip())
+                status_change = form.status_change.data.strip() if form.status_change.data else None
 
                 if not note:
                     flash_error('Log note cannot be empty.')
                     return render_template('jobs/edit_log.html', job=job, log=log_entry, form=form)
 
                 # Update the log entry
-                success, updated_log, error = log_service.update_log(log_id, note)
+                success, updated_log, error = log_service.update_log(log_id, note, status_change, job_id)
 
                 if success:
                     current_app.logger.info(f'Log entry {log_id} updated for job {job_id}')

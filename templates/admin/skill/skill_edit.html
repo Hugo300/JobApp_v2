@@ -1,0 +1,527 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{{ url_for('skill.manage_skills') }}">Skills Management</a></li>
+                            <li class="breadcrumb-item active">Edit Skill</li>
+                        </ol>
+                    </nav>
+                    <h1 class="display-6 mb-0">
+                        <i class="bi bi-pencil-square text-primary"></i>
+                        Edit Skill: <span class="text-primary fw-bold">{{ skill.name }}</span>
+                    </h1>
+                </div>
+                <div>
+                    <a href="{{ url_for('skill.manage_skills') }}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i>
+                        Back to Skills
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Edit Form -->
+        <div class="col-lg-8">
+            <!-- Basic Information Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle-fill"></i>
+                        Basic Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('skill.edit_skill', skill_id=skill.id) }}" id="editSkillForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <label for="name" class="form-label">Skill Name *</label>
+                                    <input type="text" 
+                                           class="form-control form-control-lg" 
+                                           id="name" 
+                                           name="name" 
+                                           value="{{ skill.name }}" 
+                                           required
+                                           placeholder="Enter skill name">
+                                    <div class="form-text">This is the canonical name that will be used for skill matching</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="category_id" class="form-label">Category</label>
+                                    <select class="form-select form-select-lg" id="category_id" name="category_id">
+                                        <option value="">No Category</option>
+                                        {% for category in categories %}
+                                            <option value="{{ category.id }}" 
+                                                    {{ 'selected' if skill.category and skill.category.id == category.id else '' }}>
+                                                {{ category.name }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" 
+                                           type="checkbox" 
+                                           role="switch" 
+                                           id="is_blacklisted" 
+                                           name="is_blacklisted"
+                                           {{ 'checked' if skill.is_blacklisted else '' }}>
+                                    <label class="form-check-label" for="is_blacklisted">
+                                        <strong>Blacklist this skill</strong>
+                                        <br><small class="text-muted">Blacklisted skills are excluded from automatic extraction</small>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 text-end">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    Update Skill
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Add Variant Form -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>
+                        <i class="bi bi-plus-circle-fill"></i>
+                        Add New Variant
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('skill.add_variant', skill_id=skill.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <input type="text" 
+                                        name="variant_name" 
+                                        class="form-control" 
+                                        placeholder="Enter variant name (e.g., python, py, Python3)"
+                                        required>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="submit" class="btn btn-success">Add Variant</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Current Variants -->
+            <div class="card">
+                <div class="card-header">
+                    <h5>
+                        <i class="bi bi-list-ul"></i>
+                        Current Variants
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if skill.variants %}
+                        <div class="row" id="variantsList">
+                            {% for variant in skill.variants %}
+                            <div class="col-md-6 mb-3" id="variant-{{ variant.id }}">
+                                <div class="d-flex justify-content-between align-items-center p-2 border rounded">
+                                    <span class="fw-bold">{{ variant.variant_name }}</span>
+                                    <form method="POST" 
+                                            action="{{ url_for('skill.delete_variant', variant_id=variant.id) }}" 
+                                            class="d-inline"
+                                            onsubmit="return confirm('Are you sure you want to delete this variant?')">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            Delete
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center text-muted py-4">
+                            <p>No variants defined for this skill yet.</p>
+                            <p>Use the form above to add some common variations like:</p>
+                            <ul class="list-unstyled">
+                                <li><code>python</code> (lowercase)</li>
+                                <li><code>Python3</code> (with version)</li>
+                                <li><code>py</code> (abbreviation)</li>
+                            </ul>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Usage Examples -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6>
+                        <i class="bi bi-info-square"></i>
+                        How This Works
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted">
+                        When your app extracts skills from job positions, it will now recognize all these variants 
+                        and map them to the canonical skill "<strong>{{ skill.name }}</strong>". 
+                        This helps normalize different ways the same skill might be written.
+                    </p>
+                    
+                    {% if skill.variants %}
+                    <p class="small">
+                        <strong>Current mappings:</strong><br>
+                        {% for variant in skill.variants %}
+                            <code>{{ variant.variant_name }}</code> → {{ skill.name }}{% if not loop.last %}, {% endif %}
+                        {% endfor %}
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Skill Status Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-clipboard-data-fill"></i>
+                        Skill Status
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="border-end">
+                                <div class="fs-4 fw-bold text-info">{{ skill.variants|length }}</div>
+                                <small class="text-muted">Variants</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="fs-4 fw-bold {{ 'text-danger' if skill.is_blacklisted else 'text-success' }}">
+                                {% if skill.is_blacklisted %}
+                                <i class="bi bi-x-circle"></i>
+                                {% else %}
+                                <i class="bi bi-check-circle"></i>
+                                {% endif %}
+                            </div>
+                            <small class="text-muted">
+                                {{ 'Blacklisted' if skill.is_blacklisted else 'Active' }}
+                            </small>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div class="d-grid gap-2">
+                        <small class="text-muted mb-2">
+                            <strong>Current mapping:</strong>
+                        </small>
+                        
+                        <div class="p-2 bg-secondary rounded">
+                            <div class="text-center">
+                                <span class="badge bg-primary">{{ skill.name }}</span>
+                                <div class="mt-2">
+                                    {% if skill.variants %}
+                                        {% for variant in skill.variants %}
+                                            <small class="d-block text-muted">
+                                                <code>{{ variant.variant_name }}</code> → {{ skill.name }}
+                                            </small>
+                                        {% endfor %}
+                                    {% else %}
+                                        <small class="text-muted">No variants defined</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Category Info Card -->
+            {% if skill.category %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-folder-fill"></i>
+                        Category Information
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-secondary bg-opacity-10 rounded-circle p-2 me-3">
+                            <i class="bi bi-folder-fill text-primary"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">{{ skill.category.name }}</h6>
+                            <small class="text-muted">Category ID: {{ skill.category.id }}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Danger Zone Card -->
+            <div class="card border-danger shadow-sm">
+                <div class="card-header bg-danger bg-opacity-10 border-danger">
+                    <h6 class="mb-0 text-danger">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        Danger Zone
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid">
+                        <button type="button" 
+                                class="btn btn-outline-danger"
+                                data-bs-toggle="modal" 
+                                data-bs-target="#deleteSkillModal">
+                            <i class="bi bi-trash-fill"></i>
+                            Delete Skill Permanently
+                        </button>
+                    </div>
+                    <small class="text-muted mt-2 d-block">
+                        This action cannot be undone. The skill and all its variants will be permanently removed.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Variant Modal -->
+<div class="modal fade" id="addVariantModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-plus-circle text-success"></i>
+                    Add New Variant
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('skill.add_variant', skill_id=skill.id) }}" id="addVariantForm">
+                <div class="modal-body">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    
+                    <div class="mb-3">
+                        <label for="variant_name" class="form-label">Variant Name *</label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="variant_name" 
+                               name="variant_name" 
+                               required 
+                               placeholder="e.g., python, py, Python3">
+                        <div class="form-text">
+                            Enter an alternative name for "{{ skill.name }}" as it might appear in job descriptions
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <strong>Examples:</strong>
+                        <ul class="mb-0">
+                            <li>For "Python": python, py, Python3, python3</li>
+                            <li>For "JavaScript": js, javascript, JS</li>
+                            <li>For "React": reactjs, react.js, ReactJS</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-plus-circle"></i>
+                        Add Variant
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Skill Modal -->
+<div class="modal fade" id="deleteSkillModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    Confirm Skill Deletion
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <h6 class="alert-heading">Warning: Permanent Deletion</h6>
+                    <p class="mb-0">You are about to permanently delete the skill <strong>"{{ skill.name }}"</strong>.</p>
+                </div>
+                
+                <p>This action will:</p>
+                <ul>
+                    <li>Remove the skill from the database</li>
+                    <li>Delete all {{ skill.variants|length }} associated variant(s)</li>
+                    <li>Remove this skill from any job associations</li>
+                    <li>This action <strong>cannot be undone</strong></li>
+                </ul>
+                
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="confirmDelete" required>
+                    <label class="form-check-label" for="confirmDelete">
+                        I understand this action cannot be undone
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="POST" action="{{ url_for('skill.delete_skill', skill_id=skill.id) }}" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-danger" id="confirmDeleteBtn" disabled>
+                        <i class="bi bi-trash-fill"></i>
+                        Delete Skill Permanently
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Initialize tooltips
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        // Enable delete button when checkbox is checked
+        document.getElementById('confirmDelete').addEventListener('change', function() {
+            document.getElementById('confirmDeleteBtn').disabled = !this.checked;
+        });
+    });
+
+    // Delete variant functionality
+    function deleteVariant(variantId, variantName) {
+        if (confirm(`Are you sure you want to delete the variant "${variantName}"?`)) {
+            fetch(`{{ url_for('skill.delete_variant', variant_id=0) }}`.replace('0', variantId), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `csrf_token=${document.querySelector('[name="csrf_token"]').value}&skill_id={{ skill.id }}`
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Remove the variant from the UI
+                    const variantElement = document.getElementById(`variant-${variantId}`);
+                    if (variantElement) {
+                        variantElement.remove();
+                    }
+                    
+                    // Update variant count badge
+                    const badge = document.querySelector('.fs-4.fw-bold.text-info');
+                    const currentCount = parseInt(badge.textContent);
+                    badge.textContent = currentCount - 1;
+                    
+                    // Show no variants message if this was the last one
+                    const remainingVariants = document.querySelectorAll('[id^="variant-"]');
+                    if (remainingVariants.length === 0) {
+                        document.getElementById('variantsList').innerHTML = `
+                            <div class="text-center py-4 text-muted" id="noVariantsMessage">
+                                <i class="bi bi-tags display-4 text-muted opacity-50"></i>
+                                <h6 class="mt-3">No variants defined</h6>
+                                <p>Add some common variations of "{{ skill.name }}" to improve skill matching accuracy.</p>
+                                <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addVariantModal">
+                                    <i class="bi bi-plus-circle me-1"></i>Add First Variant
+                                </button>
+                            </div>
+                        `;
+                    }
+                    
+                    // Show success message
+                    showAlert('success', `Variant "${variantName}" deleted successfully`);
+                } else {
+                    showAlert('danger', 'Error deleting variant');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('danger', 'Error deleting variant');
+            });
+        }
+    }
+
+    // Add variant form submission with AJAX
+    document.getElementById('addVariantForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const variantName = formData.get('variant_name');
+        
+        fetch(this.action, {
+            method: 'POST',
+            headers: { 'Accept': 'application/json' },
+            body: formData
+        })
+        .then(response => response.text())
+        .then(data => {
+            // Check if the response indicates success (you might want to return JSON instead)
+            if (data.includes('success') || !data.includes('error')) {
+                // Close modal
+                bootstrap.Modal.getInstance(document.getElementById('addVariantModal')).hide();
+                
+                // Clear form
+                document.getElementById('variant_name').value = '';
+                
+                // Reload page to show new variant (or you could add it dynamically)
+                window.location.reload();
+            } else {
+                showAlert('danger', 'Error adding variant');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('danger', 'Error adding variant');
+        });
+    });
+
+    // Utility function to show alerts
+    function showAlert(type, message) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        const messageNode = document.createTextNode(message);
+        alertDiv.appendChild(messageNode);
+
+        const closeButton = document.createElement('button');
+        closeButton.type = 'button';
+        closeButton.className = 'btn-close';
+        closeButton.setAttribute('data-bs-dismiss', 'alert');
+        alertDiv.appendChild(closeButton);
+        
+        // Insert at the top of the container
+        const container = document.querySelector('.container');
+        container.insertBefore(alertDiv, container.firstChild);
+        
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 5000);
+    }
+</script>
+{% endblock %}

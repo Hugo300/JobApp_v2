@@ -5,7 +5,8 @@
     <div class="row align-items-center">
         <div class="col">
             <h1 class="card-title mb-1">
-                <i class="bi bi-list-ul text-primary me-2"></i>Skills Management
+                <i class="bi bi-list-ul text-primary"></i>
+                Skills Management
             </h1>
             <p class="card-text text-muted">Manage your skills database and their variants</p>
         </div>
@@ -39,9 +40,15 @@
                 </select>
             </div>
             <div class="col-md-2">
-                <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">
-                    <i class="bi bi-arrow-clockwise me-1"></i>Clear
+                <button id="clearButton" class="btn btn-outline-secondary w-100">
+                    <i class="bi bi-arrow-clockwise"></i>
+                    Clear
                 </button>
+            </div>
+        </div>
+        <div class="row mt-2">
+            <div class="col">
+                <small id="resultsCount" class="text-muted">Showing {{ skills|length }} skills</small>
             </div>
         </div>
     </div>
@@ -60,7 +67,7 @@
         </thead>
         <tbody id="skillsTableBody">
             {% for skill in skills %}
-            <tr class="skill-row {{ 'table-warning' if skill.is_blacklisted else '' }}" 
+            <tr class="skill-row {{ 'table-danger' if skill.is_blacklisted else '' }}" 
                 data-skill-name="{{ skill.name.lower() }}" 
                 data-category="{{ skill.category.name.lower() if skill.category else 'uncategorized' }}"
                 data-blacklisted="{{ 'true' if skill.is_blacklisted else 'false' }}">
@@ -68,9 +75,9 @@
                     <div class="d-flex align-items-center">
                         <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-3">
                             {% if skill.is_blacklisted %}
-                                <i class="bi bi-x-circle-fill text-danger"></i>
+                            <i class="bi bi-x-circle-fill"></i>
                             {% else %}
-                                <i class="bi bi-code-square text-primary"></i>
+                            <i class="bi bi-code-square"></i>
                             {% endif %}
                         </div>
                         <div>
@@ -103,12 +110,13 @@
                 </td>
                 <td class="text-center align-middle">
                     <div class="btn-group" role="group">
-                        <a href="{{ url_for('skill.manage_variants', skill_id=skill.id) }}" 
-                            class="btn btn-sm btn-outline-primary" 
-                            data-bs-toggle="tooltip" 
-                            title="Manage variants for {{ skill.name }}">
-                            <i class="bi bi-pencil-square me-1"></i>
-                            Manage Variants
+                        <!-- Edit Button -->
+                        <a href="{{ url_for('skill.edit_skill', skill_id=skill.id) }}" 
+                           class="btn btn-sm btn-outline-primary" 
+                           data-bs-toggle="tooltip" 
+                           title="Edit skill details and manage variants">
+                            <i class="bi bi-pencil-fill"></i>
+                            Edit
                         </a>
                         
                         <!-- Blacklist Toggle Button -->
@@ -120,17 +128,17 @@
                                         class="btn btn-sm btn-outline-success"
                                         data-bs-toggle="tooltip" 
                                         title="Remove from blacklist"
-                                        onclick="return confirm('Remove {{ skill.name }} from blacklist?')">
-                                    <i class="bi bi-check-circle me-1"></i>
+                                        onclick="return confirm('Remove {{ skill.name|e }} from blacklist?')">
+                                    <i class="bi bi-check-circle"></i>
                                     Unblacklist
                                 </button>
                             {% else %}
                                 <button type="submit" 
-                                        class="btn btn-sm btn-outline-danger"
+                                        class="btn btn-sm btn-outline-warning"
                                         data-bs-toggle="tooltip" 
                                         title="Add to blacklist"
-                                        onclick="return confirm('Add {{ skill.name }} to blacklist? This will exclude it from skill extraction.')">
-                                    <i class="bi bi-x-circle me-1"></i>
+                                        onclick="return confirm('Add {{ skill.name|e }} to blacklist? This will exclude it from skill extraction.')">
+                                    <i class="bi bi-x-circle"></i>
                                     Blacklist
                                 </button>
                             {% endif %}
@@ -141,7 +149,7 @@
             {% else %}
             <tr>
                 <td colspan="4" class="text-center py-4 text-muted">
-                    <i class="bi bi-inbox display-1 d-block mb-3 text-muted opacity-50"></i>
+                    <i class="bi bi-inbox"></i>
                     <h5>No skills found</h5>
                     <p>Add some skills to your database first.</p>
                 </td>
@@ -154,67 +162,69 @@
 
 {% block scripts %}
 <script>
-    // Initialize tooltips
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-
-    // Search and filter functionality
-    function filterTable() {
-        const searchTerm = document.getElementById('skillSearch').value.toLowerCase();
-        const categoryFilter = document.getElementById('categoryFilter').value.toLowerCase();
-        const rows = document.querySelectorAll('.skill-row');
-        let visibleCount = 0;
-        
-        rows.forEach(row => {
-            const skillName = row.dataset.skillName || '';
-            const category = row.dataset.category || '';
-            
-            const matchesSearch = skillName.includes(searchTerm) ||
-                                category.includes(searchTerm) ||
-                                row.textContent.toLowerCase().includes(searchTerm);
-            const matchesCategory = !categoryFilter || category === categoryFilter;
-            
-            if (matchesSearch && matchesCategory) {
-                row.style.display = '';
-                visibleCount++;
-            } else {
-                row.style.display = 'none';
-            }
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
         });
-        
-        document.getElementById('resultsCount').textContent = `Showing ${visibleCount} skills`;
-    }
 
-    function clearFilters() {
+        // Search and filter functionality
+        function filterTable() {
+            const searchTerm = document.getElementById('skillSearch').value.toLowerCase();
+            const categoryFilter = document.getElementById('categoryFilter').value.toLowerCase();
+            const rows = document.querySelectorAll('.skill-row');
+            let visibleCount = 0;
+            
+            rows.forEach(row => {
+                const skillName = row.dataset.skillName || '';
+                const category = row.dataset.category || '';
+                
+                const matchesSearch = skillName.includes(searchTerm) ||
+                                    category.includes(searchTerm) ||
+                                    row.textContent.toLowerCase().includes(searchTerm);
+                const matchesCategory = !categoryFilter || category === categoryFilter;
+                
+                if (matchesSearch && matchesCategory) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            const resultsEl = document.getElementById('resultsCount');
+            if (resultsEl) {
+                resultsEl.textContent = `Showing ${visibleCount} skills`;
+            }
+        }
+        
+        function clearFilters() {
+            const searchInput = document.getElementById('skillSearch');
+            const categorySelect = document.getElementById('categoryFilter');
+            
+            if (searchInput) searchInput.value = '';
+            if (categorySelect) categorySelect.value = '';
+            
+            filterTable();
+        }
+
+        // Event listeners with null checks
         const searchInput = document.getElementById('skillSearch');
         const categorySelect = document.getElementById('categoryFilter');
+        const clearButton = document.getElementById('clearButton');
         
-        if (searchInput) searchInput.value = '';
-        if (categorySelect) categorySelect.value = '';
+        if (searchInput) {
+            searchInput.addEventListener('input', filterTable);
+        }
         
-        filterTable();
-    }
+        if (categorySelect) {
+            categorySelect.addEventListener('change', filterTable);
+        }
 
-    function filterByBlacklist() {
-        const selectedFilter = document.getElementById('blacklistFilter').value;
-        // Redirect to the same page with the blacklist filter parameter
-        const currentUrl = new URL(window.location);
-        currentUrl.searchParams.set('blacklist', selectedFilter);
-        window.location.href = currentUrl.toString();
-    }
-
-    // Event listeners with null checks
-    const searchInput = document.getElementById('skillSearch');
-    const categorySelect = document.getElementById('categoryFilter');
-    
-    if (searchInput) {
-        searchInput.addEventListener('input', filterTable);
-    }
-    
-    if (categorySelect) {
-        categorySelect.addEventListener('change', filterTable);
-    }
+        if (clearButton) {
+            clearButton.addEventListener('click', clearFilters);
+        }
+    });
 </script>
 {% endblock %}

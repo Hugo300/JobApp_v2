@@ -7,7 +7,7 @@
 {% block content %}
 <div class="row">
     <div class="col-12">
-        <h1><i class="fas fa-plus me-2"></i>New Job Application</h1>
+        <h1><i class="bi bi-plus-lg me-2"></i>New Job Application</h1>
         <p class="text-muted">Add a new job application. You can either enter details manually or scrape them from a job posting URL.</p>
     </div>
 </div>
@@ -28,7 +28,7 @@
                     {{ render_input_group(
                         form.url,
                         "scrapeBtn",
-                        "fa-magic",
+                        "bi-magic",
                         "Auto-Fill",
                         "scrapeJob()",
                         help_text="Optional: Enter a job posting URL to automatically fill in details",
@@ -105,19 +105,19 @@
             <div class="card-body">
                 <ul class="list-unstyled">
                     <li class="mb-2">
-                        <i class="fas fa-info-circle text-info me-2"></i>
+                        <i class="bi bi-info-circle text-info me-2"></i>
                         Works with most job posting websites
                     </li>
                     <li class="mb-2">
-                        <i class="fas fa-info-circle text-info me-2"></i>
+                        <i class="bi bi-info-circle text-info me-2"></i>
                         May not work with all sites due to structure differences
                     </li>
                     <li class="mb-2">
-                        <i class="fas fa-info-circle text-info me-2"></i>
+                        <i class="bi bi-info-circle text-info me-2"></i>
                         Always review scraped content for accuracy
                     </li>
                     <li class="mb-2">
-                        <i class="fas fa-info-circle text-info me-2"></i>
+                        <i class="bi bi-info-circle text-info me-2"></i>
                         You can edit the scraped content before saving
                     </li>
                 </ul>
@@ -148,7 +148,7 @@ function scrapeJob() {
     // Show loading state
     const scrapeBtn = document.getElementById('scrapeBtn');
     const originalText = scrapeBtn.innerHTML;
-    scrapeBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Scraping with Python...';
+    scrapeBtn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i>Scraping with Python...';
     scrapeBtn.disabled = true;
 
     // Show progress message

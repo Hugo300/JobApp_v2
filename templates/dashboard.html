@@ -9,9 +9,13 @@
 <div class="row">
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1><i class="fas fa-tachometer-alt me-2"></i>Dashboard</h1>
+            <h1>
+                <i class="bi bi-speedometer2"></i>
+                Dashboard
+            </h1>
             <a href="{{ url_for('jobs.new_job') }}" class="btn btn-primary">
-                <i class="fas fa-plus me-1"></i>New Job Application
+                <i class="bi bi-plus-circle"></i>
+                New Job Application
             </a>
         </div>
     </div>
@@ -24,17 +28,18 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="card-title mb-0">
-                    <i class="fas fa-chart-bar me-2"></i>Application Summary
+                    <i class="bi bi-bar-chart-fill"></i>
+                    Application Summary
                 </h5>
             </div>
             <div class="card-body">
                 <div class="row">
                     <!-- Total Jobs -->
-                    <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="col-md-3 col-sm-6 mb-3 align-items-center text-center">
                         {{ render_stats_card(
-                            title="Total Applications",
+                            title="Total Jobs",
                             value=summary.total_jobs,
-                            icon="fas fa-briefcase",
+                            icon="bi bi-briefcase-fill fs-1",
                             color="primary"
                         ) }}
                     </div>
@@ -49,13 +54,15 @@
                             <div class="col-md-4">
                                 {% for status, count in summary.status_counts.items() %}
                                 <div class="d-flex justify-content-between align-items-center mb-1 small">
-                                    <span class="badge bg-{{
-                                        'success' if status == 'Completed'
-                                        else 'info' if status == 'Process'
-                                        else 'warning' if status in ['Applied', 'Waiting Decision']
-                                        else 'secondary' if status == 'Collected'
-                                        else 'danger' if status == 'Rejected'
-                                        else 'primary'
+                                    <span class="badge {{
+                                        ({  
+                                        'Completed': 'badge--status-completed',  
+                                        'Process': 'badge--status-process',  
+                                        'Applied': 'badge--status-applied',  
+                                        'Waiting Decision': 'badge--status-waiting',  
+                                        'Collected': 'badge--status-collected',  
+                                        'Rejected': 'badge--status-rejected'  
+                                        }).get(status, 'bg-primary')
                                     }}">{{ status }}</span>
                                     <span>{{ count }}</span>
                                 </div>
@@ -77,7 +84,8 @@
                         <h6 class="mb-2">Top Countries</h6>
                         {% for country, count in summary.top_countries %}
                         <div class="small text-muted mb-1">
-                            <i class="fas fa-globe me-1"></i>{{ country }}: {{ count }}
+                            <i class="bi bi-globe"></i>
+                            {{ country }}: {{ count }}
                         </div>
                         {% endfor %}
                         {% endif %}
@@ -95,7 +103,8 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="card-title mb-0">
-                    <i class="fas fa-search me-2"></i>Search & Filter
+                    <i class="bi bi-search"></i>
+                    Search & Filter
                 </h5>
             </div>
             <div class="card-body">
@@ -125,7 +134,7 @@
     {{ render_empty_state(
         title="No job applications yet",
         message="Start by adding your first job application.",
-        icon="fas fa-briefcase",
+        icon="bi bi-briefcase",
         action_text="Add First Job",
         action_url=url_for('jobs.new_job')
     ) }}

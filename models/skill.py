@@ -16,7 +16,7 @@ class Skill(db.Model):
     category = relationship('SkillCategory', back_populates='skills', lazy=True)
     variants = relationship('SkillVariant', back_populates='skill', cascade='all, delete-orphan')
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Skill(name={self.name}, category_id={self.category_id})>"
 
 
@@ -29,11 +29,11 @@ class SkillCategory(db.Model):
 
     skills = relationship("Skill", back_populates="category")
 
-    def __init__(self, name, description=None):
+    def __init__(self, name, description=None) -> None:
         self.name = name
         self.description = description
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<SkillCategory(name={self.name})>"
 
 
@@ -45,5 +45,5 @@ class SkillVariant(db.Model):
 
     skill = relationship('Skill', back_populates='variants')
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'<SkillVariant {self.variant_name} -> {self.skill.name}>'

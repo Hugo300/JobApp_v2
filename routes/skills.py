@@ -1,260 +1,396 @@
-from flask import Blueprint, redirect, request, jsonify, render_template, url_for, current_app
-from services import SkillService, CategoryService
-from models import db
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
+from sqlalchemy.orm import joinedload
+from sqlalchemy.exc import IntegrityError
 
-skills_bp = Blueprint('skills', __name__)
+from models import Skill, SkillVariant, SkillCategory, db
+from services.skill.skill_service import get_skill_service
+from utils.responses import flash_error, flash_success
 
-# Initialize the skill extraction service
-skill_extraction_service = SkillService()
-
-@skills_bp.route('/skills_extract', methods=['POST'])
-def skills_extract():
-    """
-    API endpoint to extract and categorize skills from a job description.
-
-    Request JSON:
-    {
-        "job_description": "string"
-    }
-
-    Response JSON:
-    {
-        "extracted_skills": ["skill1", "skill2", ...],
-        "categorized_skills": {
-            "Category1": ["skill1", ...],
-            "Category2": ["skill2", ...],
-            ...
-        }
-    }
-    """
-    data = request.get_json()
-    job_description = data.get('job_description', '')
-
-    if not job_description:
-        return jsonify({"error": "Job description is required."}), 400
-
-    # Extract skills
-    extracted_skills = skill_extraction_service.extract_skills(job_description)
-
-    # Categorize skills
-    categorized_skills = skill_extraction_service.categorize_skills(extracted_skills)    
-
-    return jsonify({
-        "extracted_skills": extracted_skills,
-        "categorized_skills": categorized_skills
-    }), 200
+skill_bp = Blueprint('skill', __name__)
 
 
-
-@skills_bp.route('/manage')
-def skills_manage():
-
-    skill_service = SkillService()
-    skills = skill_service.get_all_skills_and_category()
-
-    category_service = CategoryService()
-    categories = category_service.get_all_categories()
-
-    blacklist = skill_service.get_blacklist_skills()
-
-    uncategorized_skills = skill_service.get_uncategorized_skills()
-
-    return render_template(
-        'admin/main.html',
-        categories=categories,
-        skills=skills,
-        blacklisted_words=blacklist,
-        uncategorized_skills=uncategorized_skills
-    )
-
-@skills_bp.route('/create_skill', methods=['POST'])
-def skill_create():
+@skill_bp.route('')
+def manage_skills():
+    """Manage skills with blacklist filtering"""
+    # Get blacklist filter parameter, default to 'active' (non-blacklisted)
+    blacklist_filter = request.args.get('blacklist', 'active')
+    # Get the skill service instance
+    skill_service = get_skill_service()
+    
     try:
-        skill_service = SkillService()
+        # Use SkillService to get skills based on filter
+        if blacklist_filter == 'active':
+            skills = skill_service.get_all_active_skills(include_relationships=True)
+        elif blacklist_filter == 'blacklisted':
+            skills = skill_service.get_blacklist_skills()
+        else:  # 'all'
+            skills = skill_service.get_all_skills(include_relationships=True)
 
-        name = request.form.get('name')
-        category = request.form.get('category_id')
+        # Calculate total variants count
+        total_variants = sum(len(skill.variants) for skill in skills)
 
-        result = skill_service.create_skill(name=name, category=category, is_blacklisted=False)
-        print(result)
+        # Get categories for the filter dropdown   
+        categories = SkillCategory.query.all()
+
+        return render_template('admin/skill/skill_manage.html',
+                               skills=skills, 
+                               total_variants=total_variants,
+                               categories=categories,
+                               current_blacklist_filter=blacklist_filter)
+                               
     except Exception as e:
-        print(e)
-        db.session.rollback()
+        current_app.logger.exception("manage_skills failed")
+        flash_error('Error loading skills') 
+        return render_template('admin/skill/skill_manage.html',
+                               skills=[], 
+                               total_variants=0,
+                               categories=[],
+                               current_blacklist_filter=blacklist_filter)
 
-    return redirect(url_for('skills.skills_manage'))
-
-@skills_bp.route('/<int:skill_id>/edit', methods=['POST'])
-def skill_update(skill_id):
+@skill_bp.route('/<int:skill_id>/toggle-blacklist', methods=['POST'])
+def toggle_blacklist(skill_id):
+    """Toggle blacklist status of a skill"""
     try:
-        skill_service = SkillService()
+        # Get the skill service instance
+        skill_service = get_skill_service()
 
-        data = request.get_json()
-        print(data)
-
-        result = skill_service.update_skill(
-            skill_id=skill_id,
-            **{
-                'name': data['name'],
-                'category_id': data['category_id'],
-                'is_blacklisted': False if data['is_blacklisted'] == 'False' else True
-            }
-        )
-        print(result)
-    except Exception as e:
-        print(e)
-        db.session.rollback()
-
-    return redirect(url_for('skills.skills_manage'))
-
-@skills_bp.route('/<int:skill_id>/delete', methods=['POST'])
-def skill_delete(skill_id):
-    try:
-        skill_service = SkillService()
-        skill_service.delete_skill(skill_id=skill_id)
-    except Exception as e:
-        db.session.rollback()
-
-    return redirect(url_for('skills.skills_manage'))
-
-
-
-@skills_bp.route('/create_blacklist', methods=['POST'])
-def blacklist_create():
-    try:
-        skill_service = SkillService()
-
-        name = request.form.get('name')
-        category = request.form.get('category_id')
-
-        result = skill_service.create_skill(name=name, category=category, is_blacklisted=True)
-        print(result)
-    except Exception as e:
-        print(e)
-        db.session.rollback()
-
-    return redirect(url_for('skills.skills_manage'))
-
-@skills_bp.route('/<int:skill_id>/add_blacklist', methods=['POST'])
-def skill_add_blacklist(skill_id):
-    try:
-        skill_service = SkillService()
-        skill_service.set_blacklist(skill_id=skill_id, value=True)
-    except Exception as e:
-        db.session.rollback()
-
-    return redirect(url_for('skills.skills_manage'))
-
-@skills_bp.route('/<int:skill_id>/remove_blacklist', methods=['POST'])
-def skill_remove_blacklist(skill_id):
-    try:
-        skill_service = SkillService()
-        skill_service.set_blacklist(skill_id=skill_id, value=False)
-    except Exception as e:
-        db.session.rollback()
-
-    return redirect(url_for('skills.skills_manage'))
-
-
-@skills_bp.route('/create_category', methods=['POST'])
-def category_create():
-    try:
-        service = CategoryService()
-
-        name = request.form.get('name')
-        description = request.form.get('description')
-
-        result = service.create_category(name=name, description=description)
-        print(result)
-    except Exception as e:
-        print(e)
-        db.session.rollback()
-
-    return redirect(url_for('skills.skills_manage'))
-
-@skills_bp.route('/category/<int:category_id>/delete', methods=['POST'])
-def category_delete(category_id):
-    try:
-        current_app.logger.info('category_delete route called')
-        current_app.logger.info(f'Category ID: {category_id}')
-
-        service = CategoryService()
-        success, result, error = service.delete_category(category_id)
-
+        # Get the current skill
+        skill = skill_service.get_skill_by_id(skill_id)
+        if not skill:
+            flash('Skill not found', 'error')
+            return redirect(url_for('skill.manage_skills'))
+        
+        # Toggle blacklist status using SkillService
+        new_status = not skill.is_blacklisted
+        success, updated_skill, error = skill_service.set_blacklist(skill_id, new_status)
+        
         if success:
-            current_app.logger.info('Category deleted successfully')
+            action = "blacklisted" if new_status else "removed from blacklist"
+            flash_success(f'Skill "{updated_skill.name}" has been {action}')
         else:
-            current_app.logger.error(f'Failed to delete category: {error}')
-
+            flash_error(f'Error updating skill: {error}')
+        
     except Exception as e:
-        current_app.logger.error(f'Error in category_delete: {e}')
         db.session.rollback()
+        flash_error(f'Error toggling blacklist: {str(e)}')
+    
+    # Redirect back to the same page with current filters
+    blacklist_filter = request.form.get('current_filter', 'active')
+    return redirect(url_for('skill.manage_skills', blacklist=blacklist_filter))
 
-    return redirect(url_for('skills.skills_manage'))
-
-@skills_bp.route('/category/<int:category_id>/edit', methods=['POST'])
-def category_update(category_id):
+@skill_bp.route('/<int:skill_id>/variants/add', methods=['POST'])
+def add_variant(skill_id):
+    """Add a new variant to a skill"""
     try:
-        service = CategoryService()
+        # Get the skill service instance
+        skill_service = get_skill_service()
+
+        # Verify skill exists using SkillService
+        skill = skill_service.get_skill_by_id(skill_id)
+        if not skill:
+            flash('Skill not found', 'error')
+            return redirect(url_for('skill.manage_skills'))
+        
+        variant_name = request.form.get('variant_name', '').strip()
+        
+        if not variant_name:
+            flash('Variant name cannot be empty', 'error')
+            return redirect(url_for('skill.edit_skill', skill_id=skill_id))
+        
+        if len(variant_name) > 255:  
+            flash('Variant name must be 255 characters or less', 'error')  
+            return redirect(url_for('skill.edit_skill', skill_id=skill_id))
+        
+        # Check if variant exists as a main skill name using SkillService
+        if skill_service.get_skill_by_name(variant_name):
+            flash('This variant name conflicts with an existing skill', 'error')
+            return redirect(url_for('skill.edit_skill', skill_id=skill_id))
+
+        # Check if variant already exists for this skill
+        try:
+            variant = SkillVariant(skill_id=skill_id, variant_name=variant_name)
+            db.session.add(variant)
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            flash('This variant already exists', 'error')
+            return redirect(url_for('skill.edit_skill', skill_id=skill_id))
+        
+        # Refresh the skill service cache since we added a variant
+        skill_service.refresh_cache()
+        
+        flash(f'Variant "{variant_name}" added successfully', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error adding variant: {str(e)}', 'error')
+    
+    return redirect(url_for('skill.edit_skill', skill_id=skill_id))
+
+@skill_bp.route('/variants/<int:variant_id>/delete', methods=['POST'])
+def delete_variant(variant_id):
+    """Delete a skill variant"""
+    skill_id = None
+
+    try:
+        # Get the skill service instance
+        skill_service = get_skill_service()
+
+        variant = SkillVariant.query.get_or_404(variant_id)
+        skill_id = variant.skill_id
+        variant_name = variant.variant_name
+        
+        db.session.delete(variant)
+        db.session.commit()
+        
+        # Refresh the skill service cache since we deleted a variant
+        skill_service.refresh_cache()
+        
+        flash(f'Variant "{variant_name}" deleted successfully', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting variant: {str(e)}', 'error')
+
+        if not skill_id:
+            return redirect(url_for('skill.manage_skills'))
+    
+    return redirect(url_for('skill.edit_skill', skill_id=skill_id))
+
+@skill_bp.route('/create', methods=['GET', 'POST'])
+def create_skill():
+    """Create a new skill"""
+    if request.method == 'GET':
+        categories = SkillCategory.query.all()
+        return render_template('admin/skill/skill_create.html', categories=categories)
+    
+    try:
+        # Get the skill service instance
+        skill_service = get_skill_service()
+
+        name = request.form.get('name', '').strip()
+        category_id = request.form.get('category_id')
+        is_blacklisted = bool(request.form.get('is_blacklisted'))
+
+        if not name:
+            flash_error('Name cannot be empty')
+            return redirect(url_for('skill.create_skill'))
+        
+        if len(name) > 255:
+            flash_error('Name must be 255 characters or less')
+            return redirect(url_for('skill.create_skill'))
+        
+        if category_id:
+            category_id = int(category_id)
+        else:
+            category_id = None
+        
+        success, skill, error = skill_service.create_skill(
+            name=name,
+            category=category_id,
+            is_blacklisted=is_blacklisted
+        )
+        
+        if success:
+            flash_success(f'Skill "{skill.name}" created successfully')
+            return redirect(url_for('skill.manage_skills'))
+        else:
+            flash_error(f'Error creating skill: {error}')
+            
+    except Exception as e:
+        flash_error(f'Error creating skill: {str(e)}')
+    
+    # Reload form with categories on error
+    categories = SkillCategory.query.all()
+    return render_template('admin/skill/skill_create.html', categories=categories)
+
+
+@skill_bp.route('/<int:skill_id>/edit', methods=['GET', 'POST'])
+def edit_skill(skill_id):
+    """Edit an existing skill - comprehensive edit page"""
+    try:
+        # Get the skill service instance
+        skill_service = get_skill_service()
+
+        skill = skill_service.get_skill_by_id(skill_id)
+        if not skill:
+            flash_error('Skill not found')
+            return redirect(url_for('skill.manage_skills'))
+        
+        if request.method == 'GET':
+            # Load skill with all relationships for the edit page
+            skill = skill_service.get_skill_by_id(skill_id, include_relationships=True)
+            categories = SkillCategory.query.all()
+            return render_template('admin/skill/skill_edit.html', 
+                                 skill=skill, 
+                                 categories=categories)
+        
+        # Handle POST request
+        name = request.form.get('name', '').strip()
+        category_id = request.form.get('category_id')
+        is_blacklisted = bool(request.form.get('is_blacklisted'))
+
+        if not name:  
+            flash_error('Name cannot be empty')  
+            return redirect(url_for('skill.edit_skill', skill_id=skill_id))  
+
+        if len(name) > 255:  
+            flash_error('Name must be 255 characters or less')  
+            return redirect(url_for('skill.edit_skill', skill_id=skill_id))
+        
+        if category_id:
+            category_id = int(category_id)
+        else:
+            category_id = None
+        
+        success, updated_skill, error = skill_service.update_skill(
+            skill_id,
+            name=name,
+            category_id=category_id,
+            is_blacklisted=is_blacklisted
+        )
+        
+        if success:
+            flash_success(f'Skill "{updated_skill.name}" updated successfully')
+            # Stay on the edit page to continue editing
+            return redirect(url_for('skill.edit_skill', skill_id=skill_id))
+        else:
+            flash_error(f'Error updating skill: {error}')
+            
+    except Exception as e:
+        flash_error(f'Error editing skill: {str(e)}')
+        return redirect(url_for('skill.manage_skills'))
+
+@skill_bp.route('/<int:skill_id>/delete', methods=['POST'])
+def delete_skill(skill_id):
+    """Delete a skill"""
+    try:
+        # Get the skill service instance
+        skill_service = get_skill_service()
+
+        skill = skill_service.get_skill_by_id(skill_id)
+        if not skill:
+            flash('Skill not found', 'error')
+            return redirect(url_for('skill.manage_skills'))
+        
+        skill_name = skill.name
+        success, _, error = skill_service.delete_skill(skill_id)
+        
+        if success:
+            flash(f'Skill "{skill_name}" deleted successfully', 'success')
+        else:
+            flash(f'Error deleting skill: {error}', 'error')
+            
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting skill: {str(e)}', 'error')
+    
+    return redirect(url_for('skill.manage_skills'))
+
+
+# API endpoints for AJAX functionality
+@skill_bp.route('/api/skills/<int:skill_id>/variants')
+def api_get_variants(skill_id):
+    """Get variants for a skill via API"""
+    try:
+        # Get the skill service instance
+        skill_service = get_skill_service()
+
+        skill = skill_service.get_skill_by_id(skill_id, include_relationships=True)
+        if not skill:
+            return jsonify({'error': 'Skill not found'}), 404
+        
+        variants = [{'id': v.id, 'name': v.variant_name} for v in skill.variants]
+        return jsonify(variants)
+        
+    except Exception as e:
+        current_app.logger.exception("api_get_variants failed")
+        return jsonify({'error': 'Internal server error'}), 500
+
+@skill_bp.route('/api/skills/search')
+def api_search_skills():
+    """Search skills via API"""
+    try:
+        # Get the skill service instance
+        skill_service = get_skill_service()
+
+        query = request.args.get('q', '').strip()
+
+        # validate query length and content
+        if len(query) > 100:
+            return jsonify({'error': 'Query too long'}), 400
+        if not query:
+            return jsonify([])
+
+        # Query database directly with limit
+        safe = query.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
+        pattern = f"%{safe}%"
+        query = query.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
+        matching_skills = Skill.query.filter(  
+            Skill.name.ilike(pattern, escape='\\')  
+        ).options(joinedload(Skill.category)).limit(10).all()
+        
+        results = [{
+            'id': s.id, 
+            'name': s.name, 
+            'category': s.category.name if s.category else None
+        } for s in matching_skills]
+        
+        return jsonify(results)
+        
+    except Exception as e:
+        current_app.logger.exception("api_search_skills failed")
+        return jsonify({'error': 'Internal server error'}), 500
+
+@skill_bp.route('/api/skills/extract', methods=['POST'])
+def api_extract_skills():
+    """Extract skills from text via API"""
+    try:
+        # Get the skill service instance
+        skill_service = get_skill_service()
 
         data = request.get_json()
-        print(data)
+        if not data or 'text' not in data:
+            return jsonify({'error': 'No text provided'}), 400
+        
+        text = data['text']
+        if not isinstance(text, str):
+            return jsonify({'error': 'text must be a string'}), 400
 
-        result = service.update_category(
-            category_id=category_id,
-            **{
-                'name': data['name'],
-                'description': data['description']
-            }
-        )
-        print(result)
+        result = skill_service.process_job_description(text)
+        
+        if result.success:
+            return jsonify({
+                'success': True,
+                'extracted_skills': result.extracted_skills,
+                'normalized_skills': [{'id': s.id, 'name': s.name} for s in result.normalized_skills],
+                'unmatched_skills': result.unmatched_skills,
+                'categorized_skills': {
+                    category: [{'id': s.id, 'name': s.name} for s in skills]
+                    for category, skills in result.categorized_skills.items()
+                },
+                'total_skills': result.total_skills
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': result.error
+            }), 400
+            
     except Exception as e:
-        print(e)
-        db.session.rollback()
+        current_app.logger.exception("api_extract_skills failed")
+        return jsonify({'error': 'Internal server error'}), 500
 
-    return redirect(url_for('skills.skills_manage'))
-
-
-
-
-@skills_bp.route('/test', methods=['GET'])
-def test_page():
-    """
-    Render a test page for the skills API.
-    """
-    from flask_wtf.csrf import generate_csrf
-    csrf_token = generate_csrf()
-    return render_template('test_skills.html', csrf_token=csrf_token)
-
-@skills_bp.route('/uncategorized_skills', methods=['GET'])
-def uncategorized_skills():
-    """
-    Fetch skills with no category and not blacklisted.
-    """
-    skill_service = SkillService()
-    uncategorized_skills = skill_service.get_uncategorized_skills()
-
-    return render_template(
-        'admin/uncategorized_skills.html',
-        uncategorized_skills=uncategorized_skills
-    )
-
-@skills_bp.route('/mass_edit_skills', methods=['POST'])
-def mass_edit_skills():
-    """
-    Endpoint to handle mass editing of skills.
-    """
+@skill_bp.route('/api/skills/audit', methods=['POST'])
+def api_audit_skills():
+    """Audit existing job skills via API"""
     try:
-        skill_ids = request.form.getlist('skill_ids')
-        new_category_id = request.form.get('new_category_id')
-
-        if not skill_ids:
-            return jsonify({"error": "No skills selected for editing."}), 400
-
-        skill_service = SkillService()
-        for skill_id in skill_ids:
-            skill_service.update_skill(skill_id, category_id=new_category_id)
-
-        return redirect(url_for('skills.uncategorized_skills'))
+        # Get the skill service instance
+        skill_service = get_skill_service()
+        
+        audit_result = skill_service.audit_existing_job_skills()
+        return jsonify(audit_result)
+        
     except Exception as e:
-        print(f"Error during mass edit: {e}")
-        return jsonify({"error": "An error occurred during mass editing."}), 500
+        current_app.logger.exception("api_sufit_skills failed")
+        return jsonify({'error': 'Internal server error'}), 500

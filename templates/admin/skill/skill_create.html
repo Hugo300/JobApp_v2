@@ -1,0 +1,501 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('skill.manage_skills') }}">Skills Management</a></li>
+                    <li class="breadcrumb-item active">Create Skill</li>
+                </ol>
+            </nav>
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-6 mb-0">
+                        <i class="bi bi-plus-circle-fill text-success"></i>
+                        Create New Skill
+                    </h1>
+                    <p class="text-muted">Add a new skill to your database</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('skill.manage_skills') }}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i>
+                        Back to Skills
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Create Skill Form -->
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle-fill"></i>
+                        Skill Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('skill.create_skill') }}" id="createSkillForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <!-- Skill Name -->
+                        <div class="mb-4">
+                            <label for="name" class="form-label">
+                                <strong>Skill Name *</strong>
+                            </label>
+                            <input type="text" 
+                                   class="form-control form-control-lg" 
+                                   id="name" 
+                                   name="name" 
+                                   required
+                                   maxlength="255"
+                                   placeholder="e.g., Python, JavaScript, Project Management">
+                            <div class="form-text">
+                                Enter the canonical name for this skill. This will be the primary identifier used for matching.
+                            </div>
+                        </div>
+
+                        <!-- Category Selection -->
+                        <div class="mb-4">
+                            <label for="category_id" class="form-label">
+                                <strong>Category</strong>
+                                <span class="text-muted">(Optional)</span>
+                            </label>
+                            <div class="row">
+                                <div class="col-md-10">
+                                    <select class="form-select form-select-lg" id="category_id" name="category_id">
+                                        <option value="">No Category (Uncategorized)</option>
+                                        {% for category in categories %}
+                                            <option value="{{ category.id }}" 
+                                                    {% if request.args.get('category') and request.args.get('category')|int == category.id %}selected{% endif %}>
+                                                {{ category.name }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-text">
+                                        Organize skills into categories for better management and filtering.
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <a href="{{ url_for('skill_category.create_category') }}" 
+                                       class="btn btn-outline-primary w-100"
+                                       data-bs-toggle="tooltip" 
+                                       title="Create a new category">
+                                        <i class="bi bi-folder-plus"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Blacklist Option -->
+                        <div class="mb-4">
+                            <div class="card border-warning">
+                                <div class="card-body">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" 
+                                               type="checkbox" 
+                                               role="switch" 
+                                               id="is_blacklisted" 
+                                               name="is_blacklisted">
+                                        <label class="form-check-label" for="is_blacklisted">
+                                            <strong>Blacklist this skill</strong>
+                                        </label>
+                                    </div>
+                                    <div class="form-text text-warning mt-2">
+                                        <i class="bi bi-exclamation-triangle"></i>
+                                        <strong>Blacklisted skills</strong> are excluded from automatic skill extraction processes. 
+                                        Only enable this if you want to prevent this skill from being automatically detected 
+                                        in job descriptions or resumes.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="text-muted">
+                                <small>* Required fields</small>
+                            </div>
+                            <div>
+                                <a href="{{ url_for('skill.manage_skills') }}" class="btn btn-secondary me-2">
+                                    Cancel
+                                </a>
+                                <button type="submit" class="btn btn-success btn-lg">
+                                    <i class="bi bi-plus-circle"></i>
+                                    Create Skill
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Initial Variants Card -->
+            <div class="card mt-4 border-info">
+                <div class="card-header bg-info bg-opacity-10">
+                    <h6 class="mb-0 text-info">
+                        <i class="bi bi-lightbulb-fill"></i>
+                        About Skill Variants
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-3">After creating this skill, you can add <strong>variants</strong> - alternative names that should map to this skill.</p>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">Examples:</h6>
+                            <ul class="list-unstyled text-muted small">
+                                <li>• <strong>Python</strong> → python, py, Python3</li>
+                                <li>• <strong>JavaScript</strong> → js, javascript, JS</li>
+                                <li>• <strong>React</strong> → reactjs, react.js, ReactJS</li>
+                                <li>• <strong>Node.js</strong> → nodejs, node, NodeJS</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-primary">Why use variants?</h6>
+                            <ul class="list-unstyled text-muted small">
+                                <li>• Normalize different spellings</li>
+                                <li>• Handle case variations</li>
+                                <li>• Include common abbreviations</li>
+                                <li>• Improve extraction accuracy</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-light mt-3 mb-0">
+                        <strong>Pro Tip:</strong> You'll be taken to the skill details page after creation where you can immediately add variants.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Duplicate Detection Card -->
+            <div class="card mt-4" id="duplicateCheckCard" style="display: none;">
+                <div class="card-header bg-warning bg-opacity-10">
+                    <h6 class="mb-0 text-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Possible Duplicates Found
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-3">Similar skills already exist in your database:</p>
+                    <div id="duplicatesList" class="mb-3">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="proceedAnyway">
+                        <label class="form-check-label" for="proceedAnyway">
+                            I understand these skills exist and want to create this skill anyway
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal fade" id="successModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-check-circle"></i>
+                    Skill Created Successfully!
+                </h5>
+            </div>
+            <div class="modal-body">
+                <p>Your new skill <strong id="createdSkillName"></strong> has been created.</p>
+                <p>What would you like to do next?</p>
+            </div>
+            <div class="modal-footer">
+                <a href="{{ url_for('skill.manage_skills') }}" class="btn btn-secondary">
+                    <i class="bi bi-list-ul"></i>
+                    View All Skills
+                </a>
+                <a href="#" id="editSkillLink" class="btn btn-primary">
+                    <i class="bi bi-pencil-fill"></i>
+                    Add Variants & Edit
+                </a>
+                <button type="button" class="btn btn-success" onclick="createAnother()">
+                    <i class="bi bi-plus-circle"></i>
+                    Create Another Skill
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let duplicateCheckTimeout;
+    let hasDuplicates = false;
+    let checkingDuplicates = false;
+    let duplicateController = null;
+    let lastQuery = '';
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        // Auto-focus on name field
+        document.getElementById('name').focus();
+        
+        // Character counter for name field
+        addCharacterCounter(document.getElementById('name'), 255);
+
+        // Real-time duplicate checking
+        const nameField = document.getElementById('name');
+        nameField.addEventListener('input', function() {
+            clearTimeout(duplicateCheckTimeout);
+            
+            if (this.value.trim().length < 2) {
+                hideDuplicateCheck();
+                return;
+            }
+            
+            duplicateCheckTimeout = setTimeout(() => {
+                checkForDuplicates(this.value.trim());
+            }, 500);
+        });
+
+        // Pre-select category if passed in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const categoryParam = urlParams.get('category');
+        if (categoryParam) {
+            const categorySelect = document.getElementById('category_id');
+            categorySelect.value = categoryParam;
+        }
+    });
+
+    function checkForDuplicates(skillName) {
+        if (!skillName || skillName.length < 2) return;
+
+        // Show loading state
+        const duplicateCard = document.getElementById('duplicateCheckCard');
+        const duplicatesList = document.getElementById('duplicatesList');
+        
+        duplicatesList.innerHTML = '<div class="text-center"><div class="spinner-border spinner-border-sm" role="status"></div> Checking for duplicates...</div>';
+        duplicateCard.style.display = 'block';
+
+        // Abort any in-flight request and start a new one
+        if (duplicateController) duplicateController.abort();
+        duplicateController = new AbortController();
+        const { signal } = duplicateController;
+        checkingDuplicates = true;
+        lastQuery = skillName;
+
+        // Check for similar skills via API
+        fetch(`{{ url_for('skill.api_search_skills') }}?q=${encodeURIComponent(skillName)}`, { signal })
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return response.json();
+            })
+            .then(data => {
+                // Ignore stale responses
+                if (skillName !== lastQuery) return;
+
+                if (Array.isArray(data) && data.length > 0) {
+                    showDuplicates(data, skillName);
+                } else {
+                    hideDuplicateCheck();
+                }
+            })
+            .catch(error => {
+                if (error.name !== 'AbortError') {
+                    console.error('Error checking duplicates:', error);
+                    hideDuplicateCheck();
+                }
+            })
+            .finally(() => {
+                if (skillName === lastQuery) checkingDuplicates = false;
+            });
+    }
+
+    function showDuplicates(duplicates, searchTerm) {
+        const duplicateCard = document.getElementById('duplicateCheckCard');
+        const duplicatesList = document.getElementById('duplicatesList');
+
+        // Reset UI  
+        duplicatesList.innerHTML = '';  
+        const proceedCheckbox = document.getElementById('proceedAnyway');  
+        if (proceedCheckbox) proceedCheckbox.checked = false;
+        
+        // Filter out exact matches and very similar ones
+        const similarSkills = duplicates.filter(skill => {
+            const skillLower = skill.name.toLowerCase();
+            const searchLower = searchTerm.toLowerCase();
+            return skillLower.includes(searchLower) || searchLower.includes(skillLower) || 
+                   levenshteinDistance(skillLower, searchLower) <= 2;
+        });
+
+        if (similarSkills.length > 0) {
+            hasDuplicates = true;
+            
+            const lg = document.createElement('div');
+            lg.className='list-group list-group-flush'
+            similarSkills.forEach(skill => {
+                const item = document.createElement('div');
+                item.className = "list-group-item d-flex justify-content-between align-items-center";
+                const left = document.createElement('div');
+                const strong = document.createElement('strong');
+                strong.textContent = skill.name;
+                left.appendChild(strong);
+
+                if (skill.category) {
+                    const badge = document.createElement('span');
+                    badge.className = 'badge bg-secondary ms-2';
+                    badge.textContent = skill.category;
+                    left.appendChild(badge);
+                }
+
+                const a = document.createElement('a');
+                a.className = 'btn btn-sm btn-outline-primary';
+                a.textContent = 'View';
+                a.href = {{ url_for('skill.edit_skill', skill_id=0)|tojson }}.replace('0', String(skill.id));
+                item.append(left, a);
+                lg.appendChild(item);
+            });
+            duplicatesList.appendChild(lg);
+        } else {
+            hideDuplicateCheck();
+        }
+    }
+
+    function hideDuplicateCheck() {
+        const duplicateCard = document.getElementById('duplicateCheckCard');
+        duplicateCard.style.display = 'none';
+        hasDuplicates = false;
+    }
+
+    function addCharacterCounter(field, maxLength) {
+        if (!field) return;
+        
+        const counter = document.createElement('div');
+        counter.className = 'form-text text-end';
+        counter.style.fontSize = '0.875rem';
+        
+        field.parentNode.appendChild(counter);
+        
+        function updateCounter() {
+            const remaining = maxLength - field.value.length;
+            counter.textContent = `${field.value.length}/${maxLength} characters`;
+            
+            if (remaining < 20) {
+                counter.className = 'form-text text-end text-warning';
+            } else if (remaining < 0) {
+                counter.className = 'form-text text-end text-danger';
+            } else {
+                counter.className = 'form-text text-end text-muted';
+            }
+        }
+        
+        updateCounter();
+        field.addEventListener('input', updateCounter);
+    }
+
+    // Form validation
+    document.getElementById('createSkillForm').addEventListener('submit', function(e) {
+        const name = document.getElementById('name').value.trim();
+        
+        if (!name) {
+            e.preventDefault();
+            showAlert('danger', 'Please enter a skill name.');
+            document.getElementById('name').focus();
+            return false;
+        }
+        
+        if (name.length > 255) {
+            e.preventDefault();
+            showAlert('danger', 'Skill name is too long. Please keep it under 255 characters.');
+            document.getElementById('name').focus();
+            return false;
+        }
+
+        // Check for duplicates
+        if (hasDuplicates) {
+            const proceedCheckbox = document.getElementById('proceedAnyway');
+            if (!proceedCheckbox.checked) {
+                e.preventDefault();
+                showAlert('warning', 'Please review the similar skills found or check the box to proceed anyway.');
+                proceedCheckbox.focus();
+                return false;
+            }
+        } else if (document.getElementById('duplicateCheckCard').style.display !== 'none' && !hasDuplicates) {
+            // If we're still checking for duplicates, prevent submission
+            e.preventDefault();
+            showAlert('info', 'Please wait while we check for duplicates...');
+            return false;
+        }
+    });
+
+    function createAnother() {
+        // Reset form
+        document.getElementById('createSkillForm').reset();
+        document.getElementById('name').focus();
+        hideDuplicateCheck();
+        
+        // Hide modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('successModal'));
+        if (modal) modal.hide();
+    }
+
+    // Utility functions
+    function levenshteinDistance(str1, str2) {
+        const matrix = [];
+        for (let i = 0; i <= str2.length; i++) {
+            matrix[i] = [i];
+        }
+        for (let j = 0; j <= str1.length; j++) {
+            matrix[0][j] = j;
+        }
+        for (let i = 1; i <= str2.length; i++) {
+            for (let j = 1; j <= str1.length; j++) {
+                if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+                    matrix[i][j] = matrix[i - 1][j - 1];
+                } else {
+                    matrix[i][j] = Math.min(
+                        matrix[i - 1][j - 1] + 1,
+                        matrix[i][j - 1] + 1,
+                        matrix[i - 1][j] + 1
+                    );
+                }
+            }
+        }
+        return matrix[str2.length][str1.length];
+    }
+
+    function showAlert(type, message) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+
+        // Create text node for message to prevent XSS
+        const messageNode = document.createTextNode(message);
+        alertDiv.appendChild(messageNode);
+        
+        // Create close button safely
+        const closeButton = document.createElement('button');
+        closeButton.type = 'button';
+        closeButton.className = 'btn-close';
+        closeButton.setAttribute('data-bs-dismiss', 'alert');
+        alertDiv.appendChild(closeButton);
+            
+        const container = document.querySelector('.container');
+        container.insertBefore(alertDiv, container.firstChild);
+        
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 5000);
+    }
+</script>
+{% endblock %}

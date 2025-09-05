@@ -31,20 +31,33 @@ class JobApplication(db.Model):
     skills = association_proxy('job_skills', 'skills')
     
     @property
-    def status_enum(self):
+    def status_enum(self) -> ApplicationStatus:
         """Get the status as an enum"""
-        return ApplicationStatus(self.status)
+        try:  
+            return ApplicationStatus(self.status)  
+        except ValueError:  
+            return ApplicationStatus.COLLECTED 
     
     @status_enum.setter
-    def status_enum(self, value):
+    def status_enum(self, value: ApplicationStatus|str) -> None:
         """Set the status from an enum"""
         if isinstance(value, ApplicationStatus):
             self.status = value.value
+        elif isinstance(value, str):  
+            # Accept enum name or value  
+            try:  
+                resolved = ApplicationStatus[value]  # by name  
+            except KeyError:  
+                try:  
+                    resolved = ApplicationStatus(value)  # by value  
+                except ValueError as e:  
+                    raise ValueError(f"Invalid application status: {value}") from e  
+            self.status = resolved.value
         else:
-            self.status = value
+            raise TypeError(f"Expected ApplicationStatus or str, got {type(value).__name__}")
 
     @property
-    def job_mode_enum(self):
+    def job_mode_enum(self) -> JobMode:
         """Get the job mode as an enum"""
         try:
             return JobMode(self.job_mode)
@@ -52,14 +65,23 @@ class JobApplication(db.Model):
             return JobMode.ON_SITE  # Default fallback
 
     @job_mode_enum.setter
-    def job_mode_enum(self, value):
+    def job_mode_enum(self, value: JobMode|str) -> None:
         """Set the job mode from an enum"""
         if isinstance(value, JobMode):
             self.job_mode = value.value
+        elif isinstance(value, str):  
+            try:  
+                resolved = JobMode[value]  # by name  
+            except KeyError:  
+                try:  
+                    resolved = JobMode(value)  # by value  
+                except ValueError as e:  
+                    raise ValueError(f"Invalid job mode: {value}") from e  
+            self.job_mode = resolved.value 
         else:
-            self.job_mode = value
+            raise TypeError(f"Expected JobMode or str, got {type(value).__name__}")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'<JobApplication {self.company} - {self.title}>'
 
 
@@ -71,7 +93,7 @@ class Document(db.Model):
     file_path = db.Column(db.String(500), nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'<Document {self.type} for Job {self.job_id}>'
 
 
@@ -80,11 +102,12 @@ class JobLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     job_id = db.Column(db.Integer, db.ForeignKey('job_application.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
     note = db.Column(db.Text, nullable=False)
     status_change_from = db.Column(db.String(50))  # Previous status if this log represents a status change
     status_change_to = db.Column(db.String(50))    # New status if this log represents a status change
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'<JobLog {self.id}: {self.note[:50]}...>'
 
 
@@ -94,5 +117,5 @@ class JobSkill(db.Model):
     job_id = db.Column(db.Integer, db.ForeignKey('job_application.id'), nullable=False)  # Corrected foreign key
     skill_id = db.Column(db.Integer, db.ForeignKey('skills.id'), nullable=False)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<JobSkill(job_id={self.job_id}, skill_id={self.skill_id})>"

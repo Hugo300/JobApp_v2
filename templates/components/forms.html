@@ -33,7 +33,7 @@
                 {{ field(class=input_class) }}
             {% endif %}
             <button type="button" id="{{ button_id }}" class="btn btn-outline-primary" onclick="{{ button_onclick }}">
-                <i class="fas {{ button_icon }}"></i>
+                <i class="bi {{ button_icon }}"></i>
                 {{ button_text }}
             </button>
         </div>
@@ -134,7 +134,7 @@
                             data-bs-toggle="collapse" data-bs-target="#section-{{ title|replace(' ', '-')|lower }}" 
                             aria-expanded="{{ 'false' if collapsed else 'true' }}">
                         {% if icon %}<i class="{{ icon }} me-2"></i>{% endif %}{{ title }}
-                        <i class="fas fa-chevron-down float-end mt-1"></i>
+                        <i class="bi bi-chevron-down float-end mt-1"></i>
                     </button>
                 </h5>
             {% else %}
@@ -202,7 +202,7 @@
             </div>
             <div class="col-md-2">
                 <button type="submit" class="btn btn-primary w-100">
-                    <i class="fas fa-search me-1"></i>Search
+                    <i class="bi bi-search me-1"></i>Search
                 </button>
             </div>
         </div>
