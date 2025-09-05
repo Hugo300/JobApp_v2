@@ -158,6 +158,7 @@
                                                 data-category-id="{{ category.id }}"
                                                 data-category-name="{{ category.name }}"
                                                 data-skill-count="{{ category.skill_count }}"
+                                                data-delete-url="{{ url_for('skill_category.delete_category', category_id=category.id) }}"
                                                 title="Delete category">
                                             <i class="bi bi-trash-fill"></i>
                                         </button>
@@ -318,7 +319,7 @@
                 
                 // Update form action
                 const form = document.getElementById('deleteCategoryForm');
-                form.action = `/admin/categories/${categoryId}/delete`;
+                form.action = button.getAttribute('data-delete-url');
                 
                 // Update modal content
                 document.getElementById('categoryNameToDelete').textContent = categoryName;

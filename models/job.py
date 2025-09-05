@@ -33,21 +33,26 @@ class JobApplication(db.Model):
     @property
     def status_enum(self) -> ApplicationStatus:
         """Get the status as an enum"""
-        return ApplicationStatus(self.status)
+        try:  
+            return ApplicationStatus(self.status)  
+        except ValueError:  
+            return ApplicationStatus.COLLECTED 
     
     @status_enum.setter
     def status_enum(self, value: ApplicationStatus|str) -> None:
         """Set the status from an enum"""
         if isinstance(value, ApplicationStatus):
             self.status = value.value
-        elif isinstance(value, str) and value in {s.value for s in ApplicationStatus}:  
-            self.status = value 
-        elif isinstance(value, str):
-            # Try to convert string to enum
-            try:
-                self.status = ApplicationStatus(value).value
-            except ValueError:
-                self.status = value  # Let database constraint handle invalid values
+        elif isinstance(value, str):  
+            # Accept enum name or value  
+            try:  
+                resolved = ApplicationStatus[value]  # by name  
+            except KeyError:  
+                try:  
+                    resolved = ApplicationStatus(value)  # by value  
+                except ValueError as e:  
+                    raise ValueError(f"Invalid application status: {value}") from e  
+            self.status = resolved.value
         else:
             raise TypeError(f"Expected ApplicationStatus or str, got {type(value).__name__}")
 
@@ -64,17 +69,15 @@ class JobApplication(db.Model):
         """Set the job mode from an enum"""
         if isinstance(value, JobMode):
             self.job_mode = value.value
-
-        elif isinstance(value, str):
-            # Validate string value
-            if value in {m.value for m in JobMode}:
-                self.job_mode = value
-            else:
-                # Try to convert string to enum
-                try:
-                    self.job_mode = JobMode(value).value
-                except ValueError:
-                    self.job_mode = value  # Let database constraint handle invalid values
+        elif isinstance(value, str):  
+            try:  
+                resolved = JobMode[value]  # by name  
+            except KeyError:  
+                try:  
+                    resolved = JobMode(value)  # by value  
+                except ValueError as e:  
+                    raise ValueError(f"Invalid job mode: {value}") from e  
+            self.job_mode = resolved.value 
         else:
             raise TypeError(f"Expected JobMode or str, got {type(value).__name__}")
 

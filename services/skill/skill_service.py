@@ -251,12 +251,18 @@ class SkillService(BaseService):
                 ).first()
                 if dupe:  
                     return False, None, f"Skill '{proposed_name}' already exists"
+                
+            if 'category' in kwargs and 'category_id' not in kwargs:  
+                kwargs['category_id'] = kwargs.pop('category')  
+            allowed_fields = {'name', 'category_id', 'is_blacklisted'}
             
             # Update attributes
-            for key, value in kwargs.items():                    
-                if hasattr(skill, key):
+            for key, value in kwargs.items():  
+                if key not in allowed_fields:  
+                    continue  
+                if hasattr(skill, key):  
                     if key == 'name' and value:  
-                        value = proposed_name
+                        value = proposed_name  
                     setattr(skill, key, value)
             
             db.session.commit()

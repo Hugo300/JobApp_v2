@@ -31,7 +31,7 @@
             
             {% if job.description %}
                 <p class="card-text text-muted small">
-                    {% if job.description %} {{ job.description | markdown }} {% endif %}
+                    {% if job.description_short %} {{ job.description_short | markdown }} {% endif %}
                 </p>
             {% endif %}
             

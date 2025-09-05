@@ -6,6 +6,7 @@ from sqlalchemy.orm import joinedload
 from flask import current_app
 import logging
 
+from utils.forms import sanitize_input
 from models import SkillCategory, Skill, db
 from ..base_service import BaseService
 
@@ -95,8 +96,8 @@ class CategoryService(BaseService):
                 self.logger.warning("Category creation failed: Category name is required")
                 return False, None, "Category name is required"
             
-            name = name.strip()
-            description = description.strip() if description else None
+            name = sanitize_input(name)
+            description = sanitize_input(description) if description else None
             
             # Check if category already exists
             existing = self.get_category_by_name(name)
@@ -162,6 +163,11 @@ class CategoryService(BaseService):
         Returns: (success, result_info, error_message)
         """
         self.logger.info(f"Deleting category ID: {category_id}")
+
+        allowed_actions = {"keep", "delete", "cancel"}  
+        if skill_action not in allowed_actions:
+            self.logger.warning("Invalid skill_action '%s' for category %s", skill_action, category_id)  
+            return False, None, "Invalid skill_action"
   
         category = self.get_category_by_id(category_id)
         if not category:
@@ -192,10 +198,9 @@ class CategoryService(BaseService):
                     return False, None, f"Cannot delete category - {len(skills_with_jobs)} skills are referenced by jobs"
                 
                 # Safe to delete all skills
-                for skill in skills_in_category:
-                    self.delete(skill)
-
-                self.logger.info(f"Skills have been deleted")
+                for skill in skills_in_category:  
+                    db.session.delete(skill)  
+                self.logger.info("Queued %d skills for deletion", len(skills_in_category))
 
         success, _result, error = self.delete(category)
 

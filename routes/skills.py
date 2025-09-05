@@ -39,7 +39,8 @@ def manage_skills():
                                current_blacklist_filter=blacklist_filter)
                                
     except Exception as e:
-        flash(f'Error loading skills: {str(e)}', 'error')
+        current_app.logger.exception("manage_skills failed")
+        flash_error('Error loading skills') 
         return render_template('admin/skill/skill_manage.html',
                                skills=[], 
                                total_variants=0,
@@ -228,6 +229,14 @@ def edit_skill(skill_id):
         name = request.form.get('name', '').strip()
         category_id = request.form.get('category_id')
         is_blacklisted = bool(request.form.get('is_blacklisted'))
+
+        if not name:  
+            flash_error('Name cannot be empty')  
+            return redirect(url_for('skill.edit_skill', skill_id=skill_id))  
+
+        if len(name) > 255:  
+            flash_error('Name must be 255 characters or less')  
+            return redirect(url_for('skill.edit_skill', skill_id=skill_id))
         
         if category_id:
             category_id = int(category_id)
@@ -314,9 +323,11 @@ def api_search_skills():
             return jsonify([])
 
         # Query database directly with limit
+        safe = query.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
+        pattern = f"%{safe}%"
         query = query.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
-        matching_skills = Skill.query.filter(
-            Skill.name.ilike(f'%{query}%')
+        matching_skills = Skill.query.filter(  
+            Skill.name.ilike(pattern, escape='\\')  
         ).options(joinedload(Skill.category)).limit(10).all()
         
         results = [{
