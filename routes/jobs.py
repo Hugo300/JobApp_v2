@@ -114,34 +114,38 @@ def job_detail(job_id):
             recent_logs = all_logs[:10]  # Limit to 10
 
         # Get user data and skills
-        user_data = UserService().get_user_data()
+        user_data = user_service.get_user_data()
         user_skills = []
         if user_data:
-            user_skills = UserService().get_user_skills(user_data.id)
+            user_skills = user_service.get_user_skills(user_data.id)
     
         # Get job skills (assuming you have a method to get job skills by category)
-        job_skills_by_category = job_service.get_job_skills_by_category(job.id)
-        
-        if job_skills_by_category.get('error'):
-            current_app.logger.error(f"job_skills_by_category error: {job_skills_by_category['error']}")
+        job_skills_result  = job_service.get_job_skills_by_category(job.id)
 
-        total_skills = job_skills_by_category['data']['active_skills']
+        if not job_skills_result.get('success') or not job_skills_result.get('data'):  
+            current_app.logger.error(f"get_job_skills_by_category failed for job {job.id}: {job_skills_result.get('error')}")  
+            total_skills = 0  
+            categorized_skills = {} 
+        else:  
+            total_skills = job_skills_result['data']['active_skills']  
+            categorized_skills = job_skills_result['data']['skills'] 
 
         match_score, matched_skills_count, missing_skills_count = job_service.calculate_skill_match(
             job_service.get_job_skills(job_id) or [], user_skills
         )
 
         # get skills by category and matching
-        matched_skills_by_category, missing_skills_by_category = job_service.get_skills_by_user_category(job_skills_by_category.get('data', {}).get('skills', []), user_skills)
+        matched_skills_by_category, missing_skills_by_category = job_service.get_skills_by_user_category(
+            categorized_skills, user_skills)
         
         job_description = job.description or ''
-        job_description_short = job.description[:500] + ('...' if len(job_description) > 500 else '')
+        job_description_short = job_description[:500] + ('...' if len(job_description) > 500 else '')
 
         return render_template('jobs/job_detail.html',
                              job=job,
                              job_description=job_description,
                              job_description_short=job_description_short,
-                             job_skills=job_skills_by_category['data']['skills'],
+                             job_skills=categorized_skills,
                              matched_skills_by_category=matched_skills_by_category,
                              missing_skills_by_category=missing_skills_by_category,
                              total_skills=total_skills,
@@ -183,7 +187,7 @@ def scrape_new_job():
             current_app.logger.info(f'Scraping completed successfully')
 
             return success_response(result.get('message', 'Job details scraped successfully!'), {
-                'data': result['data'],
+                'data': result.get('data', {}),
             })
         else:
             return error_response(result.get('error', 'Failed to scrape job details'))
@@ -521,7 +525,8 @@ def edit_job(job_id):
                 )
 
                 # Update the skills
-                extracted_skills = service.extract_job_skills(job.id, description)
+                raw_description = form.description.data.strip() if form.description.data else None
+                extracted_skills = service.extract_job_skills(job.id, raw_description)
                 if not extracted_skills:
                    current_app.logger.warning(f'No skills extracted for job {job.id}')
 

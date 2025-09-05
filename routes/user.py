@@ -2,6 +2,7 @@
 
 from flask import Blueprint, request, redirect, render_template, url_for, current_app, jsonify
 from sqlalchemy import func
+from sqlalchemy.exc import SQLAlchemyError
 from collections import defaultdict
 
 from services.user_service import UserService
@@ -83,13 +84,13 @@ def add_user_skill():
     category_id = request.form.get('category_id') or None
     
     if not skill_name:
-        flash_error('Skill name is required!', 'error')
+        flash_error('Skill name is required!')
         return redirect(url_for('user.user_data'))
     
     # Get or create user data
     user_data = UserData.query.first()
     if not user_data:
-        flash_error('Please complete your profile first!', 'error')
+        flash_error('Please complete your profile first!')
         return redirect(url_for('user.user_data'))
     
     # Check if skill already exists (case-insensitive)
@@ -123,9 +124,10 @@ def add_user_skill():
     try:
         db.session.commit()
         flash_success(f'Successfully added "{skill_name}" to your skills!', 'success')
-    except Exception as e:
+    except SQLAlchemyError:
         db.session.rollback()
-        flash_error('Error adding skill. Please try again.', 'error')
+        current_app.logger.exception("Error adding user skill")
+        flash_error('Error adding skill. Please try again.')
     
     return redirect(url_for('user.user_data'))
 
@@ -134,7 +136,7 @@ def add_user_skill():
 def remove_user_skill(skill_id):
     user_data = UserData.query.first()
     if not user_data:
-        flash_error('User profile not found!', 'error')
+        flash_error('User profile not found!')
         return redirect(url_for('user.user_data'))
     
     # Find the user skill relationship
@@ -157,6 +159,7 @@ def remove_user_skill(skill_id):
         flash_success(f'Successfully removed "{skill_name}" from your skills!', 'success')
     except Exception as e:
         db.session.rollback()
-        flash_success('Error removing skill. Please try again.', 'error')
+        current_app.logger.exception("Error removing user skill")  
+        flash_error('Error removing skill. Please try again.')
     
     return redirect(url_for('user.user_data'))

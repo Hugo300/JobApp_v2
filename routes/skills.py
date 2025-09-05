@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
 from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import IntegrityError
 
@@ -92,6 +92,10 @@ def add_variant(skill_id):
         
         if not variant_name:
             flash('Variant name cannot be empty', 'error')
+            return redirect(url_for('skill.edit_skill', skill_id=skill_id))
+        
+        if len(variant_name) > 255:  
+            flash('Variant name must be 255 characters or less', 'error')  
             return redirect(url_for('skill.edit_skill', skill_id=skill_id))
         
         # Check if variant exists as a main skill name using SkillService
@@ -280,6 +284,7 @@ def api_get_variants(skill_id):
         return jsonify(variants)
         
     except Exception as e:
+        current_app.logger.exception("api_get_variants failed")
         return jsonify({'error': str(e)}), 500
 
 @skill_bp.route('/api/skills/search')
@@ -312,6 +317,7 @@ def api_search_skills():
         return jsonify(results)
         
     except Exception as e:
+        current_app.logger.exception("api_search_skills failed")
         return jsonify({'error': str(e)}), 500
 
 @skill_bp.route('/api/skills/extract', methods=['POST'])
@@ -347,6 +353,7 @@ def api_extract_skills():
             }), 400
             
     except Exception as e:
+        current_app.logger.exception("api_extract_skills failed")
         return jsonify({'error': str(e)}), 500
 
 @skill_bp.route('/api/skills/audit', methods=['POST'])
@@ -360,4 +367,5 @@ def api_audit_skills():
         return jsonify(audit_result)
         
     except Exception as e:
+        current_app.logger.exception("api_sufit_skills failed")
         return jsonify({'error': str(e)}), 500

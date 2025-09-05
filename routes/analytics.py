@@ -2,9 +2,12 @@
 Analytics routes for job application insights
 """
 from datetime import datetime, timezone
+import csv
+import io
+from flask import Blueprint, render_template, jsonify, request, current_app, make_response
 
-from flask import Blueprint, render_template, jsonify, request, current_app
 from services import AnalyticsService
+
 
 analytics_bp = Blueprint('analytics', __name__)
 
@@ -92,7 +95,6 @@ def api_performance():
 def api_timeline():
     """API endpoint for timeline data"""
     try:
-        weeks = request.args.get('weeks', 12, type=int)
         data = AnalyticsService.get_timeline_data()
         return jsonify(data)
     except Exception as e:
@@ -166,10 +168,7 @@ def api_export():
         elif format_type == 'csv':
             # For CSV export, we'll need to flatten the data
             # This is a simplified version - you might want to create separate CSV exports
-            # for different sections of the analytics
-            import csv
-            import io
-            
+            # for different sections of the analytics            
             output = io.StringIO()
             writer = csv.writer(output)
             
@@ -184,8 +183,6 @@ def api_export():
             writer.writerow(['Remote Percentage (%)', data['location_analytics']['remote_percentage']])
             
             output.seek(0)
-            
-            from flask import make_response
             response = make_response(output.getvalue())
             response.headers['Content-Type'] = 'text/csv'
             response.headers['Content-Disposition'] = 'attachment; filename=job_analytics.csv'

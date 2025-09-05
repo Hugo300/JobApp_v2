@@ -1,5 +1,6 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, current_app, render_template, request, redirect, url_for, flash, jsonify
 from services.skill.category_service import get_category_service
+from utils.responses import flash_success
 
 skill_category_bp = Blueprint('skill_category', __name__)
 
@@ -106,7 +107,7 @@ def edit_category(category_id):
         all_skills, active_skills, blacklisted_skills = category_service.get_category_skills(category_id)
 
         return render_template(
-            '/admin/category/category_edit.html',
+            'admin/category/category_edit.html',
             category=category,
             all_skills=all_skills,
             active_skills=active_skills,
@@ -128,10 +129,16 @@ def delete_category(category_id):
             flash('Invalid action specified', 'error')
             return redirect(url_for('skill_category.manage_categories'))
 
-        success, result_info, error = category_service.delete_category(category_id, skill_action)
+        category = category_service.get_category_by_id(category_id)     
+        if not category:  
+            flash('Category not found', 'error')  
+            return redirect(url_for('skill_category.manage_categories'))  
         
+        category_name = category.name
+        success, _result, error = category_service.delete_category(category_id, skill_action)    
+
         if success:
-            flash(f'Category "{result_info["category_name"]}" deleted successfully. {result_info.get("message", "")}', 'success')
+            flash_success(f'Category "{category_name}" deleted successfully.')
         else:
             if 'cancelled' in error:
                 flash(error, 'info')
@@ -182,6 +189,7 @@ def api_get_categories():
         return jsonify(results)
         
     except Exception as e:
+        current_app.logger.exception("api_get_categories failed")
         return jsonify({'error': str(e)}), 500
 
 @skill_category_bp.route('/api/categories/<int:category_id>')
@@ -202,6 +210,7 @@ def api_get_category(category_id):
         return jsonify(result)
         
     except Exception as e:
+        current_app.logger.exception("api_get_category failed")
         return jsonify({'error': str(e)}), 500
 
 @skill_category_bp.route('/api/categories/<int:category_id>/skills/move', methods=['POST'])
@@ -240,6 +249,7 @@ def api_move_skills(category_id):
             }), 400
             
     except Exception as e:
+        current_app.logger.exception("api_move_skills failed")
         return jsonify({'error': str(e)}), 500
 
 @skill_category_bp.route('/api/stats')
@@ -250,4 +260,5 @@ def api_get_stats():
         return jsonify(stats)
         
     except Exception as e:
+        current_app.logger.exception("api_get_stats failed")
         return jsonify({'error': str(e)}), 500

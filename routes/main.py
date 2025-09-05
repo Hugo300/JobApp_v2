@@ -26,7 +26,7 @@ def dashboard():
         # create short blurb for each job
         character_limit = 150
         for job in jobs:
-            desc = getattr(job, 'description', '')
+            desc = job.getattr(job, 'description', '')
             short = desc[:character_limit].rstrip()
             job.description_short = f"{short}..." if len(desc) > character_limit else short
 
