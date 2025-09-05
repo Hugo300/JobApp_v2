@@ -35,7 +35,7 @@ class AnalyticsService(BaseService):
         status_distribution = {status: count for status, count in status_counts}
         
         # Success rate calculation (offer + interview as positive outcomes)
-        positive_statuses = [ApplicationStatus.WAITING_DECISION.value, ApplicationStatus.OFFER.value]
+        positive_statuses =  [ApplicationStatus.WAITING_DECISION.value, ApplicationStatus.OFFER.value, ApplicationStatus.ACCEPTED.value]
         positive_count = sum(status_distribution.get(status, 0) for status in positive_statuses)
         success_rate = (positive_count / total_jobs * 100) if total_jobs > 0 else 0
         
@@ -103,7 +103,7 @@ class AnalyticsService(BaseService):
         # Group by week in Python
         weekly_counts = defaultdict(int)
         
-        for app_date, app_id in applications:
+        for app_date, _ in applications:
             if app_date:
                 # Calculate the Monday of the week for this date
                 days_since_monday = app_date.weekday()
@@ -291,7 +291,7 @@ class AnalyticsService(BaseService):
             Skill.name,
             func.count(JobSkill.id).label('count')
         ).join(JobSkill, Skill.id == JobSkill.skill_id
-        ).filter(Skill.is_blacklisted==False
+        ).filter(Skill.is_blacklisted.is_(False)
         ).group_by(Skill.name).order_by(
             func.count(JobSkill.id).desc()
         ).limit(10).all()
