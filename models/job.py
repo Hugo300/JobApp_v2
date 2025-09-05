@@ -40,6 +40,8 @@ class JobApplication(db.Model):
         """Set the status from an enum"""
         if isinstance(value, ApplicationStatus):
             self.status = value.value
+        elif isinstance(value, str) and value in {s.value for s in ApplicationStatus}:  
+            self.status = value 
         else:
             self.status = value
 
@@ -80,6 +82,7 @@ class JobLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     job_id = db.Column(db.Integer, db.ForeignKey('job_application.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     note = db.Column(db.Text, nullable=False)
     status_change_from = db.Column(db.String(50))  # Previous status if this log represents a status change
     status_change_to = db.Column(db.String(50))    # New status if this log represents a status change
