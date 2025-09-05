@@ -93,7 +93,8 @@
                             <div class="col-md-6">
                                 <label for="skillName" class="form-label fw-bold">Skill Name</label>
                                 <input type="text" name="skill_name" id="skillName" class="form-control" 
-                                       placeholder="e.g., Python, JavaScript, Project Management..." required>
+                                       placeholder="e.g., Python, JavaScript, Project Management..."
+                                       required maxlength="100" pattern="[A-Za-z0-9\s\-\.\+\#\/]+">
                                 <div class="form-text">Enter the skill name as you want it to appear</div>
                             </div>
                             <div class="col-md-4">
@@ -133,8 +134,8 @@
                                     {% for skill in skills %}
                                         <span class="badge me-2 mb-2 skill-badge bg-primary text-white position-relative">
                                             {{ skill.name }}
-                                            <button type="button" class="btn-close btn-close-white ms-1"
-                                                    onclick="removeUserSkill({{ skill.id }})"
+                                            <button type="button" class="btn-close btn-close-white ms-1 remove-skill-btn"
+                                                    data-skill-id="{{ skill.id }}"
                                                     data-skill-name="{{ skill.name|e }}"
                                                     aria-label="Remove skill"
                                                     style="font-size: 0.6em; padding: 0.1em;">

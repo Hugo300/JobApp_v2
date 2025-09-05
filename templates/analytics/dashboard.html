@@ -13,7 +13,7 @@
                     <p class="text-muted mb-0">Comprehensive insights into your job application journey</p>
                 </div>
                 <div class="d-flex gap-2">
-                    <button class="btn btn-outline-primary" onclick="refreshAnalytics()">
+                    <button id="refresh-analytics-btn" class="btn btn-outline-primary" onclick="refreshAnalytics()">
                         <i class="bi bi-arrow-repeat me-1"></i>Refresh
                     </button>
                     <div class="dropdown">
@@ -188,7 +188,7 @@
                 <div class="card-header">
                     <div class="d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0">
-                            <i class="bi bi-building me-2"></i>Top Skills
+                            <i class="bi bi-lightbulb me-2"></i>Top Skills
                         </h5>
                     </div>
                 </div>
@@ -379,7 +379,7 @@
                         {% for mode, count in location_analytics.job_mode_distribution.items() %}
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <div>
-                                <i class="bi {% if mode == 'remote' %}bi-house{% elif mode == 'hybrid' %}bi-hybrid{% else %}bi-building{% endif %} me-2"></i>
+                                <i class="bi {% if mode == 'remote' %}bi-house{% elif mode == 'hybrid' %}bi-diagram-3{% else %}bi-building{% endif %} me-2"></i>
                                 <span class="text-capitalize">{{ mode.replace('_', ' ') }}</span>
                             </div>
                             <span class="badge bg-primary">{{ count }}</span>
@@ -569,9 +569,14 @@ function initializeCharts() {
 
 function refreshAnalytics() {
     // Show loading state
-    const refreshBtn = document.querySelector('[onclick="refreshAnalytics()"]');
+    const refreshBtn = document.getElementById('refresh-analytics-btn');
     const originalText = refreshBtn.innerHTML;
-    refreshBtn.innerHTML = '<i class="bi bi-arrow-repeat me-1 spin"></i>Refreshing...';
+    refreshBtn.textContent = '';
+    const spinner = document.createElement('i');
+    spinner.className = 'bi bi-arrow-repeat me-1 spin';
+    const text = document.createTextNode('Refreshing...');
+    refreshBtn.appendChild(spinner);
+    refreshBtn.appendChild(text);
     refreshBtn.disabled = true;
     
     // Reload page after a brief delay to show loading state

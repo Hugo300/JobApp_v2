@@ -302,6 +302,11 @@
     function showDuplicates(duplicates, searchTerm) {
         const duplicateCard = document.getElementById('duplicateCheckCard');
         const duplicatesList = document.getElementById('duplicatesList');
+
+        // Reset UI  
+        duplicatesList.innerHTML = '';  
+        const proceedCheckbox = document.getElementById('proceedAnyway');  
+        if (proceedCheckbox) proceedCheckbox.checked = false;
         
         // Filter out exact matches and very similar ones
         const similarSkills = duplicates.filter(skill => {

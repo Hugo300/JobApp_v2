@@ -8,7 +8,7 @@
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <h1><i class="bi bi-pencil-fill-2"></i>Edit Job Application</h1>
+                <h1><i class="bi bi-pencil-fill"></i>Edit Job Application</h1>
                 <p class="text-muted mb-0">Update details for {{ job.title }} at {{ job.company }}</p>
             </div>
             <a href="{{ url_for('jobs.job_detail', job_id=job.id) }}" class="btn btn-outline-secondary">
@@ -135,14 +135,14 @@
                 <p class="mb-2">
                     <strong>Status:</strong> 
                     <span class="badge {{
-                        'badge--status-completed' if job.status == 'Completed'
-                        else 'badge--status-process' if job.status == 'Process'
-                        else 'badge--status-process' if job.status == 'Interview'
-                        else 'badge--status-applied' if job.status == 'Applied'
-                        else 'badge--status-waiting' if job.status == 'Waiting Decision'
-                        else 'badge--status-collected' if job.status == 'Collected'
-                        else 'badge--status-rejected' if job.status == 'Rejected'
-                        else 'primary'
+                        ({  
+                          'Completed': 'badge--status-completed',  
+                          'Process': 'badge--status-process',  
+                          'Applied': 'badge--status-applied',  
+                          'Waiting Decision': 'badge--status-waiting',  
+                          'Collected': 'badge--status-collected',  
+                          'Rejected': 'badge--status-rejected'  
+                        }).get(job.status, 'bg-primary')
                     }}">{{ job.status }}</span>
                 </p>
                 <p class="mb-2">
@@ -232,6 +232,10 @@ function scrapeJob() {
         body: JSON.stringify({url: url})
     })
     .then(response => response.json())
+    .then(response => {  
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);  
+        return response.json();
+    }) 
     .then(data => {
         if (data.success) {
             console.log(data)
@@ -254,6 +258,12 @@ function scrapeJob() {
         } else {
             showAlert('❌ Scraping failed: ' + (data.error || 'Unknown error'), 'danger');
         }
+    })
+    .catch(err => {  
+        showAlert('❌ Scraping error: ' + err.message, 'danger');  
+    }).finally(() => {  
+        scrapeBtn.disabled = false;  
+        scrapeBtn.innerHTML = originalText;  
     });
 }
 

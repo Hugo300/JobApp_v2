@@ -135,9 +135,9 @@
                 </div>
                 <div class="card-body">
                     {% if skill.variants %}
-                        <div class="row">
+                        <div class="row" id="variantsList">
                             {% for variant in skill.variants %}
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-6 mb-3" id="variant-{{ variant.id }}">
                                 <div class="d-flex justify-content-between align-items-center p-2 border rounded">
                                     <span class="fw-bold">{{ variant.variant_name }}</span>
                                     <form method="POST" 
@@ -433,7 +433,7 @@
                     }
                     
                     // Update variant count badge
-                    const badge = document.querySelector('.badge.bg-info');
+                    const badge = document.querySelector('.fs-4.fw-bold.text-info');
                     const currentCount = parseInt(badge.textContent);
                     badge.textContent = currentCount - 1;
                     
@@ -474,6 +474,7 @@
         
         fetch(this.action, {
             method: 'POST',
+            headers: { 'Accept': 'application/json' },
             body: formData
         })
         .then(response => response.text())

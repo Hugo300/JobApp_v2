@@ -55,13 +55,14 @@
                                 {% for status, count in summary.status_counts.items() %}
                                 <div class="d-flex justify-content-between align-items-center mb-1 small">
                                     <span class="badge {{
-                                        'badge--status-completed' if status == 'Completed'
-                                        else 'badge--status-process' if status == 'Process'
-                                        else 'badge--status-applied' if status == 'Applied'
-                                        else 'badge--status-waiting' if status == 'Waiting Decision'
-                                        else 'badge--status-collected' if status == 'Collected'
-                                        else 'badge--status-rejected' if status == 'Rejected'
-                                        else 'primary'
+                                        ({  
+                                        'Completed': 'badge--status-completed',  
+                                        'Process': 'badge--status-process',  
+                                        'Applied': 'badge--status-applied',  
+                                        'Waiting Decision': 'badge--status-waiting',  
+                                        'Collected': 'badge--status-collected',  
+                                        'Rejected': 'badge--status-rejected'  
+                                        }).get(status, 'bg-primary')
                                     }}">{{ status }}</span>
                                     <span>{{ count }}</span>
                                 </div>

@@ -179,11 +179,14 @@ function updateStatusPreview() {
     const preview = document.getElementById('statusChangePreview');
     const newStatusSpan = document.getElementById('newStatus');
 
-    if (statusSelect.value && statusSelect.value !== '') {
-        newStatusSpan.textContent = statusSelect.value;
-        preview.style.display = 'block';
-    } else {
-        preview.style.display = 'none';
+    if (!statusSelect) return;
+        const selectedText = statusSelect.options[statusSelect.selectedIndex]?.text?.trim() || '';
+        const currentText = document.getElementById('currentStatus')?.textContent?.trim() || '';
+        if (selectedText && selectedText !== currentText) {
+            newStatusSpan.textContent = selectedText;
+            preview.style.display = 'block';
+        } else {
+            preview.style.display = 'none';
     }
 }
 
