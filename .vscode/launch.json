@@ -19,7 +19,17 @@
                 "--no-reload"
             ],
             "jinja": true,
-            "autoStartBrowser": false
+            "autoStartBrowser": false,
+        },
+        {
+            "name": "Python Debugger: Migration",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "./job migration/obsidian_importer.py",
+            "args": [
+                "C:\\Users\\hugof\\Obsidian\\MainVault\\01 - Projects\\Job Search\\03 - Applications\\Applications",
+                "--debug",
+            ],
         }
     ]
 }

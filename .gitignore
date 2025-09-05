@@ -28,4 +28,4 @@ _pycache_/
 docs/
 logs/
 .investigations/
-.vscode/
+.vscode
