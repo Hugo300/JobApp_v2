@@ -19,7 +19,7 @@ from scraper import _clean_and_enhance_markdown
 class ObsidianJobImporter:
     """Complete job importer from Obsidian files to Flask app"""
     
-    def __init__(self, base_url: str = "http://localhost:5000"):
+    def __init__(self, base_url: str = "http://localhost:7000"):
         self.base_url = base_url
         self.session = requests.Session()
         self.job_mode_mapping = {
@@ -151,7 +151,8 @@ class ObsidianJobImporter:
             
             description = callout_content.replace('>', '')
 
-            description = _clean_and_enhance_markdown(description)
+            cleaned_description = _clean_and_enhance_markdown(description)
+            description = cleaned_description if cleaned_description else description
                         
             return description
         
@@ -237,8 +238,9 @@ class ObsidianJobImporter:
         
         filtered_jobs = []
         for job in jobs:
-            if isinstance(job['_metadata']['status'], list):
-                job['_metadata']['status'] = job['_metadata']['status'][0]
+            if isinstance(job.get('_metadata', {}).get('status'), list):
+                status_list = job['_metadata']['status']
+                job['_metadata']['status'] = status_list[0] if status_list else ''
 
             job_status = job.get('_metadata', {}).get('status', '').lower()
             
@@ -328,7 +330,7 @@ class ObsidianJobImporter:
             form_url = urljoin(self.base_url, "/job/new_job")
             print(f"Fetching CSRF token from: {form_url}")
             
-            form_response = self.session.get(form_url)
+            form_response = self.session.get(form_url, timeout=30)  
             if form_response.status_code != 200:
                 return [], [f"Failed to fetch new job form: HTTP {form_response.status_code}"]
             
@@ -372,7 +374,8 @@ class ObsidianJobImporter:
                         headers={
                             'Content-Type': 'application/x-www-form-urlencoded',
                             'Referer': form_url
-                        }
+                        },  
+                        timeout=30    
                     )
                     
                     # Check response
@@ -633,7 +636,7 @@ def main():
             else:
                 parsed_jobs = importer.parse_directory(args.source)
             
-            filtered_jobs = parsed_jobs # importer.filter_jobs_for_import(parsed_jobs, args.status_filter)
+            filtered_jobs = parsed_jobs
             
             print(f"=== Dry Run Results ===")
             print(f"Parsed: {len(parsed_jobs)} jobs")
@@ -644,7 +647,8 @@ def main():
                 for job in filtered_jobs:
                     print(f"  - {job.get('title', 'Unknown')} at {job.get('company', 'Unknown')}")
 
-                    print(job['_metadata']['logs'])
+                    if args.debug:
+                        print(job['_metadata']['logs'])
             
         else:
             # Run the full import
